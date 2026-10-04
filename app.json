@@ -3,13 +3,12 @@
     "name": "vuelta-rapida",
     "slug": "vuelta-rapida",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "landscape",
+    "platforms": ["android"],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "ios": {
-      "supportsTablet": true
-    },
     "android": {
+      "package": "com.mairajulian.vueltarapida",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -18,8 +17,10 @@
       },
       "predictiveBackGestureEnabled": false
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
+    "plugins": ["expo-router", "expo-status-bar"],
+    "scheme": "vueltarapida",
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }
