@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,400..900;1,62..125,400..900&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<script src="_ds/broadsheet-7c504617-25a5-4a0c-943d-4f14e61773c1/_ds_bundle.js"></script>
+<style>
+body{margin:0;background:#e4e6ea}
+a{color:#2a5bd7}a:hover{color:#1b3f9e}
+button:focus-visible,input:focus-visible{outline:2px solid oklch(0.56 0.2 258);outline-offset:2px}
+</style>
+</helmet>
+
+<div style="padding:64px 72px 120px;display:flex;flex-direction:column;gap:96px;background:#e4e6ea;color:#14171f;font-family:'Archivo',sans-serif;min-height:100vh">
+
+  <header style="display:flex;flex-direction:column;gap:10px;max-width:860px">
+    <div style="font-size:12px;letter-spacing:0.16em;text-transform:uppercase;font-weight:600;color:#5d6472;white-space:nowrap">Dirección Paddock · Android horizontal 20:9 · 800 × 360 dp · <a href="Vuelta Rapida v2.dc.html">ver opciones</a></div>
+    <div style="font-size:80px;line-height:0.86;font-weight:900;font-stretch:68%;text-transform:uppercase"><span>Vuelta </span><span style="color:oklch(0.56 0.2 258)">Rápida</span></div>
+    <p style="margin:0;font-size:17px;line-height:1.5;color:#3a404c;max-width:660px;text-wrap:pretty">Clara, redondeada y con bloques de color. El azul marca lo que se toca, el coral es para frenar y para los pianos, y el lima aparece solo cuando hay récord.</p>
+  </header>
+
+  <section style="display:flex;flex-direction:column;gap:44px">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <div style="font-size:12px;letter-spacing:0.16em;text-transform:uppercase;font-weight:600;color:oklch(0.48 0.2 258)">A · Sistema</div>
+      <div style="font-size:44px;line-height:1;font-weight:900;font-stretch:68%;text-transform:uppercase">Paleta</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:24px;max-width:1400px">
+      <sc-for list="{{ paleta }}" as="c" hint-placeholder-count="10">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="height:76px;border-radius:18px;box-shadow:0 1px 3px rgba(20,23,31,0.1);background:{{ c.v }}"></div>
+          <div style="font-size:15px;font-weight:700">{{ c.n }}</div>
+          <div style="font-size:12px;line-height:1.4;color:#5d6472">{{ c.uso }}</div>
+          <div style="font-size:11px;color:#7a818e">{{ c.hex }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="font-size:44px;line-height:1;font-weight:900;font-stretch:68%;text-transform:uppercase;margin-top:20px">Tipografía</div>
+    <div style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);gap:56px;max-width:1400px;align-items:end">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:92px;line-height:0.88;font-weight:900;font-stretch:66%;text-transform:uppercase">¡Largada!</div>
+        <div style="font-size:12px;color:#5d6472">Display · Archivo Black 900 · ancho 66–68 % · mayúsculas</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:60px;line-height:1;font-weight:800;font-stretch:76%;font-variant-numeric:tabular-nums">1:11.902</div>
+        <div style="font-size:12px;color:#5d6472">Cronómetro y botones · ExtraBold 800 · ancho 76–80 % · cifras tabulares</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:13px;font-weight:600;color:#5d6472">Mejor vuelta</div>
+        <div style="font-size:16px;line-height:1.45">Sostené el celular como vas a jugar y tocá Listo.</div>
+        <div style="font-size:12px;color:#5d6472">Rótulos 600 · Texto 400 · ancho normal</div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:6px;margin-top:20px">
+      <div style="font-size:44px;line-height:1;font-weight:900;font-stretch:68%;text-transform:uppercase">Componentes</div>
+      <p style="margin:0;font-size:14px;color:#5d6472">Medidas en dp. Todo lo tocable mide 48 o más; los controles de manejo, 76 o más.</p>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:56px;max-width:1400px;align-items:flex-start">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:600;color:#5d6472">Botones</div>
+        <button style="align-self:flex-start;height:64px;padding:0 10px 0 32px;border:0;border-radius:999px;background:#14171f;color:#ffffff;display:flex;align-items:center;gap:18px;cursor:pointer;font-family:inherit" style-active="background:#2a2f3a"><span style="font-weight:800;font-stretch:80%;font-size:26px">Correr</span><span style="width:46px;height:46px;border-radius:50%;background:oklch(0.9 0.19 120);color:#14171f;display:grid;place-items:center"><i class="ph-fill ph-play" style="font-size:22px"></i></span></button>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button style="height:52px;padding:0 28px;border:0;border-radius:999px;background:oklch(0.56 0.2 258);color:#ffffff;cursor:pointer;font-family:inherit;font-weight:800;font-stretch:80%;font-size:20px" style-active="background:oklch(0.48 0.2 258)">Seguir</button>
+          <button style="height:52px;padding:0 24px;border:0;border-radius:999px;background:#ffffff;box-shadow:0 1px 3px rgba(20,23,31,0.12);color:#14171f;cursor:pointer;font-family:inherit;font-weight:800;font-stretch:80%;font-size:19px" style-active="background:#eceef2">Elegir pista</button>
+          <button aria-label="Pausa" style="width:48px;height:48px;border:0;border-radius:50%;background:#ffffff;box-shadow:0 2px 6px rgba(20,23,31,0.14);color:#14171f;display:grid;place-items:center;cursor:pointer"><i class="ph-fill ph-pause" style="font-size:22px"></i></button>
+        </div>
+        <div style="font-size:12px;color:#5d6472">Principal 64 (tinta + lima) · Primario 52 · Secundario 52 · Ícono 48</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:600;color:#5d6472">Indicadores del HUD</div>
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <div style="background:#ffffff;border-radius:16px;box-shadow:0 2px 6px rgba(20,23,31,0.14);padding:6px 14px;display:flex;flex-direction:column"><span style="font-size:11px;font-weight:600;color:#5d6472">Vuelta</span><span style="font-weight:900;font-stretch:72%;font-size:30px;line-height:1">2<span style="color:#9aa1ad">/3</span></span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+            <span style="background:#ffffff;border-radius:999px;box-shadow:0 2px 6px rgba(20,23,31,0.14);padding:4px 22px;font-weight:800;font-stretch:76%;font-size:36px;line-height:1.1;font-variant-numeric:tabular-nums">1:04.318</span>
+            <div style="display:flex;gap:6px">
+              <span style="background:oklch(0.58 0.16 150);color:#ffffff;border-radius:999px;padding:3px 12px;display:flex;align-items:center;gap:6px;font-weight:800;font-stretch:80%;font-size:19px;font-variant-numeric:tabular-nums"><i class="ph-fill ph-ghost" style="font-size:16px"></i>−0.412</span>
+              <span style="background:oklch(0.58 0.22 25);color:#ffffff;border-radius:999px;padding:3px 12px;display:flex;align-items:center;gap:6px;font-weight:800;font-stretch:80%;font-size:19px;font-variant-numeric:tabular-nums"><i class="ph-fill ph-ghost" style="font-size:16px"></i>+0.236</span>
+            </div>
+          </div>
+          <div style="background:#ffffff;border-radius:16px;box-shadow:0 2px 6px rgba(20,23,31,0.14);padding:6px 14px;display:flex;flex-direction:column"><span style="font-size:11px;font-weight:600;color:#5d6472">Mejor</span><span style="font-weight:800;font-stretch:80%;font-size:20px;line-height:1.1;font-variant-numeric:tabular-nums">1:12.480</span></div>
+        </div>
+        <div style="font-size:12px;color:#5d6472;max-width:400px">Píldoras blancas opacas. Delta en verde si vas más rápido que el fantasma y en rojo si vas más lento, siempre con el signo.</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:600;color:#5d6472">Controles de manejo</div>
+        <div style="display:flex;gap:12px;align-items:flex-end">
+          <div style="width:76px;height:76px;border-radius:50%;background:#ffffff;box-shadow:0 3px 8px rgba(20,23,31,0.18);display:grid;place-items:center"><i class="ph-fill ph-caret-left" style="font-size:34px"></i></div>
+          <div style="width:76px;height:76px;border-radius:50%;background:#ffffff;box-shadow:0 3px 8px rgba(20,23,31,0.18);display:grid;place-items:center"><i class="ph-fill ph-caret-right" style="font-size:34px"></i></div>
+          <div style="width:96px;height:96px;border-radius:50%;background:oklch(0.6 0.21 28);color:#ffffff;box-shadow:0 3px 8px rgba(20,23,31,0.18);display:grid;place-items:center;font-weight:800;font-stretch:80%;font-size:20px">Freno</div>
+          <div style="width:76px;height:128px;border-radius:38px;background:oklch(0.6 0.21 28);color:#ffffff;box-shadow:0 3px 8px rgba(20,23,31,0.18);display:grid;place-items:center;font-weight:800;font-stretch:80%;font-size:18px">Freno</div>
+        </div>
+        <div style="font-size:12px;color:#5d6472">Dirección Ø 76 · Freno Ø 96 · Freno lateral (inclinación) 76 × 128</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:600;color:#5d6472">Semáforo</div>
+        <div style="display:flex;gap:8px;padding:10px;background:#14171f;border-radius:18px">
+          <sc-for list="{{ luces }}" as="l" hint-placeholder-count="5">
+            <div style="display:flex;flex-direction:column;gap:6px;padding:6px;background:#22262f;border-radius:999px">
+              <span style="width:22px;height:22px;border-radius:50%;background:#353a45"></span>
+              <span style="width:22px;height:22px;border-radius:50%;background:{{ l.f }}"></span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="font-size:12px;color:#5d6472">Cinco columnas; se encienden de a una.</div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:44px">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:12px;letter-spacing:0.16em;text-transform:uppercase;font-weight:600;color:oklch(0.48 0.2 258)">B · Pantallas</div>
+      <div style="font-size:44px;line-height:1;font-weight:900;font-stretch:68%;text-transform:uppercase">Las nueve pantallas</div>
+      <p style="margin:0;font-size:14px;color:#5d6472;max-width:680px">Interactivas: el color, el número y el nombre que elijas en la 04 se usan en todas las demás.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,800px);gap:72px 64px">
+
+      <div id="p01" data-screen-label="01 Inicio" style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:10px;align-items:center"><span style="font-size:13px;font-weight:800;padding:2px 10px;border-radius:999px;background:#14171f;color:#ffffff">01</span><span style="font-size:16px;font-weight:600;white-space:nowrap">Inicio</span></div>
+        <div style="position:relative;width:800px;height:360px;overflow:hidden;border-radius:20px;background:#f6f7f9;box-shadow:0 12px 32px rgba(20,23,31,0.16)">
+          <div style="position:absolute;right:14px;top:14px;bottom:14px;width:370px;border-radius:24px;background:oklch(0.56 0.2 258);overflow:hidden">
+            <div style="position:absolute;right:-10px;top:-40px;font-weight:900;font-stretch:62%;font-size:360px;line-height:1;color:oklch(0.62 0.19 258)">{{ numero }}</div>
+            <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-20deg)">
+              <dc-import name="Monoplaza" color="{{ carInicio }}" numero="{{ numero }}" ancho="100" hint-size="100px,225px"></dc-import>
+            </div>
+          </div>
+          <div style="position:absolute;left:44px;top:30px;display:flex;flex-direction:column;gap:14px">
+            <span style="align-self:flex-start;display:flex;align-items:center;gap:8px;padding:5px 12px 5px 6px;border-radius:999px;background:#ffffff;box-shadow:0 1px 3px rgba(20,23,31,0.1);font-size:12px;font-weight:600;white-space:nowrap"><span style="width:20px;height:20px;border-radius:6px;background:repeating-conic-gradient(#14171f 0 25%,#ffffff 0 50%) 0 0/10px 10px"></span>Contrarreloj vs. tu fantasma</span>
+            <div style="display:flex;flex-direction:column;font-weight:900;font-stretch:68%;text-transform:uppercase;font-size:84px;line-height:0.84;letter-spacing:-0.01em"><span>Vuelta</span><span style="color:oklch(0.56 0.2 258)">Rápida</span></div>
+            <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
+              <button style="height:64px;padding:0 10px 0 32px;border:0;border-radius:999px;background:#14171f;color:#ffffff;display:flex;align-items:center;gap:18px;cursor:pointer;font-family:inherit" style-active="background:#2a2f3a"><span style="font-weight:800;font-stretch:80%;font-size:26px">Correr</span><span style="width:46px;height:46px;border-radius:50%;background:oklch(0.9 0.19 120);color:#14171f;display:grid;place-items:center"><i class="ph-fill ph-play" style="font-size:22px"></i></span></button>
+              <button aria-label="Garage" style="width:56px;height:56px;border:0;border-radius:50%;background:#ffffff;box-shadow:0 1px 3px rgba(20,23,31,0.12);color:#14171f;display:grid;place-items:center;cursor:pointer" style-active="background:#eceef2"><i class="ph-fill ph-wrench" style="font-size:24px"></i></button>
+              <button aria-label="Ajustes" style="width:56px;height:56px;border:0;border-radius:50%;background:#ffffff;box-shadow:0 1px 3px rgba(20,23,31,0.12);color:#14171f;display:grid;place-items:center;cursor:pointer" style-active="background:#eceef2"><i class="ph-fill ph-gear-six" style="font-size:24px"></i></button>
+            </div>
+          </div>
+          <div style="position:absolute;left:44px;bottom:18px;display:flex;align-items:baseline;gap:10px;font-size:13px;color:#5d6472;white-space:nowrap">Tu récord en Autódromo del Lago<span style="font-weight:800;font-stretch:80%;font-size:18px;color:#14171f;font-variant-numeric:tabular-nums">1:12.480</span></div>
+        </div>
+      </div>
+
+      <div id="p02" data-screen-label="02 Elección de control" style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:10px;align-items:center"><span style="font-size:13px;font-weight:800;padding:2px 10px;border-radius:999px;background:#14171f;color:#ffffff">02</span><span style="font-size:16px;font-weight:600;white-space:nowrap">Elección de control</span></div>
+        <div style="position:relative;width:800px;height:360px;overflow:hidden;border-radius:20px;background:#f6f7f9;box-shadow:0 12px 32px rgba(20,23,31,0.16);display:flex;flex-direction:column;padding:22px 36px 24px;gap:16px">
+          <div style="display:flex;align-items:center;gap:14px">
+            <button aria-label="Volver" style="width:48px;height:48px;border:0;border-radius:50%;background:#ffffff;box-shadow:0 1px 3px rgba(20,23,31,0.12);color:#14171f;display:grid;place-items:center;cursor:pointer"><i class="ph-fill ph-arrow-left" style="font-size:22px"></i></button>
+            <div style="display:flex;flex-direction:column;flex:1">
+              <span style="font-weight:900;font-stretch:68%;font-size:36px;line-height:1;text-transform:uppercase;white-space:nowrap">¿Cómo querés manejar?</span>
+              <span style="font-size:13px;color:#5d6472">Paso 1 de 3</span>
+            </div>
+            <button style="height:52px;padding:0 28px;border:0;border-radius:999px;background:oklch(0.56 0.2 258);color:#ffffff;cursor:pointer;font-family:inherit;font-weight:800;font-stretch:80%;font-size:20px" style-active="background:oklch(0.48 0.2 258)">Seguir</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;flex:1">
+            <button onClick="{{ elegirInclinacion }}" style="text-align:left;font-family:inherit;color:inherit;cursor:pointer;border:2.5px solid {{ inc.ring }};border-radius:22px;background:#ffffff;box-shadow:0 1px 3px rgba(20,23,31,0.1);padding:8px;display:flex;gap:14px;align-items:stretch">
+              <div style="flex:none;width:130px;border-radius:16px;background:{{ inc.bg }};display:grid;place-items:center">
+                <svg viewBox="0 0 120 120" width="112" height="112">
+                  <path d="M18 70 A44 44 0 0 1 102 70" style="fill:none;stroke:{{ inc.fg }};stroke-width:5;stroke-linecap:round;stroke-dasharray:2 9"></path>
+                  <path d="M95 57 L103 72 L87 71" style="fill:none;stroke:{{ inc.fg }};stroke-width:5;stroke-linecap:round;stroke-linejoin:round"></path>
+                  <g transform="rotate(-16 60 70)"><rect x="22" y="52" width="76" height="38" rx="10" style="fill:{{ inc.phone }};stroke:{{ inc.fg }};stroke-width:4.5"></rect></g>
+                </svg>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;padding:10px 8px 10px 0">
+                <span style="font-weight:900;font-stretch:68%;font-size:30px;line-height:1;text-transform:uppercase">Inclinación</span>
+                <span style="font-size:14px;line-height:1.4;color:#3a404c">Girá el celular como un volante. Frená con cualquier pulgar.</span>
+                <span style="margin-top:auto;align-self:flex-start;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#eceef2;white-space:nowrap">Más real</span>
+              </div>
+            </button>
+            <button onClick="{{ elegirBotones }}" style="text-align:left;font-family:inherit;color:inherit;cursor:pointer;border:2.5px solid {{ bot.ring }};border-radius:22px;background:#ffffff;box-shadow:0 1px 3px rgba(20,23,31,0.1);padding:8px;display:flex;gap:14px;align-items:stretch">
+              <div style="flex:none;width:130px;border-radius:16px;background:{{ bot.bg }};display:grid;place-items:center">
+                <svg viewBox="0 0 120 120" width="112" height="112">
+                  <rect x="8" y="34" width="104" height="54" rx="12" style="fill:{{ bot.phone }};stroke:{{ bot.fg }};stroke-width:4.5"></rect>
+                  <circle cx="26" cy="72" r="7" style="fill:{{ bot.fg }}"></circle>
+                  <circle cx="44" cy="72" r="7" style="fill:{{ bot.fg }}"></circle>
+                  <circle cx="94" cy="70" r="10" style="fill:oklch(0.6 0.21 28)"></circle>
+                </svg>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;padding:10px 8px 10px 0">
+                <span style="font-weight:900;font-stretch:68%;font-size:30px;line-height:1;text-transform:uppercase">Botones</span>
+                <span style="font-size:14px;line-height:1.4;color:#3a404c">Izquierda y derecha con el pulgar izquierdo, freno con el derecho.</span>
+                <span style="margin-top:auto;align-self:flex-start;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#eceef2;white-space:nowrap">Más preciso</span>
+              </div>
+            </button>
+          </div>
+          <div style="font-size:13px;color:#5d6472">En los dos modos el auto acelera solo. Podés cambiarlo después desde la pausa.</div>
+        </div>
+      </div>
+
+      <div id="p03" data-screen-label="03 Calibración" style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:10px;align-items:center"><span style="font-size:13px;font-weight:800;padding:2px 10px;border-radius:999px;background:#14171f;color:#ffffff">03</span><span style="font-size:16px;font-weight:600;white-space:nowrap">Calibración de la inclinación</span></div>
+        <div style="position:relative;width:800px;height:360px;overflow:hidden;border-radius:20px;background:#f6f7f9;box-shadow:0 12px 32px rgba(20,23,31,0.16);display:flex;flex-direction:column;padding:22px 36px 24px;gap:12px">
+          <div style="display:flex;align-items:center;gap:14px">
+            <button aria-label="Volver" style="width:48px;height:48px;border:0;border-radius:50%;background:#ffffff;box-shadow:0 1px 3px rgba(20,23,31,0.12);color:#14171f;display:grid;place-items:center;cursor:pointer"><i class="ph-fill ph-arrow-left" style="font-size:22px"></i></button>
+            <div style="display:flex;flex-direction:column;flex:1">
+              <span style="font-weight:900;font-stretch:68%;font-size:36px;line-height:1;text-transform:uppercase">Calibrá el volante</span>
+              <span style="font-size:13px;color:#5d6472">Paso 2 de 3</span>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:190px 1fr 230px;gap:20px;flex:1;align-items:center">
+            <p style="margin:0;font-size:19px;line-height:1.35;font-weight:500;text-wrap:pretty">Sostené el celular como vas a jugar y tocá <strong style="font-weight:800">Listo</strong>.</p>
+            <div style="position:relative;height:230px">
+              <svg viewBox="0 0 260 150" width="260" height="150" style="position:absolute;top:8px;left:50%;margin-left:-130px">
+                <path d="M20 140 A110 110 0 0 1 240 140" style="fill:none;stroke:#e3e6eb;stroke-width:14;stroke-linecap:round"></path>
+                <path d="M84 37 A110 110 0 0 1 176 37" style="fill:none;stroke:oklch(0.85 0.08 258);stroke-width:14;stroke-linecap:round"></path>
+              </svg>
+              <div style="position:absolute;top:8px;left:50%;width:18px;height:140px;margin-left:-9px;transform-origin:50% 100%;transform:rotate({{ angulo }}deg)">
+                <div style="width:18px;height:18px;margin-top:-2px;border-radius:50%;background:oklch(0.56 0.2 258);box-shadow:0 0 0 4px #ffffff"></div>
+              </div>
+              <div style="position:absolute;top:108px;left:50%;width:132px;height:68px;margin-left:-66px;transform:rotate({{ angulo }}deg);border-radius:16px;background:#ffffff;box-shadow:0 3px 8px rgba(20,23,31,0.18);display:grid;place-items:center">
+                <span style="font-weight:800;font-stretch:80%;font-size:28px;font-variant-numeric:tabular-nums">{{ anguloTxt }}</span>
+              </div>
+              <div style="position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:12px;color:#5d6472;white-space:nowrap">En la zona azul el auto va derecho</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;background:#ffffff;border-radius:20px;box-shadow:0 1px 3px rgba(20,23,31,0.1);padding:16px">
+              <div style="display:flex;justify-content:space-between;align-items:baseline">
+                <span style="font-size:13px;font-weight:600">Sensibilidad</span>
+                <span style="font-weight:800;font-stretch:80%;font-size:24px">{{ sens }}</span>
+              </div>
+              <input type="range" min="1" max="10" value="{{ sens }}" onChange="{{ onSens }}" style="width:100%;height:48px;accent-color:oklch(0.56 0.2 258);margin:0">
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:#5d6472"><span>Suave</span><span>Rápida</span></div>
+              <button style="height:56px;margin-top:6px;border:0;border-radius:999px;background:oklch(0.56 0.2 258);color:#ffffff;font-family:inherit;font-weight:800;font-stretch:80%;font-size:22px;cursor:pointer" style-active="background:oklch(0.48 0.2 258)">Listo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="p04" data-screen-label="04 Personalización" style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:10px;align-items:center"><span style="font-size:13px;font-weight:800;padding:2px 10px;border-radius:999px;background:#14171f;color:#ffffff">04</span><span style="font-size:16px;font-weight:600;white-space:nowrap">Personalización del auto</span></div>
+        <div style="position:relative;width:800px;height:360px;overflow:hidden;border-radius:20px;background:#f6f7f9;box-shadow:0 12px 32px rgba(20,23,31,0.16);display:flex;flex-direction:column;padding:22px 36px 24px;gap:12px">
+          <div style="display:flex;align-items:center;gap:14px">
+            <button aria-label="Volver" style="width:48px;height:48px;border:0;border-radius:50%;background:#ffffff;box-shadow:0 1px 3px rgba(20,23,31,0.12);color:#14171f;display:grid;place-items:center;cursor:pointer"><i class="ph-fill ph-arrow-left" style="font-size:22px"></i></button>
+            <div style="display:flex;flex-direction:column;flex:1">
+              <span style="font-weight:900;font-stretch:68%;font-size:36px;line-height:1;text-transform:uppercase">Tu monoplaza</span>
+              <span style="font-size:13px;color:#5d6472">Paso 3 de 3</span>
+            </div>
+            <button style="height:52px;padding:0 28px;border:0;border-radius:999px;background:oklch(0.56 0.2 258);color:#ffffff;cursor:pointer;font-family:inherit;font-weight:800;font-stretch:80%;font-size:20px" style-active="background:oklch(0.48 0.2 258)">Guardar</button>
+          </div>
+          <div style="display:grid;grid-template-columns:250px 1fr;gap:28px;flex:1">
+            <div style="position:relative;border-radius:22px;background:#ffffff;box-shadow:0 1px 3px rgba(20,23,31,0.1);overflow:hidden;display:grid;place-items:center">
+              <div style="position:absolute;left:0;right:0;bottom:0;height:10px;background:repeating-linear-gradient(90deg,oklch(0.6 0.21 28) 0 16px,#ffffff 16px 32px)"></div>
+              <div style="transform:rotate(90deg);margin-top:-14px"><dc-import name="Monoplaza" color="{{ carColor }}" numero="{{ numero }}" ancho="74" hint-size="74px,167px"></dc-import></div>
+              <span style="position:absolute;left:14px;bottom:20px;display:flex;align-items:center;gap:6px;padding:4px 12px 4px 4px;border-radius:999px;background:#14171f;color:#ffffff;white-space:nowrap"><span style="min-width:28px;height:28px;padding:0 6px;border-radius:999px;background:{{ carColor }};display:grid;place-items:center;font-weight:800;font-stretch:80%;font-size:15px;color:{{ numTxt }}">{{ numero }}</span><span style="font-weight:800;font-stretch:80%;font-size:16px;text-transform:uppercase">{{ nombre }}</span></span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <span style="font-size:13px;font-weight:600">Color · {{ colorNombre }}</span>
+                <div style="display:flex;gap:4px">
+                  <sc-for list="{{ colores }}" as="c" hint-placeholder-count="8">
+                    <button onClick="{{ c.pick }}" aria-label="{{ c.n }}" style="width:48px;height:48px;padding:4px;border:2.5px solid {{ c.ring }};border-radius:50%;background:transparent;cursor:pointer">
+                      <span style="display:block;width:100%;height:100%;border-radius:50%;background:{{ c.v }};box-shadow:inset 0 0 0 1px rgba(20,23,31,0.12)"></span>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="display:flex;gap:24px">
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <span style="font-size:13px;font-weight:600">Número</span>
+                  <div style="display:flex;align-items:center;gap:4px;padding:4px;border-radius:999px;background:#ffffff;box-shadow:0 1px 3px rgba(20,23,31,0.1)">
+                    <button onClick="{{ menos }}" aria-label="Restar" style="width:48px;height:48px;border:0;border-radius:50%;background:#eceef2;display:grid;place-items:center;cursor:pointer;color:#14171f" style-active="background:#dfe2e7"><i class="ph-fill ph-minus" style="font-size:20px"></i></button>
+                    <span style="width:52px;text-align:center;font-weight:900;font-stretch:72%;font-size:32px;font-variant-numeric:tabular-nums">{{ numero }}</span>
+                    <button onClick="{{ mas }}" aria-label="Sumar" style="width:48px;height:48px;border:0;border-radius:50%;background:#eceef2;display:grid;place-items:center;cursor:pointer;color:#14171f" style-active="background:#dfe2e7"><i class="ph-fill ph-plus" style="font-size:20px"></i></button>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;flex:1">
+                  <span style="font-size:13px;font-weight:600">Nombre del piloto</span>
+                  <input value="{{ nombre }}" onChange="{{ onNombre }}" maxlength="10" style="height:56px;padding:0 20px;font-family:inherit;font-weight:800;font-stretch:80%;font-size:22px;text-transform:uppercase;color:#14171f;background:#ffffff;border:0;border-radius:999px;box-shadow:0 1px 3px rgba(20,23,31,0.1);caret-color:oklch(0.56 0.2 258);width:100%">
+                </div>
+              </div>
+              <span style="font-size:12px;color:#5d6472">Hasta 10 letras. Aparece en el auto y en tus récords.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="p05" data-screen-label="05 Selección de pista" style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:10px;align-items:center"><span style="font-size:13px;font-weight:800;padding:2px 10px;border-radius:999px;background:#14171f;color:#ffffff">05</span><span style="font-size:16px;font-weight:600;white-space:nowrap">Selección de pista</span></div>
+        <div style="position:relative;width:800px;height:360px;overflow:hidden;border-radius:20px;background:#f6f7f9;box-shadow:0 12px 32px rgba(20,23,31,0.16);display:flex;flex-direction:column;padding:22px 36px 26px;gap:16px">
+          <div style="display:flex;align-items:center;gap:14px">
+            <button aria-label="Volver" style="width:48px;height:48px;border:0;border-radius:50%;background:#ffffff;box-shadow:0 1px 3px rgba(20,23,31,0.12);color:#14171f;display:grid;place-items:center;cursor:pointer"><i class="ph-fill ph-arrow-left" style="font-size:22px"></i></button>
+            <div style="display:flex;flex-direction:column;flex:1">
+              <span style="font-weight:900;font-stretch:68%;font-size:36px;line-height:1;text-transform:uppercase">Elegí la pista</span>
+              <span style="font-size:13px;color:#5d6472">Contrarreloj · 3 vueltas</span>
+            </div>
+            <button style="height:52px;padding:0 28px;border:0;border-radius:999px;background:oklch(0.56 0.2 258);color:#ffffff;display:flex;align-items:center;gap:8px;cursor:pointer;font-family:inherit;font-weight:800;font-stretch:80%;font-size:22px" style-active="background:oklch(0.48 0.2 258)"><i class="ph-fill ph-flag-checkered" style="font-size:22px"></i>Largar</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;flex:1">
+            <sc-for list="{{ pistas }}" as="p" hint-placeholder-count="3">
+              <button onClick="{{ p.pick }}" style="text-align:left;font-family:inherit;color:inherit;cursor:pointer;border:2.5px solid {{ p.ring }};border-radius:20px;background:#ffffff;box-shadow:0 1px 3px rgba(20,23,31,0.1);padding:8px 8px 12px;display:flex;flex-direction:column;gap:6px">
+                <div style="border-radius:14px;background:{{ p.illoBg }};padding:6px 10px">
+                  <svg viewBox="0 0 100 60" width="100%" height="88" style="display:block">
+                    <path d="{{ p.d }}" style="fill:none;stroke:{{ p.illoStroke }};stroke-width:4.5;stroke-linejoin:round;stroke-linecap:round"></path>
+                    <rect x="{{ p.mx }}" y="{{ p.my }}" width="3" height="8" rx="1" style="fill:oklch(0.64 0.21 28)"></rect>
+                  </svg>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:2px;padding:0 6px">
+                  <span style="font-weight:800;font-stretch:72%;font-size:22px;line-height:1.05">{{ p.nombre }}</span>
+                  <span style="font-size:12px;color:#5d6472">{{ p.tipo }}</span>
+                </div>
+                <span style="margin:auto 6px 0;align-self:flex-start;display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:{{ p.recBg }};font-size:12px;font-weight:600;white-space:nowrap">{{ p.recLabel }}<span style="font-weight:800;font-stretch:80%;font-size:15px;font-variant-numeric:tabular-nums">{{ p.record }}</span></span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div id="p06" data-screen-label="06 Largada" style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:10px;align-items:center"><span style="font-size:13px;font-weight:800;padding:2px 10px;border-radius:999px;background:#14171f;color:#ffffff">06</span><span style="font-size:16px;font-weight:600;white-space:nowrap">Largada</span></div>
+        <div style="position:relative;width:800px;height:360px;overflow:hidden;border-radius:20px;box-shadow:0 12px 32px rgba(20,23,31,0.16)">
+          <dc-import name="EscenaPista" tema="claro" car-color="{{ carColor }}" numero="{{ numero }}" con-fantasma="{{ conFantasma }}" hint-size="800px,360px"></dc-import>
+          <div style="position:absolute;left:50%;top:22px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px">
+            <div style="display:flex;gap:10px;padding:12px;background:#14171f;border-radius:24px;box-shadow:0 3px 8px rgba(20,23,31,0.18)">
+              <sc-for list="{{ luces }}" as="l" hint-placeholder-count="5">
+                <div style="display:flex;flex-direction:column;gap:8px;padding:7px;background:#22262f;border-radius:999px">
+                  <span style="width:34px;height:34px;border-radius:50%;background:#353a45"></span>
+                  <span style="width:34px;height:34px;border-radius:50%;background:{{ l.f }}"></span>
+                </div>
+              </sc-for>
+            </div>
+            <span style="padding:6px 20px;border-radius:999px;background:#ffffff;box-shadow:0 2px 6px rgba(20,23,31,0.14);font-weight:900;font-stretch:68%;font-size:30px;text-transform:uppercase;white-space:nowrap">{{ luzTxt }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="p07a" data-screen-label="07a HUD inclinación" style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:10px;align-items:center"><span style="font-size:13px;font-weight:800;padding:2px 10px;border-radius:999px;background:#14171f;color:#ffffff">07a</span><span style="font-size:16px;font-weight:600;white-space:nowrap">HUD · Inclinación</span></div>
+        <div style="position:relative;width:800px;height:360px;overflow:hidden;border-radius:20px;box-shadow:0 12px 32px rgba(20,23,31,0.16);color:#14171f">
+          <dc-import name="EscenaPista" tema="claro" car-color="{{ carColor }}" numero="{{ numero }}" con-fantasma="{{ conFantasma }}" hint-size="800px,360px"></dc-import>
+          <div style="position:absolute;left:28px;top:14px;display:flex;gap:8px">
+            <div style="background:#ffffff;border-radius:16px;box-shadow:0 2px 6px rgba(20,23,31,0.14);padding:6px 8px">
+              <svg viewBox="0 0 100 60" width="80" height="48" style="display:block"><path d="M10 45 L70 45 C84 45 90 38 86 30 L80 18 C77 12 70 10 64 14 L40 30 C34 34 28 30 30 24 L32 16 C33 10 26 8 20 12 L12 20 C6 26 6 40 10 45 Z" style="fill:none;stroke:#cfd3da;stroke-width:5;stroke-linejoin:round"></path><circle cx="31" cy="20" r="5" style="fill:#ffffff;stroke:#14171f;stroke-width:2;stroke-dasharray:2 1.5"></circle><circle cx="37" cy="31" r="6" style="fill:{{ carColor }};stroke:#14171f;stroke-width:1.5"></circle></svg>
+            </div>
+            <div style="background:#ffffff;border-radius:16px;box-shadow:0 2px 6px rgba(20,23,31,0.14);padding:6px 14px;display:flex;flex-direction:column;justify-content:center">
+              <span style="font-size:11px;font-weight:600;color:#5d6472">Vuelta</span>
+              <span style="font-weight:900;font-stretch:72%;font-size:30px;line-height:1;font-variant-numeric:tabular-nums">2<span style="color:#9aa1ad">/3</span></span>
+            </div>
+          </div>
+          <div style="position:absolute;left:50%;top:14px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px">
+            <span style="background:#ffffff;border-radius:999px;box-shadow:0 2px 6px rgba(20,23,31,0.14);padding:4px 22px;font-weight:800;font-stretch:76%;font-size:36px;line-height:1.1;font-variant-numeric:tabular-nums">1:04.318</span>
+            <span style="background:{{ deltaBg }};color:#ffffff;border-radius:999px;padding:3px 12px;display:flex;align-items:center;gap:6px;font-weight:800;font-stretch:80%;font-size:19px;font-variant-numeric:tabular-nums"><i class="ph-fill ph-ghost" style="font-size:16px"></i>{{ deltaTxt }}</span>
+          </div>
+          <div style="position:absolute;right:28px;top:14px;display:flex;gap:8px;align-items:flex-start">
+            <div style="background:#ffffff;border-radius:16px;box-shadow:0 2px 6px rgba(20,23,31,0.14);padding:6px 14px;display:flex;flex-direction:column">
+              <span style="font-size:11px;font-weight:600;color:#5d6472">Mejor</span>
+              <span style="font-weight:800;font-stretch:80%;font-size:20px;line-height:1.1;font-variant-numeric:tabular-nums">1:12.480</span>
+            </div>
+            <button aria-label="Pausa" style="width:48px;height:48px;border:0;border-radius:50%;background:#ffffff;box-shadow:0 2px 6px rgba(20,23,31,0.14);color:#14171f;display:grid;place-items:center;cursor:pointer"><i class="ph-fill ph-pause" style="font-size:22px"></i></button>
+          </div>
+          <button style="position:absolute;left:20px;bottom:22px;width:76px;height:128px;border:0;border-radius:38px;background:oklch(0.6 0.21 28);color:#ffffff;box-shadow:0 3px 8px rgba(20,23,31,0.18);font-family:inherit;font-weight:800;font-stretch:80%;font-size:18px;cursor:pointer" style-active="background:oklch(0.52 0.2 28)">Freno</button>
+          <button style="position:absolute;right:20px;bottom:22px;width:76px;height:128px;border:0;border-radius:38px;background:oklch(0.6 0.21 28);color:#ffffff;box-shadow:0 3px 8px rgba(20,23,31,0.18);font-family:inherit;font-weight:800;font-stretch:80%;font-size:18px;cursor:pointer" style-active="background:oklch(0.52 0.2 28)">Freno</button>
+          <div style="position:absolute;left:50%;bottom:16px;width:168px;margin-left:-84px;height:24px;border-radius:999px;background:#ffffff;box-shadow:0 2px 6px rgba(20,23,31,0.14)">
+            <div style="position:absolute;left:66px;width:36px;top:8px;height:8px;border-radius:999px;background:oklch(0.85 0.08 258)"></div>
+            <div style="position:absolute;top:4px;left:50%;width:16px;height:16px;margin-left:{{ volanteX }}px;border-radius:50%;background:oklch(0.56 0.2 258)"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="p07b" data-screen-label="07b HUD botones" style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:10px;align-items:center"><span style="font-size:13px;font-weight:800;padding:2px 10px;border-radius:999px;background:#14171f;color:#ffffff">07b</span><span style="font-size:16px;font-weight:600;white-space:nowrap">HUD · Botones</span></div>
+        <div style="position:relative;width:800px;height:360px;overflow:hidden;border-radius:20px;box-shadow:0 12px 32px rgba(20,23,31,0.16);color:#14171f">
+          <dc-import name="EscenaPista" tema="claro" car-color="{{ carColor }}" numero="{{ numero }}" con-fantasma="{{ conFantasma }}" hint-size="800px,360px"></dc-import>
+          <div style="position:absolute;left:28px;top:14px;display:flex;gap:8px">
+            <div style="background:#ffffff;border-radius:16px;box-shadow:0 2px 6px rgba(20,23,31,0.14);padding:6px 8px">
+              <svg viewBox="0 0 100 60" width="80" height="48" style="display:block"><path d="M10 45 L70 45 C84 45 90 38 86 30 L80 18 C77 12 70 10 64 14 L40 30 C34 34 28 30 30 24 L32 16 C33 10 26 8 20 12 L12 20 C6 26 6 40 10 45 Z" style="fill:none;stroke:#cfd3da;stroke-width:5;stroke-linejoin:round"></path><circle cx="31" cy="20" r="5" style="fill:#ffffff;stroke:#14171f;stroke-width:2;stroke-dasharray:2 1.5"></circle><circle cx="37" cy="31" r="6" style="fill:{{ carColor }};stroke:#14171f;stroke-width:1.5"></circle></svg>
+            </div>
+            <div style="background:#ffffff;border-radius:16px;box-shadow:0 2px 6px rgba(20,23,31,0.14);padding:6px 14px;display:flex;flex-direction:column;justify-content:center">
+              <span style="font-size:11px;font-weight:600;color:#5d6472">Vuelta</span>
+              <span style="font-weight:900;font-stretch:72%;font-size:30px;line-height:1;font-variant-numeric:tabular-nums">2<span style="color:#9aa1ad">/3</span></span>
+            </div>
+          </div>
+          <div style="position:absolute;left:50%;top:14px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px">
+            <span style="background:#ffffff;border-radius:999px;box-shadow:0 2px 6px rgba(20,23,31,0.14);padding:4px 22px;font-weight:800;font-stretch:76%;font-size:36px;line-height:1.1;font-variant-numeric:tabular-nums">1:04.318</span>
+            <span style="background:{{ deltaBg }};color:#ffffff;border-radius:999px;padding:3px 12px;display:flex;align-items:center;gap:6px;font-weight:800;font-stretch:80%;font-size:19px;font-variant-numeric:tabular-nums"><i class="ph-fill ph-ghost" style="font-size:16px"></i>{{ deltaTxt }}</span>
+          </div>
+          <div style="position:absolute;right:28px;top:14px;display:flex;gap:8px;align-items:flex-start">
+            <div style="background:#ffffff;border-radius:16px;box-shadow:0 2px 6px rgba(20,23,31,0.14);padding:6px 14px;display:flex;flex-direction:column">
+              <span style="font-size:11px;font-weight:600;color:#5d6472">Mejor</span>
+              <span style="font-weight:800;font-stretch:80%;font-size:20px;line-height:1.1;font-variant-numeric:tabular-nums">1:12.480</span>
+            </div>
+            <button aria-label="Pausa" style="width:48px;height:48px;border:0;border-radius:50%;background:#ffffff;box-shadow:0 2px 6px rgba(20,23,31,0.14);color:#14171f;display:grid;place-items:center;cursor:pointer"><i class="ph-fill ph-pause" style="font-size:22px"></i></button>
+          </div>
+          <div style="position:absolute;left:28px;bottom:18px;display:flex;gap:14px;z-index:1">
+            <button aria-label="Izquierda" style="width:76px;height:76px;border:0;border-radius:50%;background:#ffffff;box-shadow:0 3px 8px rgba(20,23,31,0.18);color:#14171f;display:grid;place-items:center;cursor:pointer" style-active="background:oklch(0.95 0.03 258)"><i class="ph-fill ph-caret-left" style="font-size:34px"></i></button>
+            <button aria-label="Derecha" style="width:76px;height:76px;border:0;border-radius:50%;background:#ffffff;box-shadow:0 3px 8px rgba(20,23,31,0.18);color:#14171f;display:grid;place-items:center;cursor:pointer" style-active="background:oklch(0.95 0.03 258)"><i class="ph-fill ph-caret-right" style="font-size:34px"></i></button>
+          </div>
+          <button style="position:absolute;right:28px;bottom:14px;width:96px;height:96px;border:0;border-radius:50%;background:oklch(0.6 0.21 28);color:#ffffff;box-shadow:0 3px 8px rgba(20,23,31,0.18);font-family:inherit;font-weight:800;font-stretch:80%;font-size:20px;cursor:pointer" style-active="background:oklch(0.52 0.2 28)">Freno</button>
+        </div>
+      </div>
+
+      <div id="p08" data-screen-label="08 Pausa" style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:10px;align-items:center"><span style="font-size:13px;font-weight:800;padding:2px 10px;border-radius:999px;background:#14171f;color:#ffffff">08</span><span style="font-size:16px;font-weight:600;white-space:nowrap">Pausa</span></div>
+        <div style="position:relative;width:800px;height:360px;overflow:hidden;border-radius:20px;box-shadow:0 12px 32px rgba(20,23,31,0.16);color:#14171f">
+          <dc-import name="EscenaPista" tema="claro" car-color="{{ carColor }}" numero="{{ numero }}" con-fantasma="{{ conFantasma }}" hint-size="800px,360px"></dc-import>
+          <div style="position:absolute;inset:0;background:rgba(20,23,31,0.55)"></div>
+          <div style="position:absolute;left:14px;top:14px;bottom:14px;width:340px;border-radius:24px;background:#f6f7f9;padding:22px 24px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;flex-direction:column;gap:2px;margin-bottom:4px">
+              <span style="font-weight:900;font-stretch:68%;font-size:42px;line-height:0.95;text-transform:uppercase">Pausa</span>
+              <span style="font-size:13px;color:#5d6472">Vuelta 2 de 3 · Autódromo del Lago</span>
+            </div>
+            <button style="height:56px;display:flex;align-items:center;gap:12px;padding:0 8px 0 22px;border:0;border-radius:999px;background:oklch(0.56 0.2 258);color:#ffffff;cursor:pointer;font-family:inherit;font-weight:800;font-stretch:80%;font-size:22px" style-active="background:oklch(0.48 0.2 258)"><span style="flex:1;text-align:left">Continuar</span><span style="width:42px;height:42px;border-radius:50%;background:#ffffff;color:oklch(0.48 0.2 258);display:grid;place-items:center"><i class="ph-fill ph-play" style="font-size:20px"></i></span></button>
+            <button style="height:50px;display:flex;align-items:center;gap:12px;padding:0 22px;border:0;border-radius:999px;background:#ffffff;box-shadow:0 1px 3px rgba(20,23,31,0.1);color:#14171f;cursor:pointer;font-family:inherit;font-weight:700;font-stretch:85%;font-size:18px" style-active="background:#eceef2"><i class="ph-fill ph-crosshair" style="font-size:20px;color:oklch(0.56 0.2 258)"></i>Recalibrar</button>
+            <button style="height:50px;display:flex;align-items:center;gap:12px;padding:0 22px;border:0;border-radius:999px;background:#ffffff;box-shadow:0 1px 3px rgba(20,23,31,0.1);color:#14171f;cursor:pointer;font-family:inherit;font-weight:700;font-stretch:85%;font-size:18px" style-active="background:#eceef2"><i class="ph-fill ph-game-controller" style="font-size:20px;color:oklch(0.56 0.2 258)"></i>Cambiar control</button>
+            <button style="height:50px;display:flex;align-items:center;gap:12px;padding:0 22px;border:0;border-radius:999px;background:transparent;color:oklch(0.5 0.2 28);cursor:pointer;font-family:inherit;font-weight:700;font-stretch:85%;font-size:18px" style-active="background:oklch(0.95 0.03 28)"><i class="ph-fill ph-sign-out" style="font-size:20px"></i>Salir al menú</button>
+          </div>
+          <div style="position:absolute;left:390px;top:30px;display:flex;flex-direction:column;gap:2px;color:#ffffff">
+            <span style="font-size:13px;font-weight:600">Vuelta actual</span>
+            <span style="font-weight:800;font-stretch:76%;font-size:40px;line-height:1;font-variant-numeric:tabular-nums">1:04.318</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="p09" data-screen-label="09 Resultados" style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:10px;align-items:center"><span style="font-size:13px;font-weight:800;padding:2px 10px;border-radius:999px;background:#14171f;color:#ffffff">09</span><span style="font-size:16px;font-weight:600;white-space:nowrap">Resultados · récord nuevo</span></div>
+        <div style="position:relative;width:800px;height:360px;overflow:hidden;border-radius:20px;background:#f6f7f9;box-shadow:0 12px 32px rgba(20,23,31,0.16)">
+          <div style="position:absolute;left:14px;top:14px;bottom:14px;width:390px;border-radius:24px;background:oklch(0.9 0.19 120);padding:26px 28px;display:flex;flex-direction:column;gap:6px;overflow:hidden">
+            <div style="position:absolute;right:0;top:0;width:96px;height:48px;background:repeating-conic-gradient(#14171f 0 25%,oklch(0.9 0.19 120) 0 50%) 0 0/16px 16px;border-bottom-left-radius:16px"></div>
+            <span style="display:flex;align-items:center;gap:8px;font-weight:800;font-stretch:76%;font-size:24px"><i class="ph-fill ph-trophy" style="font-size:26px"></i>¡Nuevo récord!</span>
+            <span style="font-size:13px;color:#3a404c">Autódromo del Lago · Contrarreloj</span>
+            <span style="font-weight:900;font-stretch:66%;font-size:96px;line-height:0.92;letter-spacing:-0.01em;font-variant-numeric:tabular-nums;margin-top:14px;white-space:nowrap">1:11.902</span>
+            <span style="align-self:flex-start;margin-top:auto;display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:#14171f;color:#ffffff;font-size:13px;white-space:nowrap"><span style="font-weight:800;font-stretch:80%;font-size:18px;color:oklch(0.9 0.19 120);font-variant-numeric:tabular-nums">−0.578</span>vs. tu fantasma</span>
+          </div>
+          <div style="position:absolute;left:428px;right:30px;top:26px;bottom:22px;display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:13px;font-weight:600;color:#5d6472;text-transform:uppercase">{{ nombre }} · #{{ numero }}</span>
+            <sc-for list="{{ laps }}" as="v" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:16px;background:{{ v.bg }};box-shadow:0 1px 3px rgba(20,23,31,0.08)">
+                <span style="font-size:13px;color:#5d6472;width:58px">Vuelta {{ v.n }}</span>
+                <span style="flex:1;font-weight:800;font-stretch:80%;font-size:22px;font-variant-numeric:tabular-nums">{{ v.t }}</span>
+                <span style="padding:2px 10px;border-radius:999px;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;background:{{ v.chipBg }};color:{{ v.chipTxt }}">{{ v.d }}</span>
+              </div>
+            </sc-for>
+            <div style="display:flex;gap:10px;margin-top:auto">
+              <button style="flex:1;height:52px;border:0;border-radius:999px;background:oklch(0.56 0.2 258);color:#ffffff;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-family:inherit;font-weight:800;font-stretch:80%;font-size:19px" style-active="background:oklch(0.48 0.2 258)"><i class="ph-fill ph-arrow-counter-clockwise" style="font-size:20px"></i>Otra vez</button>
+              <button style="flex:1;height:52px;border:0;border-radius:999px;background:#ffffff;box-shadow:0 1px 3px rgba(20,23,31,0.12);color:#14171f;cursor:pointer;font-family:inherit;font-weight:800;font-stretch:80%;font-size:19px" style-active="background:#eceef2">Elegir pista</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:40px">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:12px;letter-spacing:0.16em;text-transform:uppercase;font-weight:600;color:oklch(0.48 0.2 258)">C · Arte en juego</div>
+      <div style="font-size:44px;line-height:1;font-weight:900;font-stretch:68%;text-transform:uppercase">Auto y tramo de pista</div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:56px;align-items:flex-start">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="border-radius:20px;overflow:hidden;box-shadow:0 12px 32px rgba(20,23,31,0.16);width:800px;height:360px">
+          <dc-import name="EscenaPista" tema="claro" car-color="{{ carColor }}" numero="{{ numero }}" con-fantasma="{{ true }}" hint-size="800px,360px"></dc-import>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;max-width:780px;font-size:14px;line-height:1.5;color:#3a404c">
+          <span><strong style="color:#14171f">Asfalto</strong> gris azulado con bordes blancos y <strong style="color:#14171f">pianos</strong> coral y blancos solo en las curvas. Fuera de pista, pasto claro con trama de puntos.</span>
+          <span><strong style="color:#14171f">Fantasma</strong>: el mismo auto en contorno blanco punteado, sin relleno.</span>
+          <span><strong style="color:#14171f">Pasaje a 3D</strong>: materiales planos con estos mismos colores, número en disco blanco y pianos como franjas geométricas.</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:600;color:#5d6472">Escuderías inventadas</div>
+        <div style="display:grid;grid-template-columns:repeat(4,110px);gap:24px">
+          <sc-for list="{{ equipos }}" as="e" hint-placeholder-count="4">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+              <dc-import name="Monoplaza" color="{{ e.c }}" numero="{{ e.num }}" ancho="64" hint-size="64px,144px"></dc-import>
+              <span style="font-weight:800;font-stretch:76%;font-size:16px;text-align:center;line-height:1.05">{{ e.n }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;deltaModo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;adelante&quot;,&quot;atras&quot;],&quot;default&quot;:&quot;adelante&quot;,&quot;tsType&quot;:&quot;'adelante'|'atras'&quot;},&quot;mostrarFantasma&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;animar&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const BLUE = 'oklch(0.56 0.2 258)';
+const COLORES = [
+  { n: 'Azul', v: BLUE, oscuro: true }, { n: 'Coral', v: 'oklch(0.64 0.21 28)', oscuro: true },
+  { n: 'Lima', v: 'oklch(0.9 0.19 120)' }, { n: 'Tinta', v: '#14171f', oscuro: true },
+  { n: 'Turquesa', v: 'oklch(0.72 0.13 190)' }, { n: 'Violeta', v: 'oklch(0.55 0.2 295)', oscuro: true },
+  { n: 'Naranja', v: 'oklch(0.76 0.16 60)' }, { n: 'Blanco', v: '#ffffff' }
+];
+const PISTAS = [
+  { nombre: 'Autódromo del Lago', tipo: 'Rápido · 5,8 km · 11 curvas', record: '1:12.480', mx: 40, my: 41,
+    d: 'M10 45 L70 45 C84 45 90 38 86 30 L80 18 C77 12 70 10 64 14 L40 30 C34 34 28 30 30 24 L32 16 C33 10 26 8 20 12 L12 20 C6 26 6 40 10 45 Z' },
+  { nombre: 'Puerto Viejo', tipo: 'Callejero · 3,3 km · 19 curvas', record: '1:18.905', mx: 50, my: 42,
+    d: 'M10 40 L30 40 L34 30 L50 30 L54 20 L70 20 L74 10 L90 10 L90 28 L80 34 L80 46 L20 50 Z' },
+  { nombre: 'Las Sierras', tipo: 'Técnico · 7,0 km · 20 curvas', record: null, mx: 38, my: 46,
+    d: 'M12 48 C20 30 30 10 46 12 C60 14 58 30 70 30 C84 30 92 18 92 30 C92 42 80 50 60 50 Z' }
+];
+const LAPS = [{ n: 1, t: '1:13.214', ms: 73214 }, { n: 2, t: '1:11.902', ms: 71902 }, { n: 3, t: '1:12.655', ms: 72655 }];
+class Component extends DCLogic {
+  state = { t: 0, lit: 3, fase: 'on', sens: 6, color: 0, numero: 27, nombre: 'Male', pista: 0, control: 'inclinacion' };
+  componentDidMount() {
+    let ticks = 0;
+    this.iv = setInterval(() => {
+      if (this.props.animar === false) return;
+      ticks++;
+      const s = { t: this.state.t + 0.06 };
+      if (ticks % 12 === 0) {
+        const { lit, fase } = this.state;
+        if (fase === 'off') { s.lit = 0; s.fase = 'on'; }
+        else if (fase === 'hold') { s.lit = 0; s.fase = 'off'; }
+        else if (lit < 5) s.lit = lit + 1;
+        else s.fase = 'hold';
+      }
+      this.setState(s);
+    }, 60);
+  }
+  componentWillUnmount() { clearInterval(this.iv); }
+  renderVals() {
+    const st = this.state, p = this.props, anim = p.animar !== false;
+    const ang = anim ? Math.round(Math.sin(st.t) * 22 + Math.sin(st.t * 2.3) * 4) : -12;
+    const lit = anim ? st.lit : 3;
+    const atras = p.deltaModo === 'atras';
+    const col = COLORES[st.color];
+    const best = Math.min(...LAPS.map(l => l.ms));
+    const sel = on => ({ ring: on ? BLUE : 'transparent', bg: on ? BLUE : 'oklch(0.96 0.02 258)', fg: on ? '#ffffff' : BLUE, phone: on ? BLUE : '#ffffff' });
+    return {
+      carColor: col.v, carInicio: st.color === 0 ? '#ffffff' : col.v, colorNombre: col.n, numTxt: col.oscuro ? '#ffffff' : '#14171f',
+      numero: st.numero, nombre: st.nombre, conFantasma: p.mostrarFantasma ?? true,
+      angulo: ang, anguloTxt: (ang > 0 ? '+' : ang < 0 ? '−' : '') + Math.abs(ang) + '°',
+      volanteX: Math.max(-80, Math.min(64, ang * 3 - 8)),
+      sens: st.sens, onSens: e => this.setState({ sens: +e.target.value }),
+      inc: sel(st.control === 'inclinacion'), bot: sel(st.control === 'botones'),
+      elegirInclinacion: () => this.setState({ control: 'inclinacion' }),
+      elegirBotones: () => this.setState({ control: 'botones' }),
+      colores: COLORES.map((c, i) => ({ ...c, ring: i === st.color ? '#14171f' : 'transparent', pick: () => this.setState({ color: i }) })),
+      menos: () => this.setState(s => ({ numero: s.numero <= 1 ? 99 : s.numero - 1 })),
+      mas: () => this.setState(s => ({ numero: s.numero >= 99 ? 1 : s.numero + 1 })),
+      onNombre: e => this.setState({ nombre: e.target.value.slice(0, 10) }),
+      pistas: PISTAS.map((x, i) => ({ ...x, record: x.record || '', recLabel: x.record ? 'Récord' : 'Sin récord todavía',
+        ring: i === st.pista ? BLUE : 'transparent', illoBg: i === st.pista ? BLUE : 'oklch(0.96 0.02 258)',
+        illoStroke: i === st.pista ? '#ffffff' : BLUE, recBg: x.record ? 'oklch(0.9 0.19 120)' : '#eceef2',
+        pick: () => this.setState({ pista: i }) })),
+      luces: [0, 1, 2, 3, 4].map(i => ({ f: i < lit ? 'oklch(0.62 0.24 27)' : '#353a45' })),
+      luzTxt: !anim ? 'Preparate…' : st.fase === 'off' ? '¡Largada!' : lit === 5 ? 'Esperá…' : 'Preparate…',
+      deltaTxt: atras ? '+0.236' : '−0.412',
+      deltaBg: atras ? 'oklch(0.58 0.22 25)' : 'oklch(0.58 0.16 150)',
+      laps: LAPS.map(l => { const b = l.ms === best; return { ...l, bg: b ? 'oklch(0.95 0.03 258)' : '#ffffff',
+        d: b ? 'Mejor' : '+' + ((l.ms - best) / 1000).toFixed(3),
+        chipBg: b ? BLUE : 'oklch(0.95 0.04 25)', chipTxt: b ? '#ffffff' : 'oklch(0.5 0.2 25)' }; }),
+      paleta: [
+        { n: 'Fondo', v: '#f6f7f9', hex: '#F6F7F9', uso: 'Fondo de menús' },
+        { n: 'Blanco', v: '#ffffff', hex: '#FFFFFF', uso: 'Tarjetas, píldoras del HUD' },
+        { n: 'Tinta', v: '#14171f', hex: '#14171F', uso: 'Texto, botón Correr, semáforo' },
+        { n: 'Gris', v: '#5d6472', hex: '#5D6472', uso: 'Texto secundario' },
+        { n: 'Azul', v: BLUE, hex: 'oklch 0.56 0.20 258', uso: 'Todo lo tocable y la selección' },
+        { n: 'Azul claro', v: 'oklch(0.95 0.03 258)', hex: 'oklch 0.95 0.03 258', uso: 'Fondos de ilustración, mejor vuelta' },
+        { n: 'Coral', v: 'oklch(0.6 0.21 28)', hex: 'oklch 0.60 0.21 28', uso: 'Freno y pianos' },
+        { n: 'Lima', v: 'oklch(0.9 0.19 120)', hex: 'oklch 0.90 0.19 120', uso: 'Solo récords y Correr' },
+        { n: 'Más rápido', v: 'oklch(0.58 0.16 150)', hex: 'oklch 0.58 0.16 150', uso: 'Delta a favor' },
+        { n: 'Más lento', v: 'oklch(0.58 0.22 25)', hex: 'oklch 0.58 0.22 25', uso: 'Delta en contra' }
+      ],
+      equipos: [
+        { n: 'Cóndor', c: BLUE, num: 7 }, { n: 'Pampa Racing', c: 'oklch(0.64 0.21 28)', num: 14 },
+        { n: 'Andes GP', c: 'oklch(0.9 0.19 120)', num: 3 }, { n: 'Tormenta', c: '#14171f', num: 21 }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

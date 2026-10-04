@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/broadsheet-7c504617-25a5-4a0c-943d-4f14e61773c1/styles.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap">
+<script src="_ds/broadsheet-7c504617-25a5-4a0c-943d-4f14e61773c1/_ds_bundle.js"></script>
+</helmet>
+<svg viewBox="0 0 40 90" width="{{ ancho }}" height="{{ alto }}" style="display:block;overflow:visible;opacity:{{ opacidad }}">
+  <rect x="1.5" y="58" width="9" height="17" rx="2" style="fill:{{ goma }};stroke:{{ trazo }};stroke-width:{{ trazoW }};stroke-dasharray:{{ dash }}"></rect>
+  <rect x="29.5" y="58" width="9" height="17" rx="2" style="fill:{{ goma }};stroke:{{ trazo }};stroke-width:{{ trazoW }};stroke-dasharray:{{ dash }}"></rect>
+  <rect x="3" y="13" width="7.5" height="13" rx="2" style="fill:{{ goma }};stroke:{{ trazo }};stroke-width:{{ trazoW }};stroke-dasharray:{{ dash }}"></rect>
+  <rect x="29.5" y="13" width="7.5" height="13" rx="2" style="fill:{{ goma }};stroke:{{ trazo }};stroke-width:{{ trazoW }};stroke-dasharray:{{ dash }}"></rect>
+  <rect x="5" y="20" width="30" height="1.6" style="fill:{{ alas }}"></rect>
+  <rect x="7" y="64" width="26" height="1.6" style="fill:{{ alas }}"></rect>
+  <path d="M12 36 C12 31 16 29 20 29 C24 29 28 31 28 36 L30.5 54 C30.5 64 26 74 22.5 79 L17.5 79 C14 74 9.5 64 9.5 54 Z" style="fill:{{ cuerpo }};stroke:{{ trazo }};stroke-width:{{ trazoW }};stroke-dasharray:{{ dash }}"></path>
+  <path d="M17.2 6 L22.8 6 L24.2 32 L15.8 32 Z" style="fill:{{ cuerpo }};stroke:{{ trazo }};stroke-width:{{ trazoW }};stroke-dasharray:{{ dash }}"></path>
+  <rect x="2.5" y="3" width="35" height="5" rx="1" style="fill:{{ cuerpo }};stroke:{{ trazo }};stroke-width:{{ trazoW }};stroke-dasharray:{{ dash }}"></rect>
+  <rect x="2.5" y="2" width="3" height="7" style="fill:{{ alas }}"></rect>
+  <rect x="34.5" y="2" width="3" height="7" style="fill:{{ alas }}"></rect>
+  <rect x="3.5" y="80" width="33" height="7" rx="1" style="fill:{{ alas }};stroke:{{ trazo }};stroke-width:{{ trazoW }};stroke-dasharray:{{ dash }}"></rect>
+  <ellipse cx="20" cy="42" rx="4.2" ry="6.5" style="fill:{{ alas }}"></ellipse>
+  <circle cx="20" cy="43" r="2.7" style="fill:{{ casco }}"></circle>
+  <path d="M15 37 Q20 31 25 37" style="fill:none;stroke:{{ alas }};stroke-width:1.6"></path>
+  <circle cx="20" cy="61" r="6.2" style="fill:{{ disco }}"></circle>
+  <text x="20" y="64.2" text-anchor="middle" style="font-family:'Source Serif 4',serif;font-weight:800;font-style:italic;font-size:8.5px;fill:{{ alas }}">{{ numero }}</text>
+</svg>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:80,&quot;height&quot;:180},&quot;color&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#0088b0&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;numero&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:27,&quot;tsType&quot;:&quot;number&quot;},&quot;fantasma&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;ancho&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:40,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props, g = !!p.fantasma, w = p.ancho ?? 40;
+    const c = p.color ?? '#0088b0';
+    return {
+      ancho: w, alto: w * 2.25, numero: g ? '' : (p.numero ?? 27),
+      opacidad: g ? 0.6 : 1,
+      cuerpo: g ? 'none' : c, alas: g ? 'none' : '#201e1d', goma: g ? 'none' : '#201e1d',
+      casco: g ? 'none' : '#edbb00', disco: g ? 'none' : '#f3f2f2',
+      trazo: g ? (p.tinta ?? '#201e1d') : 'none', trazoW: g ? 1.2 : 0, dash: g ? '2.5 2' : 'none'
+    };
+  }
+}
+</script>
+</body>
+</html>

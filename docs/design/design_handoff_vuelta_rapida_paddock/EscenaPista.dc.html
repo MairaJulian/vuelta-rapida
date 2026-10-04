@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/broadsheet-7c504617-25a5-4a0c-943d-4f14e61773c1/styles.css">
+<script src="_ds/broadsheet-7c504617-25a5-4a0c-943d-4f14e61773c1/_ds_bundle.js"></script>
+</helmet>
+<div style="position:relative;width:800px;height:360px;overflow:hidden;background:{{ t.suelo }} radial-gradient(circle,{{ t.puntos }} 1.3px,transparent 1.6px) 0 0/8px 8px">
+  <svg viewBox="0 0 800 360" width="800" height="360" style="position:absolute;inset:0;display:block">
+    <path d="M260 330 C 420 330 520 250 600 170 C 650 120 700 130 760 130" style="fill:none;stroke:{{ t.boxes }};stroke-width:46;stroke-linecap:round"></path>
+    <path d="M 200 250 C 320 250 370 215 430 160 C 490 105 560 70 640 70" style="fill:none;stroke:{{ t.pianoA }};stroke-width:138"></path>
+    <path d="M 200 250 C 320 250 370 215 430 160 C 490 105 560 70 640 70" style="fill:none;stroke:{{ t.pianoB }};stroke-width:138;stroke-dasharray:12 12"></path>
+    <path d="M -60 250 L 200 250 C 320 250 370 215 430 160 C 490 105 560 70 700 70 L 860 70" style="fill:none;stroke:{{ t.borde }};stroke-width:120"></path>
+    <path d="M -60 250 L 200 250 C 320 250 370 215 430 160 C 490 105 560 70 700 70 L 860 70" style="fill:none;stroke:{{ t.asfalto }};stroke-width:110"></path>
+    <rect x="166" y="312" width="64" height="22" rx="{{ t.rx }}" style="fill:{{ t.cartel }}"></rect>
+    <text x="198" y="328" text-anchor="middle" style="font-family:{{ t.fuente }};font-style:italic;font-weight:800;font-size:12px;fill:{{ t.cartelTxt }};letter-spacing:0.04em">META</text>
+    <g style="fill:{{ t.gomas }}">
+      <rect x="600" y="140" width="10" height="10" rx="5"></rect><rect x="612" y="140" width="10" height="10" rx="5"></rect><rect x="624" y="140" width="10" height="10" rx="5"></rect><rect x="636" y="140" width="10" height="10" rx="5"></rect>
+    </g>
+  </svg>
+  <div style="position:absolute;left:132px;top:195px;width:14px;height:110px;background:repeating-conic-gradient({{ t.chkA }} 0 25%,{{ t.chkB }} 0 50%) 0 0/14px 14px"></div>
+  <sc-if value="{{ conFantasma }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;left:520px;top:104px;transform:translate(-50%,-50%) rotate(56deg)">
+      <dc-import name="Monoplaza" fantasma="{{ true }}" tinta="{{ t.fantasma }}" ancho="30" hint-size="30px,68px"></dc-import>
+    </div>
+  </sc-if>
+  <div style="position:absolute;left:340px;top:222px;transform:translate(-50%,-50%) rotate(64deg)">
+    <dc-import name="Monoplaza" color="{{ carColor }}" numero="{{ numero }}" ancho="30" hint-size="30px,68px"></dc-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:800,&quot;height&quot;:360},&quot;tema&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;papel&quot;,&quot;noche&quot;,&quot;claro&quot;],&quot;default&quot;:&quot;papel&quot;,&quot;tsType&quot;:&quot;'papel'|'noche'|'claro'&quot;},&quot;carColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#0088b0&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;numero&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:27,&quot;tsType&quot;:&quot;number&quot;},&quot;conFantasma&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const TEMAS = {
+  papel: { suelo: 'var(--color-surface)', puntos: 'var(--color-neutral-400)', boxes: 'var(--color-neutral-300)', pianoA: 'var(--color-bg)', pianoB: 'var(--color-accent-2)', borde: 'var(--color-bg)', asfalto: 'var(--color-neutral-400)', cartel: 'var(--color-bg)', cartelTxt: 'var(--color-text)', gomas: 'var(--color-text)', chkA: 'var(--color-text)', chkB: 'var(--color-bg)', fantasma: '#201e1d', fuente: "'Source Serif 4',serif", rx: 2 },
+  noche: { suelo: '#12151b', puntos: '#232833', boxes: '#1c2028', pianoA: '#f2f3f5', pianoB: '#ff2d87', borde: '#f2f3f5', asfalto: '#2b303a', cartel: '#f2f3f5', cartelTxt: '#0f1115', gomas: '#4a505c', chkA: '#0f1115', chkB: '#f2f3f5', fantasma: '#f2f3f5', fuente: "'Barlow Condensed',sans-serif", rx: 3 },
+  claro: { suelo: 'oklch(0.9 0.05 150)', puntos: 'oklch(0.84 0.07 150)', boxes: 'oklch(0.83 0.02 260)', pianoA: '#ffffff', pianoB: 'oklch(0.64 0.21 28)', borde: '#ffffff', asfalto: 'oklch(0.46 0.015 260)', cartel: '#ffffff', cartelTxt: '#14171f', gomas: '#14171f', chkA: '#14171f', chkB: '#ffffff', fantasma: '#ffffff', fuente: "'Archivo',sans-serif", rx: 11 }
+};
+class Component extends DCLogic {
+  renderVals() {
+    return { t: TEMAS[this.props.tema] || TEMAS.papel, carColor: this.props.carColor ?? '#0088b0', numero: this.props.numero ?? 27, conFantasma: this.props.conFantasma ?? true };
+  }
+}
+</script>
+</body>
+</html>
