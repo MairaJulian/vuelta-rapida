@@ -31,7 +31,8 @@ Juego de carreras de monoplazas con vista cenital para Android. Dos fines:
 
 ## Arquitectura (regla principal)
 
-- La lógica del juego (modelo de manejo, reglas de carrera, vueltas, tiempos, fantasma) vive en **TypeScript puro**: sin importar nada de React, React Native ni Skia.
+- La lógica del juego (modelo de manejo, reglas de carrera, vueltas, tiempos, fantasma) vive en **TypeScript puro**: sin importar nada de React, React Native ni Skia. Una regla `no-restricted-imports` en `eslint.config.js` lo hace cumplir en `src/core/`.
+- La simulación corre en el hilo de UI (worklets de Reanimated). Las funciones de `core` que se llaman desde el loop llevan la directiva `'worklet'`, que es un texto y no un import.
 - El modelo de manejo trabaja en un plano (coordenadas x/z) para poder reutilizarse en 3D.
 - El renderizado solo lee el estado; nunca contiene lógica.
 - El estado de la carrera es serializable (posición, velocidad, ángulo por cuadro), pensado para el auto fantasma y un eventual online.
