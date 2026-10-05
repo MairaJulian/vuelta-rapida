@@ -1,5 +1,6 @@
 import {
   DashPathEffect,
+  Fill,
   Group,
   LinearGradient,
   Path,
@@ -18,7 +19,6 @@ import {
   CURB_RATIO,
   EDGE_RATIO,
   FINISH_SQUARE,
-  GRASS_EXTENT,
   GRASS_STRIPE_PERIOD,
 } from './TrackLayer.styles';
 import type { TrackLayerProps } from './TrackLayer.types';
@@ -61,12 +61,9 @@ export const TrackLayer = memo(function TrackLayer({ track }: TrackLayerProps) {
 
   return (
     <Group>
-      <Rect
-        x={track.centerX - GRASS_EXTENT}
-        y={track.centerZ - GRASS_EXTENT}
-        width={GRASS_EXTENT * 2}
-        height={GRASS_EXTENT * 2}
-      >
+      {/* Fill pinta todo el lienzo; el gradiente sigue la transformación de la cámara,
+          así que las franjas quedan fijas en el mundo y no se acaban nunca. */}
+      <Fill>
         <LinearGradient
           start={vec(0, 0)}
           end={vec(GRASS_STRIPE_PERIOD, GRASS_STRIPE_PERIOD)}
@@ -74,7 +71,7 @@ export const TrackLayer = memo(function TrackLayer({ track }: TrackLayerProps) {
           positions={[0, 0.5, 0.5, 1]}
           mode="repeat"
         />
-      </Rect>
+      </Fill>
 
       {curves.map((curve) => (
         <Group key={curve.side}>

@@ -28,12 +28,6 @@ export const CURB_DASH = 0.9;
 
 /** Franjas diagonales del césped: dan referencia de movimiento en cualquier dirección. */
 export const GRASS_STRIPE_PERIOD = 12;
-/**
- * Medio lado del césped con franjas, en metros, desde el centro del circuito.
- * Es enorme a propósito: el gradiente solo se calcula en los píxeles visibles, y
- * así el auto nunca se queda sin referencia de movimiento aunque se aleje mucho.
- */
-export const GRASS_EXTENT = 5000;
 
 /** Lado de cada cuadro de la bandera a cuadros, en metros. */
 export const FINISH_SQUARE = 0.5;

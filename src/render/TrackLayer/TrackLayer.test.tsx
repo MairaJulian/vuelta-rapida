@@ -45,7 +45,9 @@ describe('TrackLayer', () => {
 
   it('dibuja césped con franjas y la meta a cuadros', async () => {
     const { findAll, tree } = await renderTrack();
-    expect(findAll('LinearGradient')).toHaveLength(1);
+    // Las franjas van en un Fill: cubren todo el lienzo y nunca se acaban.
+    const [fill] = findAll('Fill');
+    expect(fill.queryAll((node) => node.type === 'LinearGradient')).toHaveLength(1);
     expect(tree).toContain(COLORS.grassStripe);
     // 1 m × 8 m con cuadros de 0,5 m: 32 cuadros, la mitad oscuros.
     const darkSquares = findAll('Rect').filter((node) => node.props.color === COLORS.finishDark);
