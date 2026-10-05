@@ -17,7 +17,18 @@
       },
       "predictiveBackGestureEnabled": false
     },
-    "plugins": ["expo-router", "expo-status-bar"],
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "cmakeVersion": "3.31.6"
+          }
+        }
+      ]
+    ],
     "scheme": "vueltarapida",
     "experiments": {
       "typedRoutes": true

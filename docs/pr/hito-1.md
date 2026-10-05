@@ -23,6 +23,7 @@ Deja el proyecto listo para empezar a desarrollar el juego. No incluye jugabilid
   - `hooks/useBoxLoop`: une `useFrameCallback` con `core`.
   - `render/LoopTestCanvas`: dibuja con Skia y solo lee estado.
   - Todos con tests y README, según la convención del proyecto.
+- **CMake 3.31.6 fijada** con `expo-build-properties`, para que el build nativo funcione en Windows (ver Notas).
 - **Fix de dependencias**: `react-dom` se fija en `19.2.3` (igual que `react`). Expo Router lo arrastraba como peer en `19.3.0` y rompía la instalación.
 
 ## Cómo probarlo
@@ -45,11 +46,8 @@ La app abre en horizontal con un rectángulo azul rebotando y un contador de FPS
 ## Notas
 
 - `android/` se genera con `expo prebuild` y está en `.gitignore`.
-- **Build nativo en Windows**: la compilación falla con `ninja: error: ... Filename longer than 260 characters` (codegen de `react-native-gesture-handler`). La CMake 3.22.1 que AGP usa por defecto trae ninja 1.10.2, que no soporta rutas largas. Para compilar hace falta:
-  1. Activar rutas largas en Windows (`LongPathsEnabled = 1` en `HKLM\SYSTEM\CurrentControlSet\Control\FileSystem`) y reiniciar.
-  2. Instalar CMake 3.31.6 desde el SDK Manager de Android Studio (trae ninja 1.12.1).
-  3. Añadir `android.cmakeVersion=3.31.6` a `android/gradle.properties`.
-
-  El paso 3 vive en `android/`, así que se pierde con `expo prebuild --clean`. Queda pendiente moverlo a un config plugin para que se aplique en cada prebuild.
+- **Build nativo en Windows**: la compilación fallaba con `ninja: error: ... Filename longer than 260 characters` (codegen de `react-native-gesture-handler`). La CMake 3.22.1 que AGP usa por defecto trae ninja 1.10.2, que no soporta rutas largas.
+  - El proyecto fija CMake 3.31.6 (trae ninja 1.12.1) con el plugin oficial `expo-build-properties` en `app.json` (`android.cmakeVersion`). Se aplica en cada `expo prebuild`, también con `--clean`.
+  - En la máquina hace falta, una sola vez: activar rutas largas en Windows (`LongPathsEnabled = 1` en `HKLM\SYSTEM\CurrentControlSet\Control\FileSystem`) y reiniciar, e instalar CMake 3.31.6 desde el SDK Manager de Android Studio.
 - Probado en un Samsung Galaxy A15 (pantalla de 90 Hz): el contador marca 90 FPS y el movimiento es fluido.
 - `.claude/settings.json` conserva el plugin de Expo y los permisos; se retiraron las reglas de `gh` porque no se usa GitHub CLI en este proyecto.
