@@ -53,4 +53,7 @@ credentials/
 *.pfx
 
 # Claude Code local settings
-.claude/
+.claude/settings.local.json
+
+# Android Studio
+.idea/
