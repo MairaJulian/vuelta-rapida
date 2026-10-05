@@ -1,3 +1,3 @@
-import { LoopTestScreen } from '@/screens/LoopTestScreen';
+import { DriveScreen } from '@/screens/DriveScreen';
 
-export default LoopTestScreen;
+export default DriveScreen;

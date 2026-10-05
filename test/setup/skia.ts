@@ -17,12 +17,17 @@ const host = (name: string) => {
 jest.mock('@shopify/react-native-skia', () => ({
   Canvas: host('Canvas'),
   Group: host('Group'),
+  Fill: host('Fill'),
   Rect: host('Rect'),
   RoundedRect: host('RoundedRect'),
   Circle: host('Circle'),
+  Oval: host('Oval'),
   Line: host('Line'),
   Path: host('Path'),
   Text: host('SkiaText'),
+  LinearGradient: host('LinearGradient'),
+  DashPathEffect: host('DashPathEffect'),
+  vec: (x = 0, y = 0) => ({ x, y }),
   matchFont: jest.fn(() => ({ __mockFont: true })),
   useFont: jest.fn(() => null),
 }));
