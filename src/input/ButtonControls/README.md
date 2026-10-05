@@ -48,4 +48,4 @@ La dirección digital (-1/0/1) se suaviza en el modelo (`steerRate`), no aquí.
 - **Chevron con bordes:** triángulo dibujado con `View`, sin agregar una librería de iconos.
 - **Sombra con `boxShadow`:** React Native 0.86 la soporta en Android con la nueva arquitectura y permite usar el valor exacto del handoff (`0 3px 8px` al 18 %) en lugar de aproximarlo con `elevation`.
 - **Tipografía:** de momento usa la del sistema; Archivo se incorpora con el HUD.
-- **Márgenes fijos de 28 dp:** en horizontal, el recorte de la cámara queda centrado en un lateral y no tapa las esquinas inferiores, así que no se suman los insets de área segura.
+- **Área segura:** los márgenes del handoff (28 dp a los lados) se suman a los insets de `useSafeAreaInsets`. En horizontal, la barra de navegación de Android queda a un costado y, con edge-to-edge, tapaba el freno.

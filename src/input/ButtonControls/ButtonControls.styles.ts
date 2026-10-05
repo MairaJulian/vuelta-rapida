@@ -16,8 +16,15 @@ export const COLORS = {
 
 const STEER_SIZE = 76;
 const BRAKE_SIZE = 96;
-/** Margen lateral mínimo del HUD. */
-const SIDE_MARGIN = 28;
+
+/**
+ * Distancia a los bordes según el handoff (margen lateral del HUD: 28). Se suma a
+ * los insets del área segura, para no quedar debajo de la barra de navegación.
+ */
+export const OFFSETS = {
+  steer: { left: 28, bottom: 18 },
+  brake: { right: 28, bottom: 14 },
+} as const;
 
 export const styles = StyleSheet.create({
   overlay: {
@@ -30,8 +37,6 @@ export const styles = StyleSheet.create({
   },
   steerGroup: {
     position: 'absolute',
-    left: SIDE_MARGIN,
-    bottom: 18,
     flexDirection: 'row',
     gap: 14,
   },
@@ -69,8 +74,6 @@ export const styles = StyleSheet.create({
   },
   brakeButton: {
     position: 'absolute',
-    right: SIDE_MARGIN,
-    bottom: 14,
     width: BRAKE_SIZE,
     height: BRAKE_SIZE,
     borderRadius: BRAKE_SIZE / 2,

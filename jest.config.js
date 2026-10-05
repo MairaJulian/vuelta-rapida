@@ -4,6 +4,7 @@ module.exports = {
   setupFiles: [
     '<rootDir>/test/setup/skia.ts',
     '<rootDir>/test/setup/reanimated.ts',
+    '<rootDir>/test/setup/safe-area.ts',
     'react-native-gesture-handler/jestSetup',
   ],
   setupFilesAfterEnv: ['<rootDir>/test/setup/testing-library.ts'],

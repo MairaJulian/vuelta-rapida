@@ -3,12 +3,13 @@ import { useEffect, useMemo } from 'react';
 import { Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import type { DrivingInput } from '@/core/DrivingModel';
 import { NEUTRAL_INPUT } from '@/input/InputControls';
 
-import { COLORS, styles } from './ButtonControls.styles';
+import { COLORS, OFFSETS, styles } from './ButtonControls.styles';
 import type { ButtonControlsProps, ControlButton, PressedButtons } from './ButtonControls.types';
 
 const RELEASED: PressedButtons = { left: false, right: false, brake: false };
@@ -49,6 +50,7 @@ function createHoldGesture(testId: string, onChange: (isDown: boolean) => void) 
  * la entrada directamente, sin pasar por React.
  */
 export function ButtonControls({ input }: ButtonControlsProps) {
+  const insets = useSafeAreaInsets();
   const pressed = useSharedValue<PressedButtons>(RELEASED);
 
   const gestures = useMemo(() => {
@@ -93,7 +95,16 @@ export function ButtonControls({ input }: ButtonControlsProps) {
 
   return (
     <View style={styles.overlay} testID="button-controls">
-      <View style={styles.steerGroup}>
+      <View
+        testID="steer-group"
+        style={[
+          styles.steerGroup,
+          {
+            left: OFFSETS.steer.left + insets.left,
+            bottom: OFFSETS.steer.bottom + insets.bottom,
+          },
+        ]}
+      >
         <GestureDetector gesture={gestures.left}>
           <Animated.View
             accessible
@@ -120,7 +131,14 @@ export function ButtonControls({ input }: ButtonControlsProps) {
           accessible
           accessibilityRole="button"
           accessibilityLabel="Frenar"
-          style={[styles.brakeButton, brakeStyle]}
+          style={[
+            styles.brakeButton,
+            {
+              right: OFFSETS.brake.right + insets.right,
+              bottom: OFFSETS.brake.bottom + insets.bottom,
+            },
+            brakeStyle,
+          ]}
         >
           <Text style={styles.brakeLabel}>Freno</Text>
         </Animated.View>

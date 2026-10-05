@@ -18,7 +18,7 @@ import {
   CURB_RATIO,
   EDGE_RATIO,
   FINISH_SQUARE,
-  GRASS_MARGIN,
+  GRASS_EXTENT,
   GRASS_STRIPE_PERIOD,
 } from './TrackLayer.styles';
 import type { TrackLayerProps } from './TrackLayer.types';
@@ -62,10 +62,10 @@ export const TrackLayer = memo(function TrackLayer({ track }: TrackLayerProps) {
   return (
     <Group>
       <Rect
-        x={rect.x - GRASS_MARGIN}
-        y={rect.z - GRASS_MARGIN}
-        width={rect.width + GRASS_MARGIN * 2}
-        height={rect.height + GRASS_MARGIN * 2}
+        x={track.centerX - GRASS_EXTENT}
+        y={track.centerZ - GRASS_EXTENT}
+        width={GRASS_EXTENT * 2}
+        height={GRASS_EXTENT * 2}
       >
         <LinearGradient
           start={vec(0, 0)}

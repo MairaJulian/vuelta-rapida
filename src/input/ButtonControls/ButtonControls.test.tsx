@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react-native';
 import * as Haptics from 'expo-haptics';
 import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { DrivingInput } from '@/core/DrivingModel';
 import { NEUTRAL_INPUT } from '@/input/InputControls';
@@ -116,6 +117,19 @@ describe('ButtonControls', () => {
     press('button-left');
     await Promise.resolve();
     expect(Haptics.impactAsync).not.toHaveBeenCalled();
+  });
+
+  it('sin insets respeta los márgenes del handoff', async () => {
+    await renderControls();
+    expect(screen.getByTestId('steer-group')).toHaveStyle({ left: 28, bottom: 18 });
+    expect(screen.getByLabelText('Frenar')).toHaveStyle({ right: 28, bottom: 14 });
+  });
+
+  it('se corre para no quedar debajo de la barra de navegación', async () => {
+    jest.mocked(useSafeAreaInsets).mockReturnValueOnce({ top: 0, right: 48, bottom: 0, left: 24 });
+    await renderControls();
+    expect(screen.getByTestId('steer-group')).toHaveStyle({ left: 28 + 24 });
+    expect(screen.getByLabelText('Frenar')).toHaveStyle({ right: 28 + 48 });
   });
 
   it('al desmontarse deja la entrada en neutro', async () => {
