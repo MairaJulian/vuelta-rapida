@@ -23,6 +23,12 @@ describe('DriveScreen', () => {
     expect(useKeepAwake).toHaveBeenCalled();
   });
 
+  it('en desarrollo incluye el panel de ajuste', async () => {
+    expect(__DEV__).toBe(true);
+    await render(<DriveScreen />);
+    expect(screen.getByLabelText('Abrir el panel de ajuste')).toBeTruthy();
+  });
+
   it('arranca el loop de la simulación', async () => {
     jest.mocked(useFrameCallback).mockClear();
     await render(<DriveScreen />);
