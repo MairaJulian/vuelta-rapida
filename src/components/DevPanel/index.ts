@@ -4,6 +4,8 @@ export {
   DRIVING_SLIDERS,
   FIXED_DRIVING_KEYS,
   formatReadings,
+  formatTiltReadings,
+  TILT_SLIDERS,
   TRACK_SLIDERS,
 } from './DevPanel';
 export type {
@@ -11,5 +13,7 @@ export type {
   DevReadings,
   NumericCameraKey,
   SliderSpec,
+  TiltReadings,
+  TiltSliderKey,
   TrackSliderKey,
 } from './DevPanel.types';

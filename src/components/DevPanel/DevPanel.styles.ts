@@ -110,6 +110,46 @@ export const styles = StyleSheet.create({
   actionPrimary: {
     backgroundColor: COLORS.primary,
   },
+  actionDisabled: {
+    opacity: 0.45,
+  },
+  // Selector de modo de control: dos opciones en una píldora.
+  segmented: {
+    flexDirection: 'row',
+    padding: 4,
+    gap: 4,
+    borderRadius: 999,
+    backgroundColor: COLORS.soft,
+  },
+  segment: {
+    flex: 1,
+    minHeight: 40,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  segmentSelected: {
+    backgroundColor: COLORS.primary,
+  },
+  segmentText: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  segmentTextSelected: {
+    color: COLORS.primaryText,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 48,
+  },
+  switchLabel: {
+    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: '600',
+  },
   actionText: {
     color: COLORS.text,
     fontSize: 14,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Switch, Text, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,17 +12,24 @@ import {
   getSpeed,
 } from '@/core/DrivingModel';
 import type { CarState, DrivingConfig } from '@/core/DrivingModel';
+import type { ControlMode } from '@/core/PlayerPreferences';
+import { DEFAULT_TILT_CONFIG } from '@/core/TiltSteering';
+import type { TiltSteeringResult } from '@/core/TiltSteering';
 import { DEFAULT_TRACK } from '@/core/Track';
+import { formatSignedDegrees } from '@/render/CalibrationGauge';
 
-import { OFFSETS, READING_FLEX, READINGS_INTERVAL_MS, styles } from './DevPanel.styles';
+import { COLORS, OFFSETS, READING_FLEX, READINGS_INTERVAL_MS, styles } from './DevPanel.styles';
 import type {
   DevPanelProps,
   DevReadings,
   NumericCameraKey,
   SliderSpec,
+  TiltReadings,
+  TiltSliderKey,
   TrackSliderKey,
 } from './DevPanel.types';
 
+const DEG = Math.PI / 180;
 const MS_TO_KMH = 3.6;
 const percent = (value: number) => `${Math.round(value * 100)} %`;
 const seconds = (value: number) => `${value.toFixed(2)} s`;
@@ -181,12 +188,65 @@ export const TRACK_SLIDERS: SliderSpec<TrackSliderKey>[] = [
   { key: 'width', label: 'Ancho de pista', min: 8, max: 30, step: 0.5, format: (v) => `${v} m` },
 ];
 
+/** Sliders de la inclinación. La zona muerta se guarda en radianes y se muestra en grados. */
+export const TILT_SLIDERS: SliderSpec<TiltSliderKey>[] = [
+  {
+    key: 'deadZone',
+    label: 'Zona muerta',
+    min: 0,
+    max: 15 * DEG,
+    step: 0.5 * DEG,
+    format: (v) => `±${(v / DEG).toFixed(1)}°`,
+  },
+  {
+    key: 'sensitivity',
+    label: 'Sensibilidad',
+    min: 1,
+    max: 10,
+    step: 1,
+    format: String,
+  },
+  {
+    key: 'smoothing',
+    label: 'Filtro del temblor',
+    min: 0,
+    max: 0.3,
+    step: 0.01,
+    format: seconds,
+  },
+  {
+    key: 'steerRampTime',
+    label: 'Rampa de dirección (inclinación)',
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    format: seconds,
+  },
+];
+
+const CONTROL_MODE_LABELS: [ControlMode, string][] = [
+  ['tilt', 'Inclinación'],
+  ['buttons', 'Botones'],
+];
+
 const READING_LABELS: [keyof DevReadings, string][] = [
   ['speed', 'Velocidad'],
   ['heading', 'Rumbo'],
   ['drift', 'Deriva'],
   ['fps', 'FPS'],
 ];
+
+const TILT_READING_LABELS: [keyof TiltReadings, string][] = [
+  ['angle', 'Ángulo leído'],
+  ['steer', 'Dirección'],
+];
+
+/** Lecturas de la inclinación: ángulo calibrado con signo y dirección de -1 a 1. */
+export function formatTiltReadings(result: TiltSteeringResult): TiltReadings {
+  // Redondea antes de formatear para que -0.001 no se muestre como "-0.00".
+  const steer = Math.round(result.steer * 100) / 100 || 0;
+  return { angle: formatSignedDegrees(result.relativeAngle), steer: steer.toFixed(2) };
+}
 
 /**
  * Lecturas para mostrar: velocidad en km/h (negativa en marcha atrás), rumbo en
@@ -206,9 +266,9 @@ export function formatReadings(car: CarState, fps: number): DevReadings {
 }
 
 /**
- * Panel desplegable para ajustar el manejo, la pista y la cámara en caliente, con
- * lecturas en vivo. Solo para desarrollo: la pantalla lo carga detrás de `__DEV__`,
- * así que no entra en el bundle de producción.
+ * Panel desplegable para ajustar en caliente el modo de control, la inclinación, el
+ * manejo, la pista y la cámara, con lecturas en vivo. Solo para desarrollo: la
+ * pantalla lo carga detrás de `__DEV__`, así que no entra en el bundle de producción.
  */
 export function DevPanel({
   drivingConfig,
@@ -217,6 +277,13 @@ export function DevPanel({
   onCameraConfigChange,
   track,
   onTrackChange,
+  controlMode,
+  onControlModeChange,
+  tiltConfig,
+  onTiltConfigChange,
+  tiltOutput,
+  onRecalibrate,
+  onOpenCalibration,
   car,
   fps,
   onResetCar,
@@ -224,6 +291,10 @@ export function DevPanel({
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
   const [readings, setReadings] = useState<DevReadings>(() => formatReadings(car.get(), fps.get()));
+  const [tiltReadings, setTiltReadings] = useState<TiltReadings>(() =>
+    formatTiltReadings(tiltOutput.get()),
+  );
+  const isTilt = controlMode === 'tilt';
 
   // Las lecturas se toman unas 5 veces por segundo y solo con el panel abierto:
   // re-renderizar React en cada cuadro competiría con el juego.
@@ -231,16 +302,21 @@ export function DevPanel({
     if (!open) {
       return undefined;
     }
-    const refresh = () => setReadings(formatReadings(car.get(), fps.get()));
+    const refresh = () => {
+      setReadings(formatReadings(car.get(), fps.get()));
+      setTiltReadings(formatTiltReadings(tiltOutput.get()));
+    };
     refresh();
     const timer = setInterval(refresh, READINGS_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [open, car, fps]);
+  }, [open, car, fps, tiltOutput]);
 
+  // Restablece los ajustes, pero no la calibración: esa la elige el jugador.
   const restoreDefaults = () => {
     onDrivingConfigChange(DEFAULT_DRIVING_CONFIG);
     onCameraConfigChange(DEFAULT_CAMERA_CONFIG);
     onTrackChange({ ...track, width: DEFAULT_TRACK.width });
+    onTiltConfigChange({ ...DEFAULT_TILT_CONFIG, neutralAngle: tiltConfig.neutralAngle });
   };
 
   return (
@@ -277,6 +353,72 @@ export function DevPanel({
                 </View>
               ))}
             </View>
+            {isTilt ? (
+              <View style={styles.readings}>
+                {TILT_READING_LABELS.map(([key, label]) => (
+                  <View key={key} style={styles.reading}>
+                    <Text style={styles.readingLabel}>{label}</Text>
+                    <Text style={styles.readingValue} testID={`reading-tilt-${key}`}>
+                      {tiltReadings[key]}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            <Text style={styles.sectionTitle}>Control</Text>
+            <View style={styles.segmented} accessibilityRole="radiogroup">
+              {CONTROL_MODE_LABELS.map(([mode, label]) => {
+                const selected = controlMode === mode;
+                return (
+                  <Pressable
+                    key={mode}
+                    style={[styles.segment, selected && styles.segmentSelected]}
+                    onPress={() => onControlModeChange(mode)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected }}
+                    accessibilityLabel={label}
+                  >
+                    <Text style={[styles.segmentText, selected && styles.segmentTextSelected]}>
+                      {label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <Text style={styles.sectionTitle}>Inclinación</Text>
+            {TILT_SLIDERS.map((spec) => (
+              <DevSlider
+                key={spec.key}
+                testID={`slider-${spec.key}`}
+                label={spec.label}
+                value={tiltConfig[spec.key]}
+                min={spec.min}
+                max={spec.max}
+                step={spec.step}
+                formatValue={spec.format}
+                onChange={(value) => onTiltConfigChange({ ...tiltConfig, [spec.key]: value })}
+              />
+            ))}
+            <View style={styles.actions}>
+              <Pressable
+                style={[styles.action, !isTilt && styles.actionDisabled]}
+                onPress={onRecalibrate}
+                disabled={!isTilt}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !isTilt }}
+              >
+                <Text style={styles.actionText}>Recalibrar</Text>
+              </Pressable>
+              <Pressable
+                style={styles.action}
+                onPress={onOpenCalibration}
+                accessibilityRole="button"
+              >
+                <Text style={styles.actionText}>Calibración completa</Text>
+              </Pressable>
+            </View>
 
             <Text style={styles.sectionTitle}>Manejo</Text>
             {DRIVING_SLIDERS.map((spec) => (
@@ -309,6 +451,19 @@ export function DevPanel({
             ))}
 
             <Text style={styles.sectionTitle}>Cámara</Text>
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Cámara gira con el auto</Text>
+              <Switch
+                testID="switch-rotateWithCar"
+                value={cameraConfig.rotateWithCar}
+                onValueChange={(value) =>
+                  onCameraConfigChange({ ...cameraConfig, rotateWithCar: value })
+                }
+                accessibilityLabel="Cámara gira con el auto"
+                trackColor={{ true: COLORS.primary, false: COLORS.soft }}
+                thumbColor={COLORS.card}
+              />
+            </View>
             {CAMERA_SLIDERS.map((spec) => (
               <DevSlider
                 key={spec.key}

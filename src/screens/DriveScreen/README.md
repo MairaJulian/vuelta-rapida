@@ -34,6 +34,11 @@ export default DriveScreen;
 - **Rampa según el modo:** con inclinación, el loop recibe `withTiltSteering(drivingConfig, tiltConfig)`, con la rampa de dirección corta, porque la señal ya llega continua y filtrada. Con botones usa la rampa normal.
 - **Dos orígenes para la inclinación:** la calibración y la sensibilidad son del jugador y vienen de las preferencias guardadas; la zona muerta, el filtro y la rampa son ajustes de desarrollo y viven en la pantalla. `withTiltPreferences` los junta.
 - **El modo cambia en caliente:** si las preferencias cambian (por ejemplo, desde el panel), la pantalla monta el otro modo de control sin reiniciar la carrera.
+- **Acciones del panel:**
+  - El selector de modo guarda la preferencia.
+  - El slider de sensibilidad la guarda, porque es del jugador. La zona muerta, el filtro y la rampa quedan solo en la sesión.
+  - "Recalibrar" toma el ángulo filtrado del momento (`calibrateTilt` sobre el resultado que publica `TiltControls`) y lo guarda.
+  - "Calibración completa" navega a `/calibracion`.
 - La configuración del manejo y de la cámara, y la pista, son estado de la pantalla: arrancan en los valores por defecto y el panel de desarrollo las modifica (de la pista, solo el ancho). `useDrivingLoop` las aplica en caliente.
 - El panel se carga con `require` detrás de `__DEV__`, para que Metro lo elimine del bundle de producción (ver el README de `DevPanel`).
 - `useKeepAwake` evita que el celular apague la pantalla mientras se maneja sin tocar (la aceleración es automática).

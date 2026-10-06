@@ -1,4 +1,5 @@
 import { useKeepAwake } from 'expo-keep-awake';
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 
@@ -6,7 +7,8 @@ import type { DevPanel as DevPanelComponent } from '@/components/DevPanel';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
 import { DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
 import { withTiltPreferences } from '@/core/PlayerPreferences';
-import { DEFAULT_TILT_CONFIG, withTiltSteering } from '@/core/TiltSteering';
+import { calibrateTilt, DEFAULT_TILT_CONFIG, withTiltSteering } from '@/core/TiltSteering';
+import type { TiltConfig } from '@/core/TiltSteering';
 import { DEFAULT_TRACK } from '@/core/Track';
 import { useDrivingLoop } from '@/hooks/useDrivingLoop';
 import { usePlayerPreferences } from '@/hooks/usePlayerPreferences';
@@ -35,12 +37,13 @@ export function DriveScreen(_props: DriveScreenProps) {
   useKeepAwake();
   const { width, height } = useWindowDimensions();
   const viewport = useMemo(() => ({ width, height }), [width, height]);
-  const { preferences } = usePlayerPreferences();
+  const router = useRouter();
+  const { preferences, updatePreferences } = usePlayerPreferences();
   const [drivingConfig, setDrivingConfig] = useState(DEFAULT_DRIVING_CONFIG);
   const [cameraConfig, setCameraConfig] = useState(DEFAULT_CAMERA_CONFIG);
   const [track, setTrack] = useState(DEFAULT_TRACK);
   // Zona muerta, filtro y rampa son ajustes de desarrollo; calibración y sensibilidad, del jugador.
-  const [tuning] = useState(DEFAULT_TILT_CONFIG);
+  const [tuning, setTuning] = useState(DEFAULT_TILT_CONFIG);
   const input = useDrivingInput();
   const tiltOutput = useTiltOutput();
 
@@ -60,6 +63,20 @@ export function DriveScreen(_props: DriveScreenProps) {
     drivingConfig: activeDrivingConfig,
     cameraConfig,
   });
+
+  // Desde el panel: la sensibilidad es del jugador y se guarda; el resto queda en la sesión.
+  // La calibración y la sensibilidad de `tuning` no se usan: las pisan las preferencias.
+  const changeTiltConfig = (next: TiltConfig) => {
+    setTuning(next);
+    if (next.sensitivity !== preferences.tiltSensitivity) {
+      updatePreferences({ tiltSensitivity: next.sensitivity });
+    }
+  };
+
+  const recalibrate = () => {
+    const calibrated = calibrateTilt(tiltOutput.get().state, tiltConfig);
+    updatePreferences({ tiltNeutralAngle: calibrated.neutralAngle });
+  };
 
   return (
     <View style={styles.container} testID="drive-screen">
@@ -81,6 +98,13 @@ export function DriveScreen(_props: DriveScreenProps) {
           onCameraConfigChange={setCameraConfig}
           track={track}
           onTrackChange={setTrack}
+          controlMode={controlMode}
+          onControlModeChange={(mode) => updatePreferences({ controlMode: mode })}
+          tiltConfig={tiltConfig}
+          onTiltConfigChange={changeTiltConfig}
+          tiltOutput={tiltOutput}
+          onRecalibrate={recalibrate}
+          onOpenCalibration={() => router.push('/calibracion')}
           car={loop.car}
           fps={loop.fps}
           onResetCar={loop.reset}

@@ -5,6 +5,9 @@ import { getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
 import { createCarState, DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
 import type { CarState } from '@/core/DrivingModel';
+import type { ControlMode } from '@/core/PlayerPreferences';
+import { createTiltState, DEFAULT_TILT_CONFIG } from '@/core/TiltSteering';
+import type { TiltSteeringResult } from '@/core/TiltSteering';
 import { DEFAULT_TRACK } from '@/core/Track';
 
 import {
@@ -13,9 +16,13 @@ import {
   DRIVING_SLIDERS,
   FIXED_DRIVING_KEYS,
   formatReadings,
+  formatTiltReadings,
+  TILT_SLIDERS,
   TRACK_SLIDERS,
 } from './DevPanel';
 import { READINGS_INTERVAL_MS } from './DevPanel.styles';
+
+const DEG = Math.PI / 180;
 
 function shared<Value>(initial: Value) {
   let value = initial;
@@ -27,7 +34,15 @@ function shared<Value>(initial: Value) {
   };
 }
 
-async function renderPanel(track = DEFAULT_TRACK) {
+function tiltResult(relativeAngle: number, steer: number): TiltSteeringResult {
+  return { state: createTiltState(), steer, relativeAngle, confidence: 1 };
+}
+
+async function renderPanel({
+  track = DEFAULT_TRACK,
+  controlMode = 'buttons' as ControlMode,
+  tiltConfig = DEFAULT_TILT_CONFIG,
+} = {}) {
   const car = shared<CarState>({ ...createCarState(0, 0, Math.PI / 2), vx: 10 });
   const props = {
     drivingConfig: DEFAULT_DRIVING_CONFIG,
@@ -36,6 +51,13 @@ async function renderPanel(track = DEFAULT_TRACK) {
     onCameraConfigChange: jest.fn(),
     track,
     onTrackChange: jest.fn(),
+    controlMode,
+    onControlModeChange: jest.fn(),
+    tiltConfig,
+    onTiltConfigChange: jest.fn(),
+    tiltOutput: shared(tiltResult(12 * DEG, 0.35)) as unknown as SharedValue<TiltSteeringResult>,
+    onRecalibrate: jest.fn(),
+    onOpenCalibration: jest.fn(),
     car: car as unknown as SharedValue<CarState>,
     fps: shared(89.6) as unknown as SharedValue<number>,
     onResetCar: jest.fn(),
@@ -92,6 +114,19 @@ describe('formatReadings', () => {
   });
 });
 
+describe('formatTiltReadings', () => {
+  it('muestra el ángulo con signo y la dirección con dos decimales', () => {
+    expect(formatTiltReadings(tiltResult(-7 * DEG, -0.123))).toEqual({
+      angle: '−7°',
+      steer: '-0.12',
+    });
+  });
+
+  it('no muestra "-0.00" cuando la dirección es casi nula', () => {
+    expect(formatTiltReadings(tiltResult(0, -0.001)).steer).toBe('0.00');
+  });
+});
+
 describe('sliders', () => {
   it('cada rango contiene el valor por defecto', () => {
     for (const spec of DRIVING_SLIDERS) {
@@ -106,6 +141,15 @@ describe('sliders', () => {
       expect(DEFAULT_TRACK[spec.key]).toBeGreaterThanOrEqual(spec.min);
       expect(DEFAULT_TRACK[spec.key]).toBeLessThanOrEqual(spec.max);
     }
+    for (const spec of TILT_SLIDERS) {
+      expect(DEFAULT_TILT_CONFIG[spec.key]).toBeGreaterThanOrEqual(spec.min);
+      expect(DEFAULT_TILT_CONFIG[spec.key]).toBeLessThanOrEqual(spec.max);
+    }
+  });
+
+  it('hay un slider por cada parámetro de la inclinación, salvo la calibración', () => {
+    const adjustable = Object.keys(DEFAULT_TILT_CONFIG).filter((key) => key !== 'neutralAngle');
+    expect(TILT_SLIDERS.map((spec) => spec.key).sort()).toEqual(adjustable.sort());
   });
 
   it('hay un slider por cada parámetro ajustable del modelo de manejo', () => {
@@ -134,9 +178,10 @@ describe('DevPanel', () => {
     expect(screen.getByTestId('reading-speed')).toHaveTextContent('36 km/h');
     expect(screen.getByTestId('reading-heading')).toHaveTextContent('90°');
     expect(screen.getByTestId('reading-fps')).toHaveTextContent('90');
-    for (const spec of [...DRIVING_SLIDERS, ...TRACK_SLIDERS, ...CAMERA_SLIDERS]) {
+    for (const spec of [...TILT_SLIDERS, ...DRIVING_SLIDERS, ...TRACK_SLIDERS, ...CAMERA_SLIDERS]) {
       expect(screen.getByText(spec.label)).toBeTruthy();
     }
+    expect(screen.getByText('Cámara gira con el auto')).toBeTruthy();
   });
 
   it('un slider de manejo cambia solo su parámetro', async () => {
@@ -175,7 +220,8 @@ describe('DevPanel', () => {
       ],
       width: 20,
     };
-    const props = await renderPanel(custom);
+    const calibrated = { ...DEFAULT_TILT_CONFIG, neutralAngle: 0.2, deadZone: 0.1, smoothing: 0.2 };
+    const props = await renderPanel({ track: custom, tiltConfig: calibrated });
     await openPanel();
     await fireEvent.press(screen.getByText('Restablecer'));
     expect(props.onDrivingConfigChange).toHaveBeenLastCalledWith(DEFAULT_DRIVING_CONFIG);
@@ -183,6 +229,78 @@ describe('DevPanel', () => {
     expect(props.onTrackChange).toHaveBeenLastCalledWith({
       ...custom,
       width: DEFAULT_TRACK.width,
+    });
+    // Los ajustes de la inclinación vuelven a los valores por defecto; la calibración, no.
+    expect(props.onTiltConfigChange).toHaveBeenLastCalledWith({
+      ...DEFAULT_TILT_CONFIG,
+      neutralAngle: 0.2,
+    });
+  });
+
+  it('el selector cambia el modo de control en caliente', async () => {
+    const props = await renderPanel();
+    await openPanel();
+    expect(screen.getByRole('radio', { name: 'Botones' })).toHaveProp('accessibilityState', {
+      checked: true,
+    });
+    await fireEvent.press(screen.getByRole('radio', { name: 'Inclinación' }));
+    expect(props.onControlModeChange).toHaveBeenCalledWith('tilt');
+  });
+
+  it('un slider de inclinación cambia solo su parámetro', async () => {
+    const props = await renderPanel({ controlMode: 'tilt' });
+    await openPanel();
+    await slide('smoothing', 1);
+    expect(props.onTiltConfigChange).toHaveBeenLastCalledWith({
+      ...DEFAULT_TILT_CONFIG,
+      smoothing: 0.3,
+    });
+    await slide('sensitivity', 0);
+    expect(props.onTiltConfigChange).toHaveBeenLastCalledWith({
+      ...DEFAULT_TILT_CONFIG,
+      sensitivity: 1,
+    });
+  });
+
+  it('muestra el ángulo leído y la dirección solo en modo inclinación', async () => {
+    await renderPanel({ controlMode: 'tilt' });
+    await openPanel();
+    expect(screen.getByTestId('reading-tilt-angle')).toHaveTextContent('+12°');
+    expect(screen.getByTestId('reading-tilt-steer')).toHaveTextContent('0.35');
+  });
+
+  it('con botones no muestra las lecturas de inclinación', async () => {
+    await renderPanel();
+    await openPanel();
+    expect(screen.queryByTestId('reading-tilt-angle')).toBeNull();
+  });
+
+  it('Recalibrar funciona solo en modo inclinación', async () => {
+    const buttons = await renderPanel();
+    await openPanel();
+    await fireEvent.press(screen.getByText('Recalibrar'));
+    expect(buttons.onRecalibrate).not.toHaveBeenCalled();
+
+    const tilt = await renderPanel({ controlMode: 'tilt' });
+    await openPanel();
+    await fireEvent.press(screen.getByText('Recalibrar'));
+    expect(tilt.onRecalibrate).toHaveBeenCalledTimes(1);
+  });
+
+  it('Calibración completa abre la pantalla de calibración', async () => {
+    const props = await renderPanel();
+    await openPanel();
+    await fireEvent.press(screen.getByText('Calibración completa'));
+    expect(props.onOpenCalibration).toHaveBeenCalled();
+  });
+
+  it('el interruptor activa la cámara que gira con el auto', async () => {
+    const props = await renderPanel();
+    await openPanel();
+    await fireEvent(screen.getByTestId('switch-rotateWithCar'), 'valueChange', true);
+    expect(props.onCameraConfigChange).toHaveBeenLastCalledWith({
+      ...DEFAULT_CAMERA_CONFIG,
+      rotateWithCar: true,
     });
   });
 

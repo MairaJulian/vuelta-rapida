@@ -1,12 +1,18 @@
-import { act, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import Storage from 'expo-sqlite/kv-store';
-import { useFrameCallback } from 'react-native-reanimated';
+import { useAnimatedSensor, useFrameCallback } from 'react-native-reanimated';
 
-import { reloadPlayerPreferences, updatePlayerPreferences } from '@/hooks/usePlayerPreferences';
+import {
+  readPlayerPreferences,
+  reloadPlayerPreferences,
+  updatePlayerPreferences,
+} from '@/hooks/usePlayerPreferences';
 
 import { DriveScreen } from './DriveScreen';
 
+const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => false };
+jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
 jest.mock('expo-keep-awake', () => ({ useKeepAwake: jest.fn() }));
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(() => Promise.resolve()),
@@ -46,6 +52,41 @@ describe('DriveScreen', () => {
     expect(screen.getByTestId('tilt-controls')).toBeTruthy();
     expect(screen.getByLabelText('Frenar o retroceder, lado izquierdo')).toBeTruthy();
     expect(screen.queryByLabelText('Doblar a la izquierda')).toBeNull();
+  });
+
+  it('desde el panel se cambia el modo en caliente y queda guardado', async () => {
+    await render(<DriveScreen />);
+    await fireEvent.press(screen.getByLabelText('Abrir el panel de ajuste'));
+    await fireEvent.press(screen.getByRole('radio', { name: 'Inclinación' }));
+    expect(readPlayerPreferences().controlMode).toBe('tilt');
+    expect(screen.getByTestId('tilt-controls')).toBeTruthy();
+  });
+
+  it('Recalibrar del panel guarda la posición actual del celular como derecho', async () => {
+    await act(() => updatePlayerPreferences({ controlMode: 'tilt', tiltNeutralAngle: 0 }));
+    await render(<DriveScreen />);
+    // Celular en horizontal (rotación 90) girado 10° a la derecha.
+    const angle = (10 * Math.PI) / 180;
+    const { sensor } = jest.mocked(useAnimatedSensor).mock.results.at(-1)!.value;
+    sensor.set({
+      x: -9.81 * Math.cos(angle),
+      y: -9.81 * Math.sin(angle),
+      z: -3,
+      interfaceOrientation: 90,
+    });
+    for (const [callback] of jest.mocked(useFrameCallback).mock.calls) {
+      callback({ timestamp: 16, timeSincePreviousFrame: 16, timeSinceFirstFrame: 16 });
+    }
+    await fireEvent.press(screen.getByLabelText('Abrir el panel de ajuste'));
+    await fireEvent.press(screen.getByText('Recalibrar'));
+    expect(readPlayerPreferences().tiltNeutralAngle).toBeCloseTo(angle, 6);
+  });
+
+  it('Calibración completa del panel abre la pantalla de calibración', async () => {
+    await render(<DriveScreen />);
+    await fireEvent.press(screen.getByLabelText('Abrir el panel de ajuste'));
+    await fireEvent.press(screen.getByText('Calibración completa'));
+    expect(mockRouter.push).toHaveBeenCalledWith('/calibracion');
   });
 
   it('cambia de modo en caliente cuando cambian las preferencias', async () => {
