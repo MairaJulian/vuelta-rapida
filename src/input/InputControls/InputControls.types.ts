@@ -2,9 +2,10 @@ import type { ComponentType } from 'react';
 import type { SharedValue } from 'react-native-reanimated';
 
 import type { DrivingInput } from '@/core/DrivingModel';
+import type { ControlMode } from '@/core/PlayerPreferences';
 
-/** Modos de control que puede elegir el jugador. */
-export type InputMode = 'buttons' | 'tilt';
+/** Modos de control que puede elegir el jugador. Se define en `core`, junto con las preferencias. */
+export type InputMode = ControlMode;
 
 /**
  * Contrato común de todos los modos de entrada.

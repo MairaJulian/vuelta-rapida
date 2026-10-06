@@ -24,7 +24,7 @@ interface InputControlsProps {
 | `vibrateOnBrake()` | Vibración corta al empezar a frenar. No falla en equipos sin motor de vibración. |
 | `InputControlsProps` | Props que recibe todo modo de control. |
 | `InputControlsComponent` | Tipo de un componente de modo de control. |
-| `InputMode` | `'buttons' \| 'tilt'`. |
+| `InputMode` | `'buttons' \| 'tilt'`. Es `ControlMode` de `core/PlayerPreferences`, donde se guarda la elección. |
 
 ## Ejemplo
 

@@ -4,16 +4,14 @@ Pantalla de manejo libre: el auto acelera solo por el óvalo y se maneja con bot
 
 ## Props
 
-| Prop | Tipo | Descripción |
-|---|---|---|
-| `controlMode` | `InputMode` (opcional) | `'buttons'` (por defecto) o `'tilt'`. |
+Ninguna. El modo de control, la calibración y la sensibilidad salen de las preferencias del jugador (`usePlayerPreferences`). Sin modo elegido, usa botones.
 
 Usa `DEFAULT_TRACK`, arranca con `DEFAULT_DRIVING_CONFIG`, `DEFAULT_CAMERA_CONFIG` y `DEFAULT_TILT_CONFIG`, y toma el tamaño de `useWindowDimensions`.
 
 ## Ejemplo
 
 ```tsx
-// src/app/index.tsx
+// src/app/pista.tsx
 import { DriveScreen } from '@/screens/DriveScreen';
 
 export default DriveScreen;
@@ -34,6 +32,8 @@ export default DriveScreen;
 
 - La pantalla solo compone: la entrada, la simulación y el dibujo son piezas independientes que se comunican por valores compartidos.
 - **Rampa según el modo:** con inclinación, el loop recibe `withTiltSteering(drivingConfig, tiltConfig)`, con la rampa de dirección corta, porque la señal ya llega continua y filtrada. Con botones usa la rampa normal.
-- La configuración del manejo, de la cámara y de la inclinación, y la pista, son estado de la pantalla: arrancan en los valores por defecto y el panel de desarrollo las modifica (de la pista, solo el ancho). `useDrivingLoop` las aplica en caliente.
+- **Dos orígenes para la inclinación:** la calibración y la sensibilidad son del jugador y vienen de las preferencias guardadas; la zona muerta, el filtro y la rampa son ajustes de desarrollo y viven en la pantalla. `withTiltPreferences` los junta.
+- **El modo cambia en caliente:** si las preferencias cambian (por ejemplo, desde el panel), la pantalla monta el otro modo de control sin reiniciar la carrera.
+- La configuración del manejo y de la cámara, y la pista, son estado de la pantalla: arrancan en los valores por defecto y el panel de desarrollo las modifica (de la pista, solo el ancho). `useDrivingLoop` las aplica en caliente.
 - El panel se carga con `require` detrás de `__DEV__`, para que Metro lo elimine del bundle de producción (ver el README de `DevPanel`).
 - `useKeepAwake` evita que el celular apague la pantalla mientras se maneja sin tocar (la aceleración es automática).

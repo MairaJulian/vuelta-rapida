@@ -27,7 +27,8 @@
             "cmakeVersion": "3.31.6"
           }
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "scheme": "vueltarapida",
     "experiments": {

@@ -5,9 +5,11 @@ import { useWindowDimensions, View } from 'react-native';
 import type { DevPanel as DevPanelComponent } from '@/components/DevPanel';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
 import { DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
+import { withTiltPreferences } from '@/core/PlayerPreferences';
 import { DEFAULT_TILT_CONFIG, withTiltSteering } from '@/core/TiltSteering';
 import { DEFAULT_TRACK } from '@/core/Track';
 import { useDrivingLoop } from '@/hooks/useDrivingLoop';
+import { usePlayerPreferences } from '@/hooks/usePlayerPreferences';
 import { useTiltOutput } from '@/hooks/useTiltSteering';
 import { ButtonControls } from '@/input/ButtonControls';
 import { useDrivingInput } from '@/input/InputControls';
@@ -29,16 +31,21 @@ const DevPanel: typeof DevPanelComponent | null = __DEV__
  * (botones o inclinación), más el panel de ajuste en desarrollo. Compone piezas;
  * no calcula nada.
  */
-export function DriveScreen({ controlMode = 'buttons' }: DriveScreenProps) {
+export function DriveScreen(_props: DriveScreenProps) {
   useKeepAwake();
   const { width, height } = useWindowDimensions();
   const viewport = useMemo(() => ({ width, height }), [width, height]);
+  const { preferences } = usePlayerPreferences();
   const [drivingConfig, setDrivingConfig] = useState(DEFAULT_DRIVING_CONFIG);
   const [cameraConfig, setCameraConfig] = useState(DEFAULT_CAMERA_CONFIG);
   const [track, setTrack] = useState(DEFAULT_TRACK);
-  const [tiltConfig] = useState(DEFAULT_TILT_CONFIG);
+  // Zona muerta, filtro y rampa son ajustes de desarrollo; calibración y sensibilidad, del jugador.
+  const [tuning] = useState(DEFAULT_TILT_CONFIG);
   const input = useDrivingInput();
   const tiltOutput = useTiltOutput();
+
+  const controlMode = preferences.controlMode ?? 'buttons';
+  const tiltConfig = useMemo(() => withTiltPreferences(tuning, preferences), [tuning, preferences]);
 
   // Con inclinación la señal ya llega continua y filtrada: la rampa del modelo se acorta.
   const activeDrivingConfig = useMemo(

@@ -1,6 +1,9 @@
-import { render, screen } from '@testing-library/react-native';
+import { act, render, screen } from '@testing-library/react-native';
 import { useKeepAwake } from 'expo-keep-awake';
+import Storage from 'expo-sqlite/kv-store';
 import { useFrameCallback } from 'react-native-reanimated';
+
+import { reloadPlayerPreferences, updatePlayerPreferences } from '@/hooks/usePlayerPreferences';
 
 import { DriveScreen } from './DriveScreen';
 
@@ -21,8 +24,15 @@ jest.mock('expo-screen-orientation', () => ({
   addOrientationChangeListener: jest.fn(() => ({ remove: jest.fn() })),
 }));
 
+const storage = Storage as unknown as { __reset: () => void };
+
 describe('DriveScreen', () => {
-  it('muestra el lienzo y, por defecto, los botones', async () => {
+  beforeEach(async () => {
+    storage.__reset();
+    await act(() => reloadPlayerPreferences());
+  });
+
+  it('muestra el lienzo y, sin modo elegido, los botones', async () => {
     await render(<DriveScreen />);
     expect(screen.getByTestId('drive-screen')).toBeTruthy();
     expect(screen.container.queryAll((node) => node.type === 'Canvas')).toHaveLength(1);
@@ -30,11 +40,20 @@ describe('DriveScreen', () => {
     expect(screen.getByLabelText('Frenar o retroceder')).toBeTruthy();
   });
 
-  it('en modo inclinación muestra los frenos laterales y no las flechas', async () => {
-    await render(<DriveScreen controlMode="tilt" />);
+  it('con inclinación guardada muestra los frenos laterales y no las flechas', async () => {
+    await act(() => updatePlayerPreferences({ controlMode: 'tilt', tiltNeutralAngle: 0.1 }));
+    await render(<DriveScreen />);
     expect(screen.getByTestId('tilt-controls')).toBeTruthy();
     expect(screen.getByLabelText('Frenar o retroceder, lado izquierdo')).toBeTruthy();
     expect(screen.queryByLabelText('Doblar a la izquierda')).toBeNull();
+  });
+
+  it('cambia de modo en caliente cuando cambian las preferencias', async () => {
+    await act(() => updatePlayerPreferences({ controlMode: 'buttons' }));
+    await render(<DriveScreen />);
+    expect(screen.getByLabelText('Doblar a la izquierda')).toBeTruthy();
+    await act(() => updatePlayerPreferences({ controlMode: 'tilt' }));
+    expect(screen.getByTestId('tilt-controls')).toBeTruthy();
   });
 
   it('mantiene la pantalla encendida mientras se maneja', async () => {
