@@ -13,6 +13,8 @@ import type {
 /** Distancia de la largada a la línea de meta, medida sobre el trazado, en metros. */
 const START_GAP = 15;
 const FINISH_LINE_THICKNESS = 1;
+/** Radio por debajo del cual un tramo cuenta como curva y lleva pianos, en metros. */
+export const CURVE_MAX_RADIUS = 150;
 
 /** Quita el ruido de coma flotante de seno y coseno (precisión de un nanómetro). */
 const tidy = (value: number) => Math.round(value * 1e9) / 1e9 || 0;
@@ -60,6 +62,55 @@ export const DEFAULT_TRACK: TrackData = createOvalTrack({
 /** Rumbo para ir de un punto a otro (0 hacia -z, positivo en sentido horario). */
 function headingBetween(from: TrackPoint, to: TrackPoint): Radians {
   return wrapAngle(Math.atan2(to.x - from.x, from.z - to.z));
+}
+
+/**
+ * Tramos curvos del trazado, para dibujar los pianos. Un punto es curvo si la
+ * curvatura (el giro en ese punto dividido por el largo medio de sus dos tramos)
+ * supera `1 / maxRadius`. Cada tramo incluye un punto más a cada lado, para cubrir
+ * la curva de punta a punta. Un trazado todo curvo devuelve la vuelta entera.
+ */
+export function getCurveSections(
+  track: TrackData,
+  maxRadius: number = CURVE_MAX_RADIUS,
+): TrackPoint[][] {
+  const points = track.centerline;
+  const count = points.length;
+  if (count < 3) {
+    return [];
+  }
+  const curved = points.map((point, i) => {
+    const previous = points[(i - 1 + count) % count];
+    const next = points[(i + 1) % count];
+    const turn = Math.abs(wrapAngle(headingBetween(point, next) - headingBetween(previous, point)));
+    const averageLength =
+      (Math.hypot(point.x - previous.x, point.z - previous.z) +
+        Math.hypot(next.x - point.x, next.z - point.z)) /
+      2;
+    return averageLength > 0 && turn / averageLength > 1 / maxRadius;
+  });
+
+  const firstStraight = curved.indexOf(false);
+  if (firstStraight < 0) {
+    return [[...points, points[0]]];
+  }
+  const runs: number[][] = [];
+  let run: number[] = [];
+  // Empieza justo después de un punto recto y termina en él, así ninguna curva queda partida en dos.
+  for (let step = 1; step <= count; step += 1) {
+    const i = (firstStraight + step) % count;
+    if (curved[i]) {
+      run.push(i);
+    } else if (run.length > 0) {
+      runs.push(run);
+      run = [];
+    }
+  }
+  return runs.map((indices) => [
+    points[(indices[0] - 1 + count) % count],
+    ...indices.map((i) => points[i]),
+    points[(indices[indices.length - 1] + 1) % count],
+  ]);
 }
 
 /** Línea de meta en el punto 0, perpendicular al primer tramo. */

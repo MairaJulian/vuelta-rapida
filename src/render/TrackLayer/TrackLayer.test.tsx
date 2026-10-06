@@ -3,40 +3,57 @@ import { render } from '@testing-library/react-native';
 import { DEFAULT_TRACK, getFinishLine } from '@/core/Track';
 
 import { TrackLayer } from './TrackLayer';
-import { COLORS, EDGE_RATIO } from './TrackLayer.styles';
+import { COLORS, CURB_RATIO, EDGE_RATIO } from './TrackLayer.styles';
 
 async function renderTrack(track = DEFAULT_TRACK) {
   const screen = await render(<TrackLayer track={track} />);
   const findAll = (type: string) => screen.container.queryAll((node) => node.type === type);
-  return { findAll, tree: JSON.stringify(screen.toJSON()) };
+  const byColor = (color: string) => findAll('Path').filter((node) => node.props.color === color);
+  return { findAll, byColor, tree: JSON.stringify(screen.toJSON()) };
 }
 
 describe('TrackLayer', () => {
-  it('dibuja borde y asfalto como trazos del trazado central', async () => {
+  it('dibuja borde y asfalto como trazos del trazado central, encima de los pianos', async () => {
     const { findAll } = await renderTrack();
     const strokes = findAll('Path');
+    // Dos curvas con dos trazos cada una, y después borde y asfalto.
     expect(strokes.map((node) => node.props.strokeWidth)).toEqual([
+      ...Array(4).fill(DEFAULT_TRACK.width * CURB_RATIO),
       DEFAULT_TRACK.width * EDGE_RATIO,
       DEFAULT_TRACK.width,
     ]);
-    expect(strokes[1].props).toMatchObject({
+    expect(strokes[5].props).toMatchObject({
       style: 'stroke',
       strokeJoin: 'round',
       color: COLORS.asphalt,
     });
   });
 
-  it('el path recorre todos los puntos del trazado y se cierra', async () => {
-    const { findAll } = await renderTrack();
-    const path: string = findAll('Path')[1].props.path;
+  it('el path del asfalto recorre todos los puntos del trazado y se cierra', async () => {
+    const { byColor } = await renderTrack();
+    const path: string = byColor(COLORS.asphalt)[0].props.path;
     expect(path.startsWith('M 0 -50 L 100 -50')).toBe(true);
     expect(path.endsWith('L -100 -50 Z')).toBe(true);
     expect(path.match(/[ML] /g)).toHaveLength(DEFAULT_TRACK.centerline.length);
   });
 
   it('el ancho de los trazos sigue al ancho de la pista', async () => {
-    const { findAll } = await renderTrack({ ...DEFAULT_TRACK, width: 20 });
-    expect(findAll('Path')[1].props.strokeWidth).toBe(20);
+    const { byColor } = await renderTrack({ ...DEFAULT_TRACK, width: 20 });
+    expect(byColor(COLORS.asphalt)[0].props.strokeWidth).toBe(20);
+    // El borde es el último trazo blanco (los pianos también tienen fondo blanco).
+    expect(byColor(COLORS.edge).at(-1)?.props.strokeWidth).toBe(20 * EDGE_RATIO);
+  });
+
+  it('dibuja pianos rayados solo en las dos curvas', async () => {
+    const { findAll, byColor } = await renderTrack();
+    const stripes = byColor(COLORS.curbStripe);
+    expect(stripes).toHaveLength(2);
+    expect(findAll('DashPathEffect')).toHaveLength(2);
+    // Cada piano va de punta a punta de su semicírculo, sin cerrarse.
+    expect(stripes[0].props.path.startsWith('M 100 -50')).toBe(true);
+    expect(stripes[0].props.path.endsWith('L 100 50')).toBe(true);
+    expect(stripes[1].props.path.startsWith('M -100 50')).toBe(true);
+    expect(stripes[1].props.path.endsWith('L -100 -50')).toBe(true);
   });
 
   it('dibuja césped con franjas', async () => {

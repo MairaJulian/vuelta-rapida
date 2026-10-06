@@ -36,4 +36,6 @@ const loop = useDrivingLoop({ input, track, viewport, drivingConfig, cameraConfi
 - **Hilo de UI:** la simulación avanza dentro de `useFrameCallback`; lee la entrada y la configuración desde valores compartidos y no pasa por React en ningún cuadro.
 - **Configuración en caliente:** los objetos de configuración llegan como props (estado de React del panel) y se copian a valores compartidos con `useEffect`; el loop lee siempre la última versión.
 - **Transformaciones derivadas:** `useDerivedValue` arma los arreglos de transformación de Skia a partir de `getCameraView` (core). El render solo los aplica.
+- **Cámara con estado propio:** en cada cuadro, después de la simulación, `stepCamera` acerca el adelanto al objetivo con el tiempo del cuadro. Es presentación: no entra en `DrivingSim` ni en su determinismo. `reset()` también la centra.
+- **Pista en caliente:** la pista llega como valor compartido, igual que la configuración. Si el panel cambia el ancho, el límite se aplica desde el paso siguiente.
 - Usa `.get()`/`.set()` en lugar de `.value`, como recomienda Reanimated 4 para que el React Compiler no marque mutaciones.

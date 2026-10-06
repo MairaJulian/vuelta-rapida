@@ -21,6 +21,7 @@ El circuito como datos: un trazado central cerrado (lista de puntos) y un ancho.
 | `getFinishLine(track)` | Meta en el punto 0, perpendicular al primer tramo. |
 | `getStartPose(track)` | Largada: 15 m antes de la meta medidos sobre el trazado, mirando hacia ella. |
 | `getNearestOnCenterline(track, x, z)` | Punto del trazado más cercano y su distancia. Worklet: lo usa el límite de pista en cada paso. |
+| `getCurveSections(track, maxRadius?)` | Tramos curvos (radio menor que `CURVE_MAX_RADIUS`, 150 m), de punta a punta, para los pianos. |
 
 ## Ejemplo
 
@@ -38,6 +39,7 @@ const custom: TrackData = { centerline: [{ x: 0, z: 0 }, { x: 80, z: 0 }, ...], 
 ## Decisiones de diseño
 
 - **Pista como datos, no como forma:** cualquier circuito es una lista de puntos. El óvalo es solo el primero, generado con `createOvalTrack`. Las curvas se describen con muchos puntos (32 segmentos por semicírculo: el arco y la cuerda se separan 6 cm).
+- **Curvas detectadas por curvatura:** el giro en cada punto dividido por el largo medio de sus tramos. Contar solo el giro fallaría en el óvalo: los puntos donde la curva se une con una recta larga también giran, y la recta inferior quedaría marcada como curva.
 - **El punto 0 es la meta** y el orden de los puntos es el sentido de la carrera: la largada, la meta y, más adelante, las vueltas salen de ahí.
 - **14 m de ancho** (unos 7 autos) en lugar de los 8 m del hito 2. Más ancho que la proporción del handoff, para que la pista perdone más mientras se aprende a manejar.
 - **Búsqueda del punto más cercano en todos los segmentos:** con 67 puntos cuesta muy poco por paso. Si una pista futura pasa dos tramos muy cerca uno del otro, convendrá buscar solo cerca del segmento anterior.

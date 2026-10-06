@@ -1,24 +1,47 @@
-import { Fill, Group, LinearGradient, Path, Rect, vec } from '@shopify/react-native-skia';
+import {
+  DashPathEffect,
+  Fill,
+  Group,
+  LinearGradient,
+  Path,
+  Rect,
+  vec,
+} from '@shopify/react-native-skia';
 import { memo, useMemo } from 'react';
 
-import { getFinishLine } from '@/core/Track';
+import { getCurveSections, getFinishLine } from '@/core/Track';
 import type { TrackPoint } from '@/core/Track';
 
-import { COLORS, EDGE_RATIO, FINISH_SQUARE, GRASS_STRIPE_PERIOD } from './TrackLayer.styles';
+import {
+  COLORS,
+  CURB_DASH,
+  CURB_RATIO,
+  EDGE_RATIO,
+  FINISH_SQUARE,
+  GRASS_STRIPE_PERIOD,
+} from './TrackLayer.styles';
 import type { TrackLayerProps } from './TrackLayer.types';
 
-/** Trazado cerrado como path SVG (y crece hacia abajo, igual que z). */
-function closedPath(points: TrackPoint[]): string {
-  return `${points.map((point, i) => `${i === 0 ? 'M' : 'L'} ${point.x} ${point.z}`).join(' ')} Z`;
+/** Puntos como path SVG abierto (y crece hacia abajo, igual que z). */
+function openPath(points: TrackPoint[]): string {
+  return points.map((point, i) => `${i === 0 ? 'M' : 'L'} ${point.x} ${point.z}`).join(' ');
 }
 
 /**
  * Dibuja el circuito en coordenadas del mundo (metros) a partir de sus datos:
- * césped con franjas, borde blanco, asfalto y línea de meta a cuadros. Es
- * estático: la cámara lo mueve desde el grupo que lo contiene.
+ * césped con franjas, pianos en las curvas, borde blanco, asfalto y línea de meta
+ * a cuadros. Es estático: la cámara lo mueve desde el grupo que lo contiene.
  */
 export const TrackLayer = memo(function TrackLayer({ track }: TrackLayerProps) {
-  const centerline = useMemo(() => closedPath(track.centerline), [track.centerline]);
+  const centerline = useMemo(() => `${openPath(track.centerline)} Z`, [track.centerline]);
+  const curbs = useMemo(
+    () =>
+      getCurveSections(track).map((section) => ({
+        key: `${section[0].x},${section[0].z}`,
+        path: openPath(section),
+      })),
+    [track],
+  );
   const finish = getFinishLine(track);
 
   // Cuadros en coordenadas locales de la meta: x a lo ancho de la pista, y en el sentido de la marcha.
@@ -53,6 +76,27 @@ export const TrackLayer = memo(function TrackLayer({ track }: TrackLayerProps) {
           mode="repeat"
         />
       </Fill>
+
+      {curbs.map((curb) => (
+        <Group key={curb.key}>
+          <Path
+            path={curb.path}
+            style="stroke"
+            strokeWidth={track.width * CURB_RATIO}
+            strokeJoin="round"
+            color={COLORS.curb}
+          />
+          <Path
+            path={curb.path}
+            style="stroke"
+            strokeWidth={track.width * CURB_RATIO}
+            strokeJoin="round"
+            color={COLORS.curbStripe}
+          >
+            <DashPathEffect intervals={[CURB_DASH, CURB_DASH]} />
+          </Path>
+        </Group>
+      ))}
 
       {/* Trazo con juntas redondeadas: cubre exactamente los puntos a menos de medio
           ancho del trazado, la misma zona que usa el límite de pista. */}

@@ -1,7 +1,9 @@
 export {
   createOvalCenterline,
   createOvalTrack,
+  CURVE_MAX_RADIUS,
   DEFAULT_TRACK,
+  getCurveSections,
   getFinishLine,
   getNearestOnCenterline,
   getStartPose,

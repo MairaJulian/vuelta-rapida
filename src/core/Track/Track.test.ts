@@ -4,6 +4,7 @@ import {
   createOvalCenterline,
   createOvalTrack,
   DEFAULT_TRACK,
+  getCurveSections,
   getFinishLine,
   getNearestOnCenterline,
   getStartPose,
@@ -144,5 +145,48 @@ describe('getNearestOnCenterline', () => {
     const hit = getNearestOnCenterline(track, -30, -45);
     expect(hit.segment).toBe(points.length - 1);
     expect(hit.distance).toBeCloseTo(5, 9);
+  });
+});
+
+describe('getCurveSections', () => {
+  it('en el óvalo encuentra las dos curvas, de punta a punta y sin las rectas', () => {
+    const sections = getCurveSections(track);
+    expect(sections).toHaveLength(2);
+    const [right, left] = sections;
+    expect(right).toHaveLength(33);
+    expect(right[0]).toEqual({ x: 100, z: -50 });
+    expect(right[32]).toEqual({ x: 100, z: 50 });
+    expect(left).toHaveLength(33);
+    expect(left[0]).toEqual({ x: -100, z: 50 });
+    expect(left[32]).toEqual({ x: -100, z: -50 });
+  });
+
+  it('con un radio máximo menor que el de las curvas, no hay pianos', () => {
+    expect(getCurveSections(track, 40)).toEqual([]);
+  });
+
+  it('una pista toda curva devuelve la vuelta entera, cerrada', () => {
+    const circle: TrackData = {
+      centerline: Array.from({ length: 24 }, (_, i) => ({
+        x: 30 * Math.cos((i * Math.PI) / 12),
+        z: 30 * Math.sin((i * Math.PI) / 12),
+      })),
+      width: 10,
+    };
+    const [section, ...rest] = getCurveSections(circle);
+    expect(rest).toHaveLength(0);
+    expect(section).toHaveLength(25);
+    expect(section[24]).toBe(circle.centerline[0]);
+  });
+
+  it('una curva que cruza el punto 0 no queda partida en dos', () => {
+    // El óvalo empezando en medio de la curva derecha.
+    const shifted: TrackData = {
+      ...track,
+      centerline: [...points.slice(17), ...points.slice(0, 17)],
+    };
+    const sections = getCurveSections(shifted);
+    expect(sections).toHaveLength(2);
+    expect(sections.map((section) => section.length)).toEqual([33, 33]);
   });
 });
