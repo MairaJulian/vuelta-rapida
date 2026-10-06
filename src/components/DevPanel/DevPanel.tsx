@@ -17,7 +17,7 @@ const seconds = (value: number) => `${value.toFixed(2)} s`;
 const metersPerSecond = (value: number) => `${value} m/s · ${Math.round(value * MS_TO_KMH)} km/h`;
 
 /** Parámetros del manejo sin slider: salen de las medidas del auto, no se ajustan a mano. */
-export const FIXED_DRIVING_KEYS: (keyof DrivingConfig)[] = ['wheelbase'];
+export const FIXED_DRIVING_KEYS: (keyof DrivingConfig)[] = ['wheelbase', 'collisionRadius'];
 
 /** Sliders del modelo de manejo. Los rangos contienen los valores por defecto. */
 export const DRIVING_SLIDERS: SliderSpec<keyof DrivingConfig>[] = [
@@ -116,6 +116,14 @@ export const DRIVING_SLIDERS: SliderSpec<keyof DrivingConfig>[] = [
     max: 20,
     step: 0.5,
     format: metersPerSecond,
+  },
+  {
+    key: 'wallFriction',
+    label: 'Pérdida contra el borde',
+    min: 0,
+    max: 5,
+    step: 0.1,
+    format: (v) => `${v.toFixed(1)} /s`,
   },
 ];
 

@@ -1,18 +1,22 @@
 import { createCarState, DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
 import type { DrivingInput } from '@/core/DrivingModel';
 import { DEFAULT_FIXED_STEP_CONFIG, getStepMs } from '@/core/FixedStep';
+import { DEFAULT_TRACK, getNearestOnCenterline, getStartPose } from '@/core/Track';
+import { getTrackLimit } from '@/core/TrackBounds';
 
 import { advanceDrivingSim, createDrivingSim, getRenderCar, interpolateCar } from './DrivingSim';
 import type { DrivingSimState } from './DrivingSim.types';
 
 const stepConfig = DEFAULT_FIXED_STEP_CONFIG;
+const track = DEFAULT_TRACK;
 const INPUT: DrivingInput = { steer: 0.6, brake: 0 };
 
 function runFrames(frames: number[], input: DrivingInput | ((frame: number) => DrivingInput)) {
-  let sim = createDrivingSim(createCarState(0, 0, 0));
+  const start = getStartPose(track);
+  let sim = createDrivingSim(createCarState(start.x, start.z, start.heading));
   frames.forEach((frameMs, index) => {
     const frameInput = typeof input === 'function' ? input(index) : input;
-    sim = advanceDrivingSim(sim, frameMs, frameInput, DEFAULT_DRIVING_CONFIG, stepConfig);
+    sim = advanceDrivingSim(sim, frameMs, frameInput, DEFAULT_DRIVING_CONFIG, track, stepConfig);
   });
   return sim;
 }
@@ -66,6 +70,7 @@ describe('DrivingSim', () => {
       getStepMs(stepConfig),
       INPUT,
       DEFAULT_DRIVING_CONFIG,
+      track,
       stepConfig,
     );
     expect(after.previousCar).toBe(before.car);
@@ -74,10 +79,28 @@ describe('DrivingSim', () => {
 
   it('un cuadro corto solo acumula tiempo y no mueve el auto', () => {
     const sim = runFrames(Array(10).fill(1000 / 60), INPUT);
-    const next = advanceDrivingSim(sim, 4, INPUT, DEFAULT_DRIVING_CONFIG, stepConfig);
+    const next = advanceDrivingSim(sim, 4, INPUT, DEFAULT_DRIVING_CONFIG, track, stepConfig);
     expect(next.car).toBe(sim.car);
     expect(next.previousCar).toBe(sim.previousCar);
     expect(next.accumulatorMs).toBeCloseTo(sim.accumulatorMs + 4, 9);
+  });
+
+  it('mantiene el auto dentro de la pista en cada paso', () => {
+    // Dirección a fondo durante 10 s: sin límites, el auto saldría del óvalo.
+    const limit = getTrackLimit(track, DEFAULT_DRIVING_CONFIG);
+    let sim = runFrames([], INPUT);
+    for (const frameMs of irregularFrames(10000)) {
+      sim = advanceDrivingSim(
+        sim,
+        frameMs,
+        { steer: 1, brake: 0 },
+        DEFAULT_DRIVING_CONFIG,
+        track,
+        stepConfig,
+      );
+      const { distance } = getNearestOnCenterline(track, sim.car.x, sim.car.z);
+      expect(distance).toBeLessThanOrEqual(limit + 1e-9);
+    }
   });
 
   it('el estado es serializable sin pérdidas', () => {

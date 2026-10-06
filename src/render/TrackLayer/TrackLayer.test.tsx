@@ -1,56 +1,63 @@
 import { render } from '@testing-library/react-native';
 
-import { DEFAULT_TRACK, getCenterlineRect } from '@/core/Track';
+import { DEFAULT_TRACK, getFinishLine } from '@/core/Track';
 
 import { TrackLayer } from './TrackLayer';
 import { COLORS, EDGE_RATIO } from './TrackLayer.styles';
 
-async function renderTrack() {
-  const screen = await render(<TrackLayer track={DEFAULT_TRACK} />);
+async function renderTrack(track = DEFAULT_TRACK) {
+  const screen = await render(<TrackLayer track={track} />);
   const findAll = (type: string) => screen.container.queryAll((node) => node.type === type);
   return { findAll, tree: JSON.stringify(screen.toJSON()) };
 }
 
 describe('TrackLayer', () => {
-  it('dibuja borde y asfalto sobre la línea central con forma de estadio', async () => {
+  it('dibuja borde y asfalto como trazos del trazado central', async () => {
     const { findAll } = await renderTrack();
-    const rect = getCenterlineRect(DEFAULT_TRACK);
-    const strokes = findAll('RoundedRect');
+    const strokes = findAll('Path');
     expect(strokes.map((node) => node.props.strokeWidth)).toEqual([
       DEFAULT_TRACK.width * EDGE_RATIO,
       DEFAULT_TRACK.width,
     ]);
     expect(strokes[1].props).toMatchObject({
-      x: rect.x,
-      y: rect.z,
-      width: rect.width,
-      height: rect.height,
-      r: rect.radius,
       style: 'stroke',
+      strokeJoin: 'round',
       color: COLORS.asphalt,
     });
   });
 
-  it('dibuja pianos rayados solo en las dos curvas', async () => {
+  it('el path recorre todos los puntos del trazado y se cierra', async () => {
     const { findAll } = await renderTrack();
-    expect(findAll('Path')).toHaveLength(4);
-    expect(findAll('DashPathEffect')).toHaveLength(2);
+    const path: string = findAll('Path')[1].props.path;
+    expect(path.startsWith('M 0 -50 L 100 -50')).toBe(true);
+    expect(path.endsWith('L -100 -50 Z')).toBe(true);
+    expect(path.match(/[ML] /g)).toHaveLength(DEFAULT_TRACK.centerline.length);
   });
 
-  it('las curvas son semicírculos hacia afuera de cada extremo', async () => {
-    const { tree } = await renderTrack();
-    expect(tree).toContain('M -100 -50 A 50 50 0 0 0 -100 50');
-    expect(tree).toContain('M 100 -50 A 50 50 0 0 1 100 50');
+  it('el ancho de los trazos sigue al ancho de la pista', async () => {
+    const { findAll } = await renderTrack({ ...DEFAULT_TRACK, width: 20 });
+    expect(findAll('Path')[1].props.strokeWidth).toBe(20);
   });
 
-  it('dibuja césped con franjas y la meta a cuadros', async () => {
+  it('dibuja césped con franjas', async () => {
     const { findAll, tree } = await renderTrack();
     // Las franjas van en un Fill: cubren todo el lienzo y nunca se acaban.
     const [fill] = findAll('Fill');
     expect(fill.queryAll((node) => node.type === 'LinearGradient')).toHaveLength(1);
     expect(tree).toContain(COLORS.grassStripe);
-    // 1 m × 8 m con cuadros de 0,5 m: 32 cuadros, la mitad oscuros.
+  });
+
+  it('dibuja la meta a cuadros en el punto 0, girada según el trazado', async () => {
+    const { findAll } = await renderTrack();
+    const finish = getFinishLine(DEFAULT_TRACK);
+    const finishGroup = findAll('Group').find((node) => node.props.transform);
+    expect(finishGroup?.props.transform).toEqual([
+      { translateX: finish.x },
+      { translateY: finish.z },
+      { rotate: finish.heading },
+    ]);
+    // 14 m × 1 m con cuadros de 0,5 m: 56 cuadros, la mitad oscuros.
     const darkSquares = findAll('Rect').filter((node) => node.props.color === COLORS.finishDark);
-    expect(darkSquares).toHaveLength(16);
+    expect(darkSquares).toHaveLength(28);
   });
 });

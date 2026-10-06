@@ -1,42 +1,106 @@
 import { createCarState, DEFAULT_DRIVING_CONFIG, stepCar } from '@/core/DrivingModel';
 
-import { DEFAULT_TRACK, getCenterlineRect, getCurves, getFinishLine, getStartPose } from './Track';
+import {
+  createOvalCenterline,
+  createOvalTrack,
+  DEFAULT_TRACK,
+  getFinishLine,
+  getNearestOnCenterline,
+  getStartPose,
+} from './Track';
+import type { TrackData, TrackPoint } from './Track.types';
 
 const track = DEFAULT_TRACK;
+const points = track.centerline;
 
-describe('Track', () => {
-  it('la línea central es un rectángulo redondeado con forma de estadio', () => {
-    expect(getCenterlineRect(track)).toEqual({
-      x: -150,
-      z: -50,
-      width: 300,
-      height: 100,
+function lapLength(centerline: TrackPoint[]): number {
+  return centerline.reduce((total, point, i) => {
+    const next = centerline[(i + 1) % centerline.length];
+    return total + Math.hypot(next.x - point.x, next.z - point.z);
+  }, 0);
+}
+
+describe('createOvalCenterline', () => {
+  it('empieza en el centro de la recta superior y tiene dos semicírculos', () => {
+    const centerline = createOvalCenterline({
+      straightLength: 200,
       radius: 50,
+      segmentsPerCurve: 8,
+    });
+    // Punto de meta y 9 puntos por curva.
+    expect(centerline).toHaveLength(1 + 9 + 9);
+    expect(centerline[0]).toEqual({ x: 0, z: -50 });
+    // Curva derecha: de arriba hacia abajo pasando por el extremo derecho.
+    expect(centerline[1]).toEqual({ x: 100, z: -50 });
+    expect(centerline[5]).toEqual({ x: 150, z: 0 });
+    expect(centerline[9]).toEqual({ x: 100, z: 50 });
+    // Curva izquierda: de abajo hacia arriba pasando por el extremo izquierdo.
+    expect(centerline[10]).toEqual({ x: -100, z: 50 });
+    expect(centerline[14]).toEqual({ x: -150, z: 0 });
+    expect(centerline[18]).toEqual({ x: -100, z: -50 });
+  });
+
+  it('los puntos de cada curva están a la distancia del radio', () => {
+    const curvePoints = points.slice(1);
+    for (const point of curvePoints) {
+      const centerX = point.x > 0 ? 100 : -100;
+      expect(Math.hypot(point.x - centerX, point.z)).toBeCloseTo(50, 6);
+    }
+  });
+
+  it('la vuelta mide casi lo mismo que el estadio ideal', () => {
+    const ideal = 2 * 200 + 2 * Math.PI * 50;
+    expect(lapLength(points)).toBeLessThan(ideal);
+    expect(lapLength(points)).toBeGreaterThan(ideal - 0.5);
+  });
+});
+
+describe('DEFAULT_TRACK', () => {
+  it('es un óvalo de 14 m de ancho', () => {
+    expect(track.width).toBe(14);
+    expect(track).toEqual(
+      createOvalTrack({ straightLength: 200, radius: 50, width: 14, segmentsPerCurve: 32 }),
+    );
+  });
+
+  it('es serializable sin pérdidas', () => {
+    expect(JSON.parse(JSON.stringify(track))).toEqual(track);
+  });
+});
+
+describe('getFinishLine', () => {
+  it('atraviesa la pista en el punto 0, con el ancho de la pista, mirando a +x', () => {
+    expect(getFinishLine(track)).toEqual({
+      x: 0,
+      z: -50,
+      heading: Math.PI / 2,
+      length: 14,
+      thickness: 1,
     });
   });
+});
 
-  it('respeta el centro del óvalo', () => {
-    const rect = getCenterlineRect({ ...track, centerX: 10, centerZ: -5 });
-    expect(rect.x + rect.width / 2).toBe(10);
-    expect(rect.z + rect.height / 2).toBe(-5);
-  });
-
-  it('las curvas están en los extremos de las rectas', () => {
-    const [left, right] = getCurves(track);
-    expect(left).toEqual({ side: 'left', centerX: -100, centerZ: 0, radius: 50 });
-    expect(right).toEqual({ side: 'right', centerX: 100, centerZ: 0, radius: 50 });
-  });
-
-  it('la meta atraviesa la recta superior con el ancho de la pista', () => {
-    expect(getFinishLine(track)).toEqual({ x: 0, z: -50, length: 8, thickness: 1 });
-  });
-
-  it('la largada está sobre la línea central, antes de la meta y mirando hacia ella', () => {
+describe('getStartPose', () => {
+  it('está sobre el trazado, 15 m antes de la meta y mirando hacia ella', () => {
     const start = getStartPose(track);
-    const finish = getFinishLine(track);
-    expect(start.z).toBe(finish.z);
-    expect(start.x).toBeLessThan(finish.x);
-    expect(start.heading).toBeCloseTo(Math.PI / 2, 12);
+    expect(start).toEqual({ x: -15, z: -50, heading: Math.PI / 2 });
+  });
+
+  it('recorre varios tramos si el último es más corto que la distancia', () => {
+    const square: TrackData = {
+      centerline: [
+        { x: 0, z: 0 },
+        { x: 10, z: 0 },
+        { x: 10, z: 10 },
+        { x: 0, z: 10 },
+      ],
+      width: 4,
+    };
+    // Hacia atrás desde (0, 0): 10 m hasta (0, 10) y 5 m más hacia (10, 10).
+    const start = getStartPose(square);
+    expect(start.x).toBeCloseTo(5, 12);
+    expect(start.z).toBeCloseTo(10, 12);
+    expect(start.heading).toBeCloseTo(-Math.PI / 2, 12);
   });
 
   it('desde la largada, el auto avanza hacia la meta', () => {
@@ -47,5 +111,38 @@ describe('Track', () => {
     }
     expect(car.x).toBeGreaterThan(start.x);
     expect(car.z).toBeCloseTo(start.z, 9);
+  });
+});
+
+describe('getNearestOnCenterline', () => {
+  it('sobre una recta, proyecta en perpendicular', () => {
+    expect(getNearestOnCenterline(track, 30, -58)).toEqual({
+      x: 30,
+      z: -50,
+      distance: 8,
+      segment: 0,
+    });
+  });
+
+  it('en una curva, mide hacia el arco', () => {
+    const hit = getNearestOnCenterline(track, 160, 0);
+    expect(hit.x).toBeCloseTo(150, 9);
+    expect(hit.z).toBeCloseTo(0, 9);
+    expect(hit.distance).toBeCloseTo(10, 9);
+  });
+
+  it('desde el centro del óvalo, la distancia es el radio', () => {
+    expect(getNearestOnCenterline(track, 0, 0).distance).toBeCloseTo(50, 9);
+  });
+
+  it('sobre el trazado, la distancia es 0', () => {
+    const point = points[20];
+    expect(getNearestOnCenterline(track, point.x, point.z).distance).toBe(0);
+  });
+
+  it('el segmento que cierra la vuelta también cuenta', () => {
+    const hit = getNearestOnCenterline(track, -30, -45);
+    expect(hit.segment).toBe(points.length - 1);
+    expect(hit.distance).toBeCloseTo(5, 9);
   });
 });

@@ -7,7 +7,7 @@ Conecta el loop de Reanimated (`useFrameCallback`, hilo de UI) con la simulació
 | Parámetro | Tipo | Descripción |
 |---|---|---|
 | `input` | `SharedValue<DrivingInput>` | Entrada que escribe el modo de control. |
-| `track` | `OvalTrack` | Circuito; define la largada. |
+| `track` | `TrackData` | Circuito: define la largada y los límites. Se puede cambiar en caliente. |
 | `viewport` | `{ width, height }` | Área de dibujo en dp. |
 | `drivingConfig` | `DrivingConfig` | Parámetros del modelo; los cambios se aplican en caliente. |
 | `cameraConfig` | `CameraConfig` | Parámetros de la cámara; también en caliente. |

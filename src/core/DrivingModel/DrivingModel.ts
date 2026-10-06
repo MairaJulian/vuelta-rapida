@@ -19,6 +19,9 @@ export const DEFAULT_DRIVING_CONFIG: DrivingConfig = {
   steerReturnTime: 0.15,
   reverseDelay: 0.4,
   maxReverseSpeed: 6,
+  wallFriction: 1,
+  // Medio ancho del Monoplaza (2 m).
+  collisionRadius: 1,
 };
 
 /** Auto detenido en una posición y rumbo dados. */

@@ -36,7 +36,7 @@ const DevPanel = __DEV__ ? require('@/components/DevPanel').DevPanel : null;
 ## Contenido
 
 - **Lecturas:** velocidad (km/h), rumbo (0° arriba, sentido horario), deriva (m/s, positiva hacia la derecha del auto) y fps.
-- **Manejo:** un slider por cada parámetro de `DrivingConfig`, salvo los de `FIXED_DRIVING_KEYS` (`wheelbase`, que sale de las medidas del auto). El ángulo de giro se muestra en grados.
+- **Manejo:** un slider por cada parámetro de `DrivingConfig`, salvo los de `FIXED_DRIVING_KEYS` (`wheelbase` y `collisionRadius`, que salen de las medidas del auto). El ángulo de giro se muestra en grados.
 - **Cámara:** zoom, alejar con la velocidad, mirar adelante y su tope. `rotateWithCar` queda fuera hasta el hito 3.
 - **Restablecer:** vuelve todos los parámetros a sus valores por defecto.
 - **Reiniciar auto:** lo devuelve a la largada, detenido.

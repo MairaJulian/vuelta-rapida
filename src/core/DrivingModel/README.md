@@ -46,6 +46,8 @@ Modelo de manejo arcade del monoplaza. TypeScript puro: no importa React, React 
 | `steerReturnTime` | s | 0.15 | Tiempo para volver de fondo al centro. |
 | `reverseDelay` | s | 0.4 | Pausa detenido con el freno apretado antes de la marcha atrás. |
 | `maxReverseSpeed` | m/s | 6 | Tope en marcha atrás (22 km/h). |
+| `wallFriction` | 1/s | 1 | Roce contra el borde de la pista. Lo usa `TrackBounds`. |
+| `collisionRadius` | m | 1 | Medio ancho del auto para el límite de pista. Fijo: no tiene slider. |
 
 Con estos valores, la velocidad de giro con la dirección a fondo queda así:
 

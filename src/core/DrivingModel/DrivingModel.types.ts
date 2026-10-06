@@ -64,4 +64,8 @@ export interface DrivingConfig {
   reverseDelay: number;
   /** Tope de velocidad en marcha atrás, en m/s. */
   maxReverseSpeed: number;
+  /** Roce mientras toca el borde de la pista, en 1/s: la velocidad cae con `exp(−wallFriction·dt)`. */
+  wallFriction: number;
+  /** Radio del auto para el límite de pista, en metros: medio ancho de la carrocería. */
+  collisionRadius: number;
 }

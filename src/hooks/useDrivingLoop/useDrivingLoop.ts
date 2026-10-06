@@ -10,11 +10,11 @@ import type { DrivingSimState } from '@/core/DrivingSim';
 import { DEFAULT_FIXED_STEP_CONFIG } from '@/core/FixedStep';
 import { smoothFps } from '@/core/FpsMeter';
 import { getStartPose } from '@/core/Track';
-import type { OvalTrack } from '@/core/Track';
+import type { TrackData } from '@/core/Track';
 
 import type { UseDrivingLoopParams, UseDrivingLoopResult } from './useDrivingLoop.types';
 
-function createStartSim(track: OvalTrack): DrivingSimState {
+function createStartSim(track: TrackData): DrivingSimState {
   const start = getStartPose(track);
   return createDrivingSim(createCarState(start.x, start.z, start.heading));
 }
@@ -37,10 +37,12 @@ export function useDrivingLoop({
   const drivingConfigValue = useSharedValue(drivingConfig);
   const cameraConfigValue = useSharedValue(cameraConfig);
   const viewportValue = useSharedValue(viewport);
+  const trackValue = useSharedValue(track);
 
   useEffect(() => drivingConfigValue.set(drivingConfig), [drivingConfigValue, drivingConfig]);
   useEffect(() => cameraConfigValue.set(cameraConfig), [cameraConfigValue, cameraConfig]);
   useEffect(() => viewportValue.set(viewport), [viewportValue, viewport]);
+  useEffect(() => trackValue.set(track), [trackValue, track]);
 
   useFrameCallback((frame) => {
     'worklet';
@@ -50,6 +52,7 @@ export function useDrivingLoop({
       frameMs,
       input.get(),
       drivingConfigValue.get(),
+      trackValue.get(),
       DEFAULT_FIXED_STEP_CONFIG,
     );
     sim.set(next);

@@ -3,13 +3,13 @@ import type { DerivedValue, SharedValue } from 'react-native-reanimated';
 
 import type { CameraConfig, Viewport } from '@/core/Camera';
 import type { CarState, DrivingConfig, DrivingInput } from '@/core/DrivingModel';
-import type { OvalTrack } from '@/core/Track';
+import type { TrackData } from '@/core/Track';
 
 export interface UseDrivingLoopParams {
   /** Entrada que escribe el modo de control. */
   input: SharedValue<DrivingInput>;
   /** Circuito; define la largada. */
-  track: OvalTrack;
+  track: TrackData;
   /** Tamaño del área de dibujo, en dp. */
   viewport: Viewport;
   /** Parámetros del modelo de manejo. Se pueden cambiar en caliente. */
