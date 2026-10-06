@@ -130,7 +130,7 @@ export function ButtonControls({ input }: ButtonControlsProps) {
         <Animated.View
           accessible
           accessibilityRole="button"
-          accessibilityLabel="Frenar"
+          accessibilityLabel="Frenar o retroceder"
           style={[
             styles.brakeButton,
             {

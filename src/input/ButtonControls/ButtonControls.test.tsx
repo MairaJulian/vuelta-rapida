@@ -62,7 +62,7 @@ describe('ButtonControls', () => {
     await renderControls();
     expect(screen.getByLabelText('Doblar a la izquierda')).toBeTruthy();
     expect(screen.getByLabelText('Doblar a la derecha')).toBeTruthy();
-    expect(screen.getByLabelText('Frenar')).toBeTruthy();
+    expect(screen.getByLabelText('Frenar o retroceder')).toBeTruthy();
     expect(screen.getByText('Freno')).toBeTruthy();
   });
 
@@ -122,14 +122,14 @@ describe('ButtonControls', () => {
   it('sin insets respeta los márgenes del handoff', async () => {
     await renderControls();
     expect(screen.getByTestId('steer-group')).toHaveStyle({ left: 28, bottom: 18 });
-    expect(screen.getByLabelText('Frenar')).toHaveStyle({ right: 28, bottom: 14 });
+    expect(screen.getByLabelText('Frenar o retroceder')).toHaveStyle({ right: 28, bottom: 14 });
   });
 
   it('se corre para no quedar debajo de la barra de navegación', async () => {
     jest.mocked(useSafeAreaInsets).mockReturnValueOnce({ top: 0, right: 48, bottom: 0, left: 24 });
     await renderControls();
     expect(screen.getByTestId('steer-group')).toHaveStyle({ left: 28 + 24 });
-    expect(screen.getByLabelText('Frenar')).toHaveStyle({ right: 28 + 48 });
+    expect(screen.getByLabelText('Frenar o retroceder')).toHaveStyle({ right: 28 + 48 });
   });
 
   it('al desmontarse deja la entrada en neutro', async () => {

@@ -6,7 +6,13 @@ import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
 import { createCarState, DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
 import type { CarState } from '@/core/DrivingModel';
 
-import { CAMERA_SLIDERS, DevPanel, DRIVING_SLIDERS, formatReadings } from './DevPanel';
+import {
+  CAMERA_SLIDERS,
+  DevPanel,
+  DRIVING_SLIDERS,
+  FIXED_DRIVING_KEYS,
+  formatReadings,
+} from './DevPanel';
 import { READINGS_INTERVAL_MS } from './DevPanel.styles';
 
 function shared<Value>(initial: Value) {
@@ -87,10 +93,11 @@ describe('sliders', () => {
     }
   });
 
-  it('hay un slider por cada parámetro del modelo de manejo', () => {
-    expect(DRIVING_SLIDERS.map((spec) => spec.key).sort()).toEqual(
-      Object.keys(DEFAULT_DRIVING_CONFIG).sort(),
+  it('hay un slider por cada parámetro ajustable del modelo de manejo', () => {
+    const adjustable = Object.keys(DEFAULT_DRIVING_CONFIG).filter(
+      (key) => !FIXED_DRIVING_KEYS.includes(key as keyof typeof DEFAULT_DRIVING_CONFIG),
     );
+    expect(DRIVING_SLIDERS.map((spec) => spec.key).sort()).toEqual(adjustable.sort());
   });
 });
 

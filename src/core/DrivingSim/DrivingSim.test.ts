@@ -88,8 +88,8 @@ describe('DrivingSim', () => {
 });
 
 describe('interpolateCar', () => {
-  const previous = { x: 0, z: 0, heading: 0, vx: 0, vz: -10, steer: 0 };
-  const current = { x: 2, z: -4, heading: 0.2, vx: 1, vz: -12, steer: 1 };
+  const previous = { x: 0, z: 0, heading: 0, vx: 0, vz: -10, steer: 0, reverseTimer: 0 };
+  const current = { x: 2, z: -4, heading: 0.2, vx: 1, vz: -12, steer: 1, reverseTimer: 0 };
 
   it('devuelve los extremos con alpha 0 y 1', () => {
     expect(interpolateCar(previous, current, 0)).toEqual(previous);

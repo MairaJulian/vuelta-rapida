@@ -13,6 +13,11 @@ import type { DevPanelProps, DevReadings, NumericCameraKey, SliderSpec } from '.
 
 const MS_TO_KMH = 3.6;
 const percent = (value: number) => `${Math.round(value * 100)} %`;
+const seconds = (value: number) => `${value.toFixed(2)} s`;
+const metersPerSecond = (value: number) => `${value} m/s · ${Math.round(value * MS_TO_KMH)} km/h`;
+
+/** Parámetros del manejo sin slider: salen de las medidas del auto, no se ajustan a mano. */
+export const FIXED_DRIVING_KEYS: (keyof DrivingConfig)[] = ['wheelbase'];
 
 /** Sliders del modelo de manejo. Los rangos contienen los valores por defecto. */
 export const DRIVING_SLIDERS: SliderSpec<keyof DrivingConfig>[] = [
@@ -22,7 +27,7 @@ export const DRIVING_SLIDERS: SliderSpec<keyof DrivingConfig>[] = [
     min: 10,
     max: 90,
     step: 1,
-    format: (v) => `${v} m/s · ${Math.round(v * MS_TO_KMH)} km/h`,
+    format: metersPerSecond,
   },
   {
     key: 'acceleration',
@@ -49,28 +54,44 @@ export const DRIVING_SLIDERS: SliderSpec<keyof DrivingConfig>[] = [
     format: (v) => `${v} m/s²`,
   },
   {
-    key: 'maxTurnRate',
-    label: 'Giro máximo',
-    min: 0.5,
-    max: 5,
-    step: 0.1,
-    format: (v) => `${v.toFixed(1)} rad/s`,
-  },
-  {
-    key: 'fullTurnSpeed',
-    label: 'Velocidad de giro completo',
-    min: 1,
-    max: 30,
-    step: 0.5,
-    format: (v) => `${v} m/s`,
-  },
-  {
-    key: 'highSpeedTurnFactor',
-    label: 'Giro a fondo (subviraje)',
+    key: 'maxSteerAngle',
+    label: 'Ángulo de giro máximo',
     min: 0.1,
     max: 1,
-    step: 0.05,
+    step: 0.01,
+    format: (v) => `${Math.round((v * 180) / Math.PI)}°`,
+  },
+  {
+    key: 'highSpeedSteerFactor',
+    label: 'Giro a velocidad máxima',
+    min: 0.02,
+    max: 1,
+    step: 0.01,
     format: percent,
+  },
+  {
+    key: 'steerFalloff',
+    label: 'Curva del giro (exponente)',
+    min: 0.2,
+    max: 3,
+    step: 0.05,
+    format: (v) => v.toFixed(2),
+  },
+  {
+    key: 'steerInTime',
+    label: 'Tiempo de giro',
+    min: 0,
+    max: 1,
+    step: 0.01,
+    format: seconds,
+  },
+  {
+    key: 'steerReturnTime',
+    label: 'Tiempo de vuelta al centro',
+    min: 0,
+    max: 1,
+    step: 0.01,
+    format: seconds,
   },
   {
     key: 'lateralGrip',
@@ -81,12 +102,20 @@ export const DRIVING_SLIDERS: SliderSpec<keyof DrivingConfig>[] = [
     format: (v) => `${v} /s`,
   },
   {
-    key: 'steerRate',
-    label: 'Rapidez de dirección',
+    key: 'reverseDelay',
+    label: 'Pausa antes de la reversa',
+    min: 0,
+    max: 1.5,
+    step: 0.05,
+    format: seconds,
+  },
+  {
+    key: 'maxReverseSpeed',
+    label: 'Velocidad de reversa',
     min: 1,
     max: 20,
     step: 0.5,
-    format: (v) => `${v} /s`,
+    format: metersPerSecond,
   },
 ];
 

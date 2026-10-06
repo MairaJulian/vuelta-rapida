@@ -45,6 +45,7 @@ export function interpolateCar(previous: CarState, current: CarState, alpha: num
     vx: lerp(previous.vx, current.vx, alpha),
     vz: lerp(previous.vz, current.vz, alpha),
     steer: lerp(previous.steer, current.steer, alpha),
+    reverseTimer: lerp(previous.reverseTimer, current.reverseTimer, alpha),
   };
 }
 

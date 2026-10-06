@@ -33,7 +33,7 @@ return (
 | Izquierda + derecha | 0 | 0 |
 | Freno (con o sin dirección) | -1, 0 o 1 | 1 |
 
-La dirección digital (-1/0/1) se suaviza en el modelo (`steerRate`), no aquí.
+La dirección digital (-1/0/1) se suaviza en el modelo (`steerInTime` y `steerReturnTime`), no aquí. El freno mantenido con el auto detenido da marcha atrás; también lo resuelve el modelo, por eso la etiqueta accesible es "Frenar o retroceder".
 
 ## Diseño (handoff, pantalla 07b)
 
