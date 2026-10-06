@@ -5,6 +5,7 @@ import { getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
 import { createCarState, DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
 import type { CarState } from '@/core/DrivingModel';
+import { DEFAULT_TRACK } from '@/core/Track';
 
 import {
   CAMERA_SLIDERS,
@@ -12,6 +13,7 @@ import {
   DRIVING_SLIDERS,
   FIXED_DRIVING_KEYS,
   formatReadings,
+  TRACK_SLIDERS,
 } from './DevPanel';
 import { READINGS_INTERVAL_MS } from './DevPanel.styles';
 
@@ -25,13 +27,15 @@ function shared<Value>(initial: Value) {
   };
 }
 
-async function renderPanel() {
+async function renderPanel(track = DEFAULT_TRACK) {
   const car = shared<CarState>({ ...createCarState(0, 0, Math.PI / 2), vx: 10 });
   const props = {
     drivingConfig: DEFAULT_DRIVING_CONFIG,
     onDrivingConfigChange: jest.fn(),
     cameraConfig: DEFAULT_CAMERA_CONFIG,
     onCameraConfigChange: jest.fn(),
+    track,
+    onTrackChange: jest.fn(),
     car: car as unknown as SharedValue<CarState>,
     fps: shared(89.6) as unknown as SharedValue<number>,
     onResetCar: jest.fn(),
@@ -64,6 +68,13 @@ describe('formatReadings', () => {
     expect(formatReadings(car, 60).speed).toBe('36 km/h');
   });
 
+  it('en marcha atrás muestra la velocidad negativa', () => {
+    // Mira hacia -z y se mueve hacia +z.
+    const reversing = { ...createCarState(0, 0, 0), vz: 5 };
+    expect(formatReadings(reversing, 60).speed).toBe('-18 km/h');
+    expect(formatReadings(createCarState(0, 0, 0), 60).speed).toBe('0 km/h');
+  });
+
   it('muestra el rumbo en grados, 0 arriba y en sentido horario', () => {
     expect(formatReadings(createCarState(0, 0, Math.PI / 2), 60).heading).toBe('90°');
     expect(formatReadings(createCarState(0, 0, -Math.PI / 2), 60).heading).toBe('270°');
@@ -91,6 +102,10 @@ describe('sliders', () => {
       expect(DEFAULT_CAMERA_CONFIG[spec.key]).toBeGreaterThanOrEqual(spec.min);
       expect(DEFAULT_CAMERA_CONFIG[spec.key]).toBeLessThanOrEqual(spec.max);
     }
+    for (const spec of TRACK_SLIDERS) {
+      expect(DEFAULT_TRACK[spec.key]).toBeGreaterThanOrEqual(spec.min);
+      expect(DEFAULT_TRACK[spec.key]).toBeLessThanOrEqual(spec.max);
+    }
   });
 
   it('hay un slider por cada parámetro ajustable del modelo de manejo', () => {
@@ -98,6 +113,11 @@ describe('sliders', () => {
       (key) => !FIXED_DRIVING_KEYS.includes(key as keyof typeof DEFAULT_DRIVING_CONFIG),
     );
     expect(DRIVING_SLIDERS.map((spec) => spec.key).sort()).toEqual(adjustable.sort());
+  });
+
+  it('hay un slider por cada parámetro numérico de la cámara', () => {
+    const numeric = Object.keys(DEFAULT_CAMERA_CONFIG).filter((key) => key !== 'rotateWithCar');
+    expect(CAMERA_SLIDERS.map((spec) => spec.key).sort()).toEqual(numeric.sort());
   });
 });
 
@@ -114,7 +134,7 @@ describe('DevPanel', () => {
     expect(screen.getByTestId('reading-speed')).toHaveTextContent('36 km/h');
     expect(screen.getByTestId('reading-heading')).toHaveTextContent('90°');
     expect(screen.getByTestId('reading-fps')).toHaveTextContent('90');
-    for (const spec of [...DRIVING_SLIDERS, ...CAMERA_SLIDERS]) {
+    for (const spec of [...DRIVING_SLIDERS, ...TRACK_SLIDERS, ...CAMERA_SLIDERS]) {
       expect(screen.getByText(spec.label)).toBeTruthy();
     }
   });
@@ -139,12 +159,31 @@ describe('DevPanel', () => {
     });
   });
 
-  it('Restablecer vuelve a los valores por defecto', async () => {
+  it('el slider de pista cambia solo el ancho', async () => {
     const props = await renderPanel();
+    await openPanel();
+    await slide('width', 1);
+    expect(props.onTrackChange).toHaveBeenLastCalledWith({ ...DEFAULT_TRACK, width: 30 });
+  });
+
+  it('Restablecer vuelve a los valores por defecto, sin cambiar el trazado', async () => {
+    const custom = {
+      centerline: [
+        { x: 0, z: 0 },
+        { x: 50, z: 0 },
+        { x: 25, z: 40 },
+      ],
+      width: 20,
+    };
+    const props = await renderPanel(custom);
     await openPanel();
     await fireEvent.press(screen.getByText('Restablecer'));
     expect(props.onDrivingConfigChange).toHaveBeenLastCalledWith(DEFAULT_DRIVING_CONFIG);
     expect(props.onCameraConfigChange).toHaveBeenLastCalledWith(DEFAULT_CAMERA_CONFIG);
+    expect(props.onTrackChange).toHaveBeenLastCalledWith({
+      ...custom,
+      width: DEFAULT_TRACK.width,
+    });
   });
 
   it('Reiniciar auto pide volver a la largada', async () => {

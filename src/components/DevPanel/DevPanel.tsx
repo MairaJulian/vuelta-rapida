@@ -5,11 +5,23 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DevSlider } from '@/components/DevSlider';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
-import { DEFAULT_DRIVING_CONFIG, getDriftSpeed, getSpeed } from '@/core/DrivingModel';
+import {
+  DEFAULT_DRIVING_CONFIG,
+  getDriftSpeed,
+  getForwardSpeed,
+  getSpeed,
+} from '@/core/DrivingModel';
 import type { CarState, DrivingConfig } from '@/core/DrivingModel';
+import { DEFAULT_TRACK } from '@/core/Track';
 
 import { OFFSETS, READING_FLEX, READINGS_INTERVAL_MS, styles } from './DevPanel.styles';
-import type { DevPanelProps, DevReadings, NumericCameraKey, SliderSpec } from './DevPanel.types';
+import type {
+  DevPanelProps,
+  DevReadings,
+  NumericCameraKey,
+  SliderSpec,
+  TrackSliderKey,
+} from './DevPanel.types';
 
 const MS_TO_KMH = 3.6;
 const percent = (value: number) => `${Math.round(value * 100)} %`;
@@ -140,20 +152,33 @@ export const CAMERA_SLIDERS: SliderSpec<NumericCameraKey>[] = [
   },
   {
     key: 'lookAheadSeconds',
-    label: 'Mirar adelante',
+    label: 'Anticipación (intensidad)',
     min: 0,
     max: 1.5,
     step: 0.05,
-    format: (v) => `${v.toFixed(2)} s`,
+    format: seconds,
   },
   {
     key: 'maxLookAheadFraction',
-    label: 'Tope de mirar adelante',
+    label: 'Tope de la anticipación',
     min: 0,
     max: 0.45,
     step: 0.05,
     format: percent,
   },
+  {
+    key: 'lookAheadSmoothing',
+    label: 'Suavizado de la anticipación',
+    min: 0,
+    max: 2,
+    step: 0.05,
+    format: seconds,
+  },
+];
+
+/** Sliders de la pista. El ancho máximo deja las curvas del óvalo (radio 50 m) sin cerrarse. */
+export const TRACK_SLIDERS: SliderSpec<TrackSliderKey>[] = [
+  { key: 'width', label: 'Ancho de pista', min: 8, max: 30, step: 0.5, format: (v) => `${v} m` },
 ];
 
 const READING_LABELS: [keyof DevReadings, string][] = [
@@ -163,13 +188,17 @@ const READING_LABELS: [keyof DevReadings, string][] = [
   ['fps', 'FPS'],
 ];
 
-/** Lecturas para mostrar: velocidad en km/h, rumbo en grados (0 = arriba, sentido horario), deriva y fps. */
+/**
+ * Lecturas para mostrar: velocidad en km/h (negativa en marcha atrás), rumbo en
+ * grados (0 = arriba, sentido horario), deriva y fps.
+ */
 export function formatReadings(car: CarState, fps: number): DevReadings {
   const degrees = ((((car.heading * 180) / Math.PI) % 360) + 360) % 360;
+  const direction = getForwardSpeed(car) < 0 ? -1 : 1;
   // Redondea antes de formatear para que -0.04 no se muestre como "-0.0".
   const drift = Math.round(getDriftSpeed(car) * 10) / 10 || 0;
   return {
-    speed: `${Math.round(getSpeed(car) * MS_TO_KMH)} km/h`,
+    speed: `${Math.round(direction * getSpeed(car) * MS_TO_KMH) || 0} km/h`,
     heading: `${Math.round(degrees) % 360}°`,
     drift: `${drift.toFixed(1)} m/s`,
     fps: `${Math.round(fps)}`,
@@ -177,15 +206,17 @@ export function formatReadings(car: CarState, fps: number): DevReadings {
 }
 
 /**
- * Panel desplegable para ajustar el manejo y la cámara en caliente, con lecturas en
- * vivo. Solo para desarrollo: la pantalla lo carga detrás de `__DEV__`, así que no
- * entra en el bundle de producción.
+ * Panel desplegable para ajustar el manejo, la pista y la cámara en caliente, con
+ * lecturas en vivo. Solo para desarrollo: la pantalla lo carga detrás de `__DEV__`,
+ * así que no entra en el bundle de producción.
  */
 export function DevPanel({
   drivingConfig,
   onDrivingConfigChange,
   cameraConfig,
   onCameraConfigChange,
+  track,
+  onTrackChange,
   car,
   fps,
   onResetCar,
@@ -209,6 +240,7 @@ export function DevPanel({
   const restoreDefaults = () => {
     onDrivingConfigChange(DEFAULT_DRIVING_CONFIG);
     onCameraConfigChange(DEFAULT_CAMERA_CONFIG);
+    onTrackChange({ ...track, width: DEFAULT_TRACK.width });
   };
 
   return (
@@ -258,6 +290,21 @@ export function DevPanel({
                 step={spec.step}
                 formatValue={spec.format}
                 onChange={(value) => onDrivingConfigChange({ ...drivingConfig, [spec.key]: value })}
+              />
+            ))}
+
+            <Text style={styles.sectionTitle}>Pista</Text>
+            {TRACK_SLIDERS.map((spec) => (
+              <DevSlider
+                key={spec.key}
+                testID={`slider-${spec.key}`}
+                label={spec.label}
+                value={track[spec.key]}
+                min={spec.min}
+                max={spec.max}
+                step={spec.step}
+                formatValue={spec.format}
+                onChange={(value) => onTrackChange({ ...track, [spec.key]: value })}
               />
             ))}
 

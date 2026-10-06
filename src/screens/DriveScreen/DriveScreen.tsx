@@ -22,7 +22,7 @@ const DevPanel: typeof DevPanelComponent | null = __DEV__
   : null;
 
 /**
- * Pantalla de manejo libre del hito 2: el óvalo, el auto, la cámara y los botones,
+ * Pantalla de manejo libre: la pista, el auto, la cámara y los botones,
  * más el panel de ajuste en desarrollo. Compone piezas; no calcula nada.
  */
 export function DriveScreen(_props: DriveScreenProps) {
@@ -31,10 +31,11 @@ export function DriveScreen(_props: DriveScreenProps) {
   const viewport = useMemo(() => ({ width, height }), [width, height]);
   const [drivingConfig, setDrivingConfig] = useState(DEFAULT_DRIVING_CONFIG);
   const [cameraConfig, setCameraConfig] = useState(DEFAULT_CAMERA_CONFIG);
+  const [track, setTrack] = useState(DEFAULT_TRACK);
   const input = useDrivingInput();
   const loop = useDrivingLoop({
     input,
-    track: DEFAULT_TRACK,
+    track,
     viewport,
     drivingConfig,
     cameraConfig,
@@ -43,7 +44,7 @@ export function DriveScreen(_props: DriveScreenProps) {
   return (
     <View style={styles.container} testID="drive-screen">
       <DriveCanvas
-        track={DEFAULT_TRACK}
+        track={track}
         cameraTransform={loop.cameraTransform}
         carTransform={loop.carTransform}
       />
@@ -54,6 +55,8 @@ export function DriveScreen(_props: DriveScreenProps) {
           onDrivingConfigChange={setDrivingConfig}
           cameraConfig={cameraConfig}
           onCameraConfigChange={setCameraConfig}
+          track={track}
+          onTrackChange={setTrack}
           car={loop.car}
           fps={loop.fps}
           onResetCar={loop.reset}
