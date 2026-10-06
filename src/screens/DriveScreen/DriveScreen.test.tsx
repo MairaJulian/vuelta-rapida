@@ -15,7 +15,7 @@ describe('DriveScreen', () => {
     await render(<DriveScreen />);
     expect(screen.getByTestId('drive-screen')).toBeTruthy();
     expect(screen.container.queryAll((node) => node.type === 'Canvas')).toHaveLength(1);
-    expect(screen.getByLabelText('Frenar')).toBeTruthy();
+    expect(screen.getByLabelText('Frenar o retroceder')).toBeTruthy();
   });
 
   it('mantiene la pantalla encendida mientras se maneja', async () => {

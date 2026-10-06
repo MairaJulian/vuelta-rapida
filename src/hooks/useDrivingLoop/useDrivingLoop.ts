@@ -2,7 +2,8 @@ import type { Transforms3d } from '@shopify/react-native-skia';
 import { useCallback, useEffect } from 'react';
 import { useDerivedValue, useFrameCallback, useSharedValue } from 'react-native-reanimated';
 
-import { getCameraView } from '@/core/Camera';
+import { createCameraState, getCameraView, stepCamera } from '@/core/Camera';
+import type { CameraState } from '@/core/Camera';
 import { createCarState } from '@/core/DrivingModel';
 import type { CarState } from '@/core/DrivingModel';
 import { advanceDrivingSim, createDrivingSim, getRenderCar } from '@/core/DrivingSim';
@@ -10,11 +11,11 @@ import type { DrivingSimState } from '@/core/DrivingSim';
 import { DEFAULT_FIXED_STEP_CONFIG } from '@/core/FixedStep';
 import { smoothFps } from '@/core/FpsMeter';
 import { getStartPose } from '@/core/Track';
-import type { OvalTrack } from '@/core/Track';
+import type { TrackData } from '@/core/Track';
 
 import type { UseDrivingLoopParams, UseDrivingLoopResult } from './useDrivingLoop.types';
 
-function createStartSim(track: OvalTrack): DrivingSimState {
+function createStartSim(track: TrackData): DrivingSimState {
   const start = getStartPose(track);
   return createDrivingSim(createCarState(start.x, start.z, start.heading));
 }
@@ -33,14 +34,17 @@ export function useDrivingLoop({
   const initialSim = createStartSim(track);
   const sim = useSharedValue<DrivingSimState>(initialSim);
   const car = useSharedValue<CarState>(initialSim.car);
+  const camera = useSharedValue<CameraState>(createCameraState());
   const fps = useSharedValue(0);
   const drivingConfigValue = useSharedValue(drivingConfig);
   const cameraConfigValue = useSharedValue(cameraConfig);
   const viewportValue = useSharedValue(viewport);
+  const trackValue = useSharedValue(track);
 
   useEffect(() => drivingConfigValue.set(drivingConfig), [drivingConfigValue, drivingConfig]);
   useEffect(() => cameraConfigValue.set(cameraConfig), [cameraConfigValue, cameraConfig]);
   useEffect(() => viewportValue.set(viewport), [viewportValue, viewport]);
+  useEffect(() => trackValue.set(track), [trackValue, track]);
 
   useFrameCallback((frame) => {
     'worklet';
@@ -50,10 +54,23 @@ export function useDrivingLoop({
       frameMs,
       input.get(),
       drivingConfigValue.get(),
+      trackValue.get(),
       DEFAULT_FIXED_STEP_CONFIG,
     );
     sim.set(next);
-    car.set(getRenderCar(next, DEFAULT_FIXED_STEP_CONFIG));
+    const drawn = getRenderCar(next, DEFAULT_FIXED_STEP_CONFIG);
+    car.set(drawn);
+    // La cámara es presentación: se suaviza con el tiempo del cuadro, fuera de la simulación.
+    camera.set(
+      stepCamera(
+        camera.get(),
+        drawn,
+        viewportValue.get(),
+        cameraConfigValue.get(),
+        drivingConfigValue.get().maxSpeed,
+        frameMs / 1000,
+      ),
+    );
     fps.set(smoothFps(fps.get(), frameMs));
   });
 
@@ -61,7 +78,7 @@ export function useDrivingLoop({
     const area = viewportValue.get();
     const view = getCameraView(
       car.get(),
-      area,
+      camera.get(),
       cameraConfigValue.get(),
       drivingConfigValue.get().maxSpeed,
     );
@@ -84,7 +101,8 @@ export function useDrivingLoop({
     const fresh = createStartSim(track);
     sim.set(fresh);
     car.set(fresh.car);
-  }, [car, sim, track]);
+    camera.set(createCameraState());
+  }, [camera, car, sim, track]);
 
   return { car, fps, cameraTransform, carTransform, reset };
 }

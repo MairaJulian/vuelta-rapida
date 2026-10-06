@@ -28,14 +28,19 @@ function runFrames(count: number, dtMs = 1000 / 60) {
   }
 }
 
-async function renderLoop(input = sharedInput({ steer: 0, brake: 0 })) {
+const FIXED_CAMERA = { ...DEFAULT_CAMERA_CONFIG, lookAheadSeconds: 0, speedZoomOut: 0 };
+
+async function renderLoop(
+  input = sharedInput({ steer: 0, brake: 0 }),
+  cameraConfig = FIXED_CAMERA,
+) {
   const { result } = await renderHook(() =>
     useDrivingLoop({
       input: input as never,
       track: DEFAULT_TRACK,
       viewport,
       drivingConfig: DEFAULT_DRIVING_CONFIG,
-      cameraConfig: { ...DEFAULT_CAMERA_CONFIG, lookAheadSeconds: 0, speedZoomOut: 0 },
+      cameraConfig,
     }),
   );
   return { result, input };
@@ -93,6 +98,24 @@ describe('useDrivingLoop', () => {
       { translateX: -car.x },
       { translateY: -car.z },
     ]);
+  });
+
+  it('la cámara se adelanta de a poco en la dirección del movimiento y reset la centra', async () => {
+    const { result } = await renderLoop(undefined, { ...DEFAULT_CAMERA_CONFIG, speedZoomOut: 0 });
+    // Cuánto se adelanta el centro de la pantalla respecto del auto, en x (el auto va hacia +x).
+    const lead = () => {
+      const [, , , , target] = result.current.cameraTransform.value as { translateX: number }[];
+      return -target.translateX - result.current.car.value.x;
+    };
+    runFrames(5);
+    const early = lead();
+    runFrames(115);
+    const later = lead();
+    expect(early).toBeGreaterThan(0);
+    expect(later).toBeGreaterThan(early * 3);
+
+    await act(() => result.current.reset());
+    expect(lead()).toBe(0);
   });
 
   it('el auto se dibuja en su posición y con su rumbo', async () => {

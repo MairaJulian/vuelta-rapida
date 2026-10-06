@@ -6,7 +6,7 @@ Lienzo Skia de la pantalla de manejo. Pinta el césped de fondo y, dentro del gr
 
 | Prop | Tipo | Descripción |
 |---|---|---|
-| `track` | `OvalTrack` | Circuito a dibujar. |
+| `track` | `TrackData` | Circuito a dibujar. |
 | `cameraTransform` | `SharedValue<Transforms3d>` | Transformación de la cámara. |
 | `carTransform` | `SharedValue<Transforms3d>` | Posición y rumbo del auto. |
 

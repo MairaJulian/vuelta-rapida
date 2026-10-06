@@ -1,18 +1,33 @@
 import type { Radians } from '@/core/MathUtils';
 
+/** Punto del plano, en metros. */
+export interface TrackPoint {
+  x: number;
+  z: number;
+}
+
 /**
- * Óvalo tipo estadio: dos rectas horizontales unidas por dos semicírculos.
- * Medidas en metros, sobre la línea central del asfalto.
+ * Circuito como datos: un trazado central cerrado y un ancho. Serializable.
+ * El punto 0 es la meta y la carrera avanza en el orden de los índices; el
+ * último punto se une con el primero.
  */
-export interface OvalTrack {
-  centerX: number;
-  centerZ: number;
-  /** Largo de cada recta. */
+export interface TrackData {
+  /** Puntos del trazado central, en metros. Las curvas se describen con muchos puntos. */
+  centerline: TrackPoint[];
+  /** Ancho del asfalto, en metros. */
+  width: number;
+}
+
+/** Medidas de un óvalo tipo estadio: dos rectas horizontales unidas por dos semicírculos. */
+export interface OvalSpec {
+  /** Largo de cada recta, en metros. */
   straightLength: number;
-  /** Radio de las curvas, medido en la línea central. */
+  /** Radio de las curvas, medido en el trazado central. */
   radius: number;
   /** Ancho del asfalto. */
   width: number;
+  /** Segmentos con que se aproxima cada semicírculo. */
+  segmentsPerCurve: number;
 }
 
 /** Posición y rumbo en el plano. */
@@ -22,30 +37,25 @@ export interface Pose {
   heading: Radians;
 }
 
-/** Línea central como rectángulo redondeado: con `radius` = alto / 2 forma el estadio. */
-export interface TrackRect {
-  x: number;
-  z: number;
-  width: number;
-  height: number;
-  radius: number;
-}
-
-/** Una de las dos curvas: semicírculo con centro en el extremo de las rectas. */
-export interface TrackCurve {
-  side: 'left' | 'right';
-  centerX: number;
-  centerZ: number;
-  radius: number;
-}
-
-/** Línea de meta: atraviesa la recta superior. */
+/** Línea de meta: atraviesa la pista en el punto 0 del trazado. */
 export interface FinishLine {
   /** Centro de la línea. */
   x: number;
   z: number;
+  /** Rumbo de la carrera al cruzarla; la línea es perpendicular a él. */
+  heading: Radians;
   /** Largo a lo ancho de la pista. */
   length: number;
   /** Grosor en el sentido de la marcha. */
   thickness: number;
+}
+
+/** Punto del trazado central más cercano a una posición. */
+export interface CenterlineHit {
+  x: number;
+  z: number;
+  /** Distancia de la posición al trazado, en metros. */
+  distance: number;
+  /** Índice del segmento (de `centerline[segment]` al punto siguiente). */
+  segment: number;
 }

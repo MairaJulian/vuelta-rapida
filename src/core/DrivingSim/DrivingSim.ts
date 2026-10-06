@@ -3,6 +3,8 @@ import type { CarState, DrivingConfig, DrivingInput } from '@/core/DrivingModel'
 import { consumeFrameTime, getStepAlpha } from '@/core/FixedStep';
 import type { FixedStepConfig } from '@/core/FixedStep';
 import { lerp, lerpAngle } from '@/core/MathUtils';
+import type { TrackData } from '@/core/Track';
+import { constrainToTrack } from '@/core/TrackBounds';
 
 import type { DrivingSimState } from './DrivingSim.types';
 
@@ -15,12 +17,14 @@ export function createDrivingSim(car: CarState): DrivingSimState {
 /**
  * Avanza la simulación con el tiempo de un cuadro. Ejecuta tantos pasos fijos
  * como correspondan; la entrada se mantiene durante todos los pasos del cuadro.
+ * Después de cada paso, el auto se mantiene dentro de la pista.
  */
 export function advanceDrivingSim(
   sim: DrivingSimState,
   frameMs: number,
   input: DrivingInput,
   drivingConfig: DrivingConfig,
+  track: TrackData,
   stepConfig: FixedStepConfig,
 ): DrivingSimState {
   'worklet';
@@ -30,7 +34,7 @@ export function advanceDrivingSim(
   let previousCar = sim.previousCar;
   for (let i = 0; i < steps; i += 1) {
     previousCar = car;
-    car = stepCar(car, input, drivingConfig, dt);
+    car = constrainToTrack(stepCar(car, input, drivingConfig, dt), track, drivingConfig, dt);
   }
   return { car, previousCar, tick: sim.tick + steps, accumulatorMs };
 }
@@ -45,6 +49,7 @@ export function interpolateCar(previous: CarState, current: CarState, alpha: num
     vx: lerp(previous.vx, current.vx, alpha),
     vz: lerp(previous.vz, current.vz, alpha),
     steer: lerp(previous.steer, current.steer, alpha),
+    reverseTimer: lerp(previous.reverseTimer, current.reverseTimer, alpha),
   };
 }
 
