@@ -5,10 +5,13 @@ import { useWindowDimensions, View } from 'react-native';
 import type { DevPanel as DevPanelComponent } from '@/components/DevPanel';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
 import { DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
+import { DEFAULT_TILT_CONFIG, withTiltSteering } from '@/core/TiltSteering';
 import { DEFAULT_TRACK } from '@/core/Track';
 import { useDrivingLoop } from '@/hooks/useDrivingLoop';
+import { useTiltOutput } from '@/hooks/useTiltSteering';
 import { ButtonControls } from '@/input/ButtonControls';
 import { useDrivingInput } from '@/input/InputControls';
+import { TiltControls } from '@/input/TiltControls';
 import { DriveCanvas } from '@/render/DriveCanvas';
 
 import { styles } from './DriveScreen.styles';
@@ -22,22 +25,32 @@ const DevPanel: typeof DevPanelComponent | null = __DEV__
   : null;
 
 /**
- * Pantalla de manejo libre: la pista, el auto, la cámara y los botones,
- * más el panel de ajuste en desarrollo. Compone piezas; no calcula nada.
+ * Pantalla de manejo libre: la pista, el auto, la cámara y el modo de control
+ * (botones o inclinación), más el panel de ajuste en desarrollo. Compone piezas;
+ * no calcula nada.
  */
-export function DriveScreen(_props: DriveScreenProps) {
+export function DriveScreen({ controlMode = 'buttons' }: DriveScreenProps) {
   useKeepAwake();
   const { width, height } = useWindowDimensions();
   const viewport = useMemo(() => ({ width, height }), [width, height]);
   const [drivingConfig, setDrivingConfig] = useState(DEFAULT_DRIVING_CONFIG);
   const [cameraConfig, setCameraConfig] = useState(DEFAULT_CAMERA_CONFIG);
   const [track, setTrack] = useState(DEFAULT_TRACK);
+  const [tiltConfig] = useState(DEFAULT_TILT_CONFIG);
   const input = useDrivingInput();
+  const tiltOutput = useTiltOutput();
+
+  // Con inclinación la señal ya llega continua y filtrada: la rampa del modelo se acorta.
+  const activeDrivingConfig = useMemo(
+    () => (controlMode === 'tilt' ? withTiltSteering(drivingConfig, tiltConfig) : drivingConfig),
+    [controlMode, drivingConfig, tiltConfig],
+  );
+
   const loop = useDrivingLoop({
     input,
     track,
     viewport,
-    drivingConfig,
+    drivingConfig: activeDrivingConfig,
     cameraConfig,
   });
 
@@ -48,7 +61,11 @@ export function DriveScreen(_props: DriveScreenProps) {
         cameraTransform={loop.cameraTransform}
         carTransform={loop.carTransform}
       />
-      <ButtonControls input={input} />
+      {controlMode === 'tilt' ? (
+        <TiltControls input={input} config={tiltConfig} output={tiltOutput} />
+      ) : (
+        <ButtonControls input={input} />
+      )}
       {DevPanel ? (
         <DevPanel
           drivingConfig={drivingConfig}

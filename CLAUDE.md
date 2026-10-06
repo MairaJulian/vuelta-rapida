@@ -20,8 +20,8 @@ Juego de carreras de monoplazas con vista cenital para Android. Dos fines:
 - Expo con dev builds (`expo prebuild`), TypeScript estricto.
 - React Native Skia para el renderizado 2D.
 - Reanimated para el loop de juego.
-- expo-sensors para la inclinación.
-- Solo Android. Orientación horizontal bloqueada.
+- Sensor de gravedad de Reanimated (`useAnimatedSensor`) para la inclinación: escribe en el hilo de UI. expo-sensors (acelerómetro) solo como respaldo en celulares sin sensor de gravedad.
+- Solo Android. Orientación horizontal bloqueada, en las dos orientaciones horizontales (`sensorLandscape`, con expo-screen-orientation).
 
 ## Futuro
 
@@ -42,6 +42,8 @@ Juego de carreras de monoplazas con vista cenital para Android. Dos fines:
 Capa de entrada abstraída con dos implementaciones intercambiables. El jugador elige el modo. Aceleración automática en ambos.
 
 - **Inclinación**: control por posición. El ángulo del celular respecto de la gravedad es el ángulo de dirección. Incluye calibración, zona muerta, suavizado, sensibilidad ajustable y corrección según la orientación horizontal.
+  - La corrección por orientación se hace una sola vez, en `core/TiltSteering`: el sensor se registra con `adjustToInterfaceOrientation: false`.
+  - En el menú de pausa del juego final, "Recalibrar" tiene que abrir la pantalla de calibración completa. El botón "Recalibrar" del panel de desarrollo solo toma la posición del momento.
 - **Botones en pantalla**.
 
 ## Marcas

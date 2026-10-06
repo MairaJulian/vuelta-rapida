@@ -1,13 +1,12 @@
-import * as Haptics from 'expo-haptics';
 import { useEffect, useMemo } from 'react';
 import { Text, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import type { DrivingInput } from '@/core/DrivingModel';
-import { NEUTRAL_INPUT } from '@/input/InputControls';
+import { createHoldGesture, NEUTRAL_INPUT, vibrateOnBrake } from '@/input/InputControls';
 
 import { COLORS, OFFSETS, styles } from './ButtonControls.styles';
 import type { ButtonControlsProps, ControlButton, PressedButtons } from './ButtonControls.types';
@@ -21,26 +20,6 @@ export function buttonsToInput(pressed: PressedButtons): DrivingInput {
     steer: (pressed.right ? 1 : 0) - (pressed.left ? 1 : 0),
     brake: pressed.brake ? 1 : 0,
   };
-}
-
-function vibrateOnBrake() {
-  // Algunos equipos no tienen motor de vibración: no es un error.
-  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-}
-
-/** Gesto de "mantener presionado": empieza al apoyar el dedo y termina al levantarlo. */
-function createHoldGesture(testId: string, onChange: (isDown: boolean) => void) {
-  return Gesture.Pan()
-    .minDistance(0)
-    .onBegin(() => {
-      'worklet';
-      onChange(true);
-    })
-    .onFinalize(() => {
-      'worklet';
-      onChange(false);
-    })
-    .withTestId(testId);
 }
 
 /**

@@ -1,2 +1,6 @@
-/** La pantalla de manejo no recibe props: usa el circuito y la configuración por defecto. */
-export type DriveScreenProps = Record<string, never>;
+import type { InputMode } from '@/input/InputControls';
+
+export interface DriveScreenProps {
+  /** Modo de control: botones en pantalla o inclinación del celular. Por defecto, botones. */
+  controlMode?: InputMode;
+}
