@@ -7,12 +7,16 @@ import type { ControlMode, PlayerPreferences, StartStep } from './PlayerPreferen
 
 export const CONTROL_MODES: readonly ControlMode[] = ['tilt', 'buttons'];
 
-/** Sin elegir ni calibrar, con la sensibilidad del medio y la zona muerta inicial (5°). */
+/**
+ * Sin elegir ni calibrar, con la sensibilidad del medio, la zona muerta inicial (5°)
+ * y sin récords.
+ */
 export const DEFAULT_PLAYER_PREFERENCES: PlayerPreferences = Object.freeze({
   controlMode: null,
   tiltNeutralAngle: null,
   tiltSensitivity: 5,
   tiltDeadZone: DEFAULT_TILT_CONFIG.deadZone,
+  bestLapsMs: Object.freeze({}),
 });
 
 const MIN_SENSITIVITY = 1;
@@ -43,6 +47,21 @@ function isControlMode(value: unknown): value is ControlMode {
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
+const isLapTime = (value: unknown): value is number => isFiniteNumber(value) && value > 0;
+
+/** Récords guardados: solo los tiempos positivos y finitos; el resto se descarta. */
+function parseBestLaps(value: unknown): Record<string, number> {
+  const records: Record<string, number> = {};
+  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    for (const [circuitId, ms] of Object.entries(value)) {
+      if (isLapTime(ms)) {
+        records[circuitId] = ms;
+      }
+    }
+  }
+  return records;
+}
+
 /**
  * Lee las preferencias guardadas. Tolera texto vacío, JSON roto y campos de más o
  * con valores inválidos: cada campo que no sirve vuelve a su valor por defecto,
@@ -56,7 +75,7 @@ export function parsePlayerPreferences(raw: string | null): PlayerPreferences {
     data = null;
   }
   if (typeof data !== 'object' || data === null) {
-    return { ...DEFAULT_PLAYER_PREFERENCES };
+    return { ...DEFAULT_PLAYER_PREFERENCES, bestLapsMs: {} };
   }
   const fields = data as Record<string, unknown>;
   return {
@@ -68,6 +87,7 @@ export function parsePlayerPreferences(raw: string | null): PlayerPreferences {
     tiltDeadZone: isFiniteNumber(fields.tiltDeadZone)
       ? clamp(fields.tiltDeadZone, MIN_DEAD_ZONE, MAX_DEAD_ZONE)
       : DEFAULT_PLAYER_PREFERENCES.tiltDeadZone,
+    bestLapsMs: parseBestLaps(fields.bestLapsMs),
   };
 }
 
@@ -78,7 +98,24 @@ export function serializePlayerPreferences(preferences: PlayerPreferences): stri
     tiltNeutralAngle: preferences.tiltNeutralAngle,
     tiltSensitivity: preferences.tiltSensitivity,
     tiltDeadZone: preferences.tiltDeadZone,
+    bestLapsMs: preferences.bestLapsMs,
   });
+}
+
+/**
+ * Récords con una vuelta nueva: si `ms` mejora el récord del circuito (o es el
+ * primero), devuelve los récords actualizados; si no, `null` (no hay nada que guardar).
+ */
+export function withBestLap(
+  bestLapsMs: Readonly<Record<string, number>>,
+  circuitId: string,
+  ms: number,
+): Record<string, number> | null {
+  const current = bestLapsMs[circuitId];
+  if (!isLapTime(ms) || (current !== undefined && current <= ms)) {
+    return null;
+  }
+  return { ...bestLapsMs, [circuitId]: ms };
 }
 
 /**
