@@ -29,17 +29,21 @@ const OPTIONS: { mode: ControlMode; title: string; description: string; chip: st
 ];
 
 /**
- * Elección de control (pantalla 02 del handoff): inclinación o botones. Guarda la
- * elección y sigue a la calibración si eligió inclinación y nunca calibró; si no,
- * directo a la pista.
+ * Elección de control (pantalla 02 del handoff): inclinación o botones. La primera
+ * vez no hay ninguna marcada y Seguir espera la elección; después aparece la guardada.
+ * Guarda la elección y sigue a la calibración si eligió inclinación y nunca calibró;
+ * si no, directo a la pista.
  */
 export function ControlChoiceScreen(_props: ControlChoiceScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { preferences, updatePreferences } = usePlayerPreferences();
-  const [selected, setSelected] = useState<ControlMode>(preferences.controlMode ?? 'tilt');
+  const [selected, setSelected] = useState<ControlMode | null>(preferences.controlMode);
 
   const next = () => {
+    if (selected === null) {
+      return;
+    }
     updatePreferences({ controlMode: selected });
     if (selected === 'tilt' && preferences.tiltNeutralAngle === null) {
       router.push('/calibracion');
@@ -65,7 +69,7 @@ export function ControlChoiceScreen(_props: ControlChoiceScreenProps) {
         title="¿Cómo querés manejar?"
         subtitle="Paso 1 de 2"
         onBack={router.canGoBack() ? router.back : undefined}
-        action={<PrimaryButton label="Seguir" onPress={next} />}
+        action={<PrimaryButton label="Seguir" onPress={next} disabled={selected === null} />}
       />
       <View style={styles.cards} accessibilityRole="radiogroup">
         {OPTIONS.map((option) => (
