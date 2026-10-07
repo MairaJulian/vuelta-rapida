@@ -16,6 +16,8 @@ export interface PlayerPreferences {
    * Independiente de la sensibilidad.
    */
   tiltDeadZone: Radians;
+  /** Mejor vuelta de cada circuito, en milisegundos, por `id` del circuito. */
+  bestLapsMs: Readonly<Record<string, number>>;
 }
 
 /** Primer paso al abrir el juego, según lo que ya está guardado. */

@@ -44,6 +44,7 @@ describe('usePlayerPreferences', () => {
       tiltNeutralAngle: 0.1,
       tiltSensitivity: 6,
       tiltDeadZone: 0.05,
+      bestLapsMs: {},
     });
   });
 

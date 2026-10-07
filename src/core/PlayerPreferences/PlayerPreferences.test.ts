@@ -9,6 +9,7 @@ import {
   isControlModeAvailable,
   parsePlayerPreferences,
   serializePlayerPreferences,
+  withBestLap,
   withTiltPreferences,
 } from './PlayerPreferences';
 import type { PlayerPreferences } from './PlayerPreferences.types';
@@ -20,6 +21,7 @@ const saved: PlayerPreferences = {
   tiltNeutralAngle: 0.12,
   tiltSensitivity: 7,
   tiltDeadZone: 3 * DEG,
+  bestLapsMs: { 'autodromo-del-lago': 72480.5 },
 };
 
 describe('parsePlayerPreferences', () => {
@@ -44,6 +46,7 @@ describe('parsePlayerPreferences', () => {
         tiltNeutralAngle: 'x',
         tiltSensitivity: 8,
         tiltDeadZone: 'grande',
+        bestLapsMs: 'rapido',
         extra: 1,
       }),
     );
@@ -52,6 +55,7 @@ describe('parsePlayerPreferences', () => {
       tiltNeutralAngle: null,
       tiltSensitivity: 8,
       tiltDeadZone: DEFAULT_PLAYER_PREFERENCES.tiltDeadZone,
+      bestLapsMs: {},
     });
   });
 
@@ -76,10 +80,25 @@ describe('parsePlayerPreferences', () => {
     );
   });
 
+  it('de los récords guardados, descarta los tiempos que no son positivos y finitos', () => {
+    const parsed = parsePlayerPreferences(
+      JSON.stringify({ bestLapsMs: { lago: 70000, roto: -5, cero: 0, texto: '1:10', nulo: null } }),
+    );
+    expect(parsed.bestLapsMs).toEqual({ lago: 70000 });
+    expect(parsePlayerPreferences(JSON.stringify({ bestLapsMs: [70000] })).bestLapsMs).toEqual({});
+  });
+
+  it('las preferencias de antes de los récords arrancan sin récords', () => {
+    const old = JSON.stringify({ controlMode: 'buttons', tiltSensitivity: 6 });
+    expect(parsePlayerPreferences(old).bestLapsMs).toEqual({});
+  });
+
   it('devuelve un objeto nuevo, no los valores por defecto congelados', () => {
     const parsed = parsePlayerPreferences(null);
     expect(parsed).not.toBe(DEFAULT_PLAYER_PREFERENCES);
     expect(Object.isFrozen(parsed)).toBe(false);
+    expect(parsed.bestLapsMs).not.toBe(DEFAULT_PLAYER_PREFERENCES.bestLapsMs);
+    expect(Object.isFrozen(parsed.bestLapsMs)).toBe(false);
   });
 });
 
@@ -87,6 +106,30 @@ describe('serializePlayerPreferences', () => {
   it('guarda solo los campos conocidos', () => {
     const withExtra = { ...saved, extra: true } as PlayerPreferences;
     expect(JSON.parse(serializePlayerPreferences(withExtra))).toEqual(saved);
+  });
+});
+
+describe('withBestLap', () => {
+  it('guarda la primera vuelta de un circuito', () => {
+    expect(withBestLap({}, 'lago', 75000)).toEqual({ lago: 75000 });
+  });
+
+  it('reemplaza el récord solo si la vuelta es más rápida', () => {
+    const records = { lago: 72000, otro: 80000 };
+    expect(withBestLap(records, 'lago', 71999)).toEqual({ lago: 71999, otro: 80000 });
+    expect(withBestLap(records, 'lago', 72000)).toBeNull();
+    expect(withBestLap(records, 'lago', 90000)).toBeNull();
+  });
+
+  it('no modifica los récords que recibe', () => {
+    const records = Object.freeze({ lago: 72000 });
+    expect(withBestLap(records, 'lago', 70000)).not.toBe(records);
+    expect(records).toEqual({ lago: 72000 });
+  });
+
+  it('ignora tiempos inválidos', () => {
+    expect(withBestLap({}, 'lago', 0)).toBeNull();
+    expect(withBestLap({}, 'lago', Number.NaN)).toBeNull();
   });
 });
 

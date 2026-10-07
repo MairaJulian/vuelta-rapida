@@ -1,6 +1,6 @@
 import type { CarState } from '@/core/DrivingModel';
 import { getNearestOnCenterline } from '@/core/Track';
-import type { TrackData } from '@/core/Track';
+import type { CenterlineHit, TrackData } from '@/core/Track';
 
 import type { TrackBoundsConfig } from './TrackBounds.types';
 
@@ -14,19 +14,21 @@ export function getTrackLimit(track: TrackData, config: TrackBoundsConfig): numb
 }
 
 /**
- * Mantiene el auto dentro de la pista. Si pasó el borde, lo devuelve justo sobre
- * él, anula la parte de la velocidad que va hacia afuera (no rebota) y le resta
- * velocidad por el roce mientras lo toca. Lo que queda es deslizarse a lo largo
- * del borde. Pura y determinista; si el auto está dentro, lo devuelve tal cual.
+ * Como `constrainToTrack`, con el punto más cercano del trazado ya calculado. La
+ * simulación lo busca una vez por paso y lo usa también para el progreso: el auto
+ * se corre sobre la normal de ese punto, así que el punto más cercano no cambia.
+ *
+ * Va antes que `constrainToTrack`: el plugin de worklets convierte las funciones
+ * en constantes, así que una función tiene que estar declarada antes de usarse.
  */
-export function constrainToTrack(
+export function constrainToHit(
   car: CarState,
+  nearest: CenterlineHit,
   track: TrackData,
   config: TrackBoundsConfig,
   dt: number,
 ): CarState {
   'worklet';
-  const nearest = getNearestOnCenterline(track, car.x, car.z);
   const limit = getTrackLimit(track, config);
   if (nearest.distance <= limit) {
     return car;
@@ -52,4 +54,20 @@ export function constrainToTrack(
     vx: vx * friction,
     vz: vz * friction,
   };
+}
+
+/**
+ * Mantiene el auto dentro de la pista. Si pasó el borde, lo devuelve justo sobre
+ * él, anula la parte de la velocidad que va hacia afuera (no rebota) y le resta
+ * velocidad por el roce mientras lo toca. Lo que queda es deslizarse a lo largo
+ * del borde. Pura y determinista; si el auto está dentro, lo devuelve tal cual.
+ */
+export function constrainToTrack(
+  car: CarState,
+  track: TrackData,
+  config: TrackBoundsConfig,
+  dt: number,
+): CarState {
+  'worklet';
+  return constrainToHit(car, getNearestOnCenterline(track, car.x, car.z), track, config, dt);
 }

@@ -1,15 +1,16 @@
 # PlayerPreferences
 
-Preferencias del jugador que se guardan entre partidas: modo de control, calibración de la inclinación, sensibilidad y zona muerta. Aquí solo están los tipos, la validación y las reglas; el guardado lo hace el hook `usePlayerPreferences`. TypeScript puro.
+Preferencias del jugador que se guardan entre partidas: modo de control, calibración de la inclinación, sensibilidad, zona muerta y récord de cada circuito. Aquí solo están los tipos, la validación y las reglas; el guardado lo hace el hook `usePlayerPreferences`. TypeScript puro.
 
 ## Tipos
 
 - `ControlMode`: `'tilt' | 'buttons'`.
-- `PlayerPreferences`: `{ controlMode, tiltNeutralAngle, tiltSensitivity, tiltDeadZone }`.
+- `PlayerPreferences`: `{ controlMode, tiltNeutralAngle, tiltSensitivity, tiltDeadZone, bestLapsMs }`.
   - `controlMode`: `null` hasta que el jugador elige.
   - `tiltNeutralAngle`: en radianes; `null` sin calibrar.
   - `tiltSensitivity`: de 1 a 10.
   - `tiltDeadZone`: en radianes, de 1° a 9°. Inicial, 5°.
+  - `bestLapsMs`: mejor vuelta de cada circuito, en milisegundos, por `id` del circuito. Inicial, vacío.
 - `StartStep`: `'choose-control' | 'calibrate' | 'drive'`.
 
 ## API
@@ -20,6 +21,7 @@ Preferencias del jugador que se guardan entre partidas: modo de control, calibra
 | `serializePlayerPreferences(preferences)` | Texto para guardar, solo con los campos conocidos. |
 | `getStartStep(preferences, tiltEnabled = true)` | Primer paso al abrir el juego. Con la inclinación desactivada, siempre `'drive'`. |
 | `isControlModeAvailable(mode, tiltEnabled)` | Si un modo guardado se puede usar al abrir el juego: con la inclinación desactivada, `'tilt'` no. |
+| `withBestLap(bestLapsMs, circuitId, ms)` | Récords con una vuelta nueva si mejora el del circuito (o es el primero); `null` si no hay nada que guardar. |
 | `withTiltPreferences(config, preferences)` | Aplica la calibración, la sensibilidad y la zona muerta guardadas a un `TiltConfig`. |
 | `deadZoneFromLevel(level)`, `deadZoneToLevel(deadZone)` | Escala del jugador para la zona muerta: niveles 1 a 5 ↔ 1°, 3°, 5°, 7° y 9°. |
 | `DEAD_ZONE_LEVELS` | Cantidad de niveles de la zona muerta (5). |
@@ -42,4 +44,5 @@ if (getStartStep(preferences) === 'calibrate') {
 - **El flujo de inicio es una regla pura** (`getStartStep`), testeable sin navegación.
 - **El interruptor de la inclinación llega como parámetro** (`tiltEnabled`), no se importa aquí: lo lee `StartScreen` de `FEATURE_FLAGS.tiltControl`. `getStartStep` lo tiene activado por defecto, que es la regla completa con los dos modos.
 - **Solo lo que elige el jugador:** el filtro y la rampa son ajustes de desarrollo y no se guardan.
+- **Récords en milisegundos, por circuito:** se guarda el tiempo y no los pasos de simulación, para que un récord siga valiendo si cambia la frecuencia de la física. La clave es el `id` estable del circuito. Un tiempo inválido (no positivo o no finito) se descarta al leer, sin perder los demás.
 - **Zona muerta en grados, escala en niveles** (cambio tras la primera prueba con usuarios): se guarda el ángulo, porque es lo que usa el cálculo y lo que ajusta el panel de desarrollo con más detalle. El jugador la ve como 5 niveles parejos, de "Chica" a "Grande". Las preferencias guardadas antes de este cambio arrancan con la zona muerta inicial.

@@ -1,6 +1,7 @@
 import type { Transforms3d } from '@shopify/react-native-skia';
 import { useCallback, useEffect } from 'react';
 import { useDerivedValue, useFrameCallback, useSharedValue } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { createCameraState, getCameraView, stepCamera } from '@/core/Camera';
 import type { CameraState } from '@/core/Camera';
@@ -11,18 +12,18 @@ import type { DrivingSimState } from '@/core/DrivingSim';
 import { DEFAULT_FIXED_STEP_CONFIG } from '@/core/FixedStep';
 import { smoothFps } from '@/core/FpsMeter';
 import { getStartPose } from '@/core/Track';
-import type { TrackData } from '@/core/Track';
+import type { Circuit } from '@/core/Track';
 
 import type { UseDrivingLoopParams, UseDrivingLoopResult } from './useDrivingLoop.types';
 
-function createStartSim(track: TrackData): DrivingSimState {
+function createStartSim(track: Circuit): DrivingSimState {
   const start = getStartPose(track);
   return createDrivingSim(createCarState(start.x, start.z, start.heading));
 }
 
 /**
  * Corre la simulación de manejo en el hilo de UI, un paso fijo a la vez, y expone
- * valores compartidos para que el render los lea. No dibuja nada.
+ * valores compartidos para que el render y el HUD los lean. No dibuja nada.
  */
 export function useDrivingLoop({
   input,
@@ -30,6 +31,7 @@ export function useDrivingLoop({
   viewport,
   drivingConfig,
   cameraConfig,
+  onBestLap,
 }: UseDrivingLoopParams): UseDrivingLoopResult {
   const initialSim = createStartSim(track);
   const sim = useSharedValue<DrivingSimState>(initialSim);
@@ -49,8 +51,9 @@ export function useDrivingLoop({
   useFrameCallback((frame) => {
     'worklet';
     const frameMs = frame.timeSincePreviousFrame ?? 0;
+    const previous = sim.get();
     const next = advanceDrivingSim(
-      sim.get(),
+      previous,
       frameMs,
       input.get(),
       drivingConfigValue.get(),
@@ -58,6 +61,10 @@ export function useDrivingLoop({
       DEFAULT_FIXED_STEP_CONFIG,
     );
     sim.set(next);
+    const best = next.laps.bestLapTicks;
+    if (onBestLap && best !== null && best !== previous.laps.bestLapTicks) {
+      scheduleOnRN(onBestLap, best);
+    }
     const drawn = getRenderCar(next, DEFAULT_FIXED_STEP_CONFIG);
     car.set(drawn);
     // La cámara es presentación: se suaviza con el tiempo del cuadro, fuera de la simulación.
@@ -92,6 +99,8 @@ export function useDrivingLoop({
     ];
   });
 
+  const laps = useDerivedValue(() => sim.get().laps);
+
   const carTransform = useDerivedValue<Transforms3d>(() => {
     const current = car.get();
     return [{ translateX: current.x }, { translateY: current.z }, { rotate: current.heading }];
@@ -104,5 +113,5 @@ export function useDrivingLoop({
     camera.set(createCameraState());
   }, [camera, car, sim, track]);
 
-  return { car, fps, cameraTransform, carTransform, reset };
+  return { car, fps, cameraTransform, carTransform, laps, reset };
 }

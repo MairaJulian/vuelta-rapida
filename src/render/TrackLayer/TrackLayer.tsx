@@ -3,13 +3,16 @@ import {
   Fill,
   Group,
   LinearGradient,
+  matchFont,
   Path,
   Rect,
+  RoundedRect,
+  Text,
   vec,
 } from '@shopify/react-native-skia';
 import { memo, useMemo } from 'react';
 
-import { getCurveSections, getFinishLine } from '@/core/Track';
+import { getCurveSections, getFinishLine, getFinishSign } from '@/core/Track';
 import type { TrackPoint } from '@/core/Track';
 
 import {
@@ -17,6 +20,7 @@ import {
   CURB_DASH,
   CURB_RATIO,
   EDGE_RATIO,
+  FINISH_SIGN,
   FINISH_SQUARE,
   GRASS_STRIPE_PERIOD,
 } from './TrackLayer.styles';
@@ -27,10 +31,20 @@ function openPath(points: TrackPoint[]): string {
   return points.map((point, i) => `${i === 0 ? 'M' : 'L'} ${point.x} ${point.z}`).join(' ');
 }
 
+/** Fuente del cartel "META": la del sistema, en itálica negrita (el handoff usa Archivo). */
+const signFont = () =>
+  matchFont({
+    fontFamily: 'sans-serif',
+    fontSize: FINISH_SIGN.fontSize,
+    fontStyle: 'italic',
+    fontWeight: 'bold',
+  });
+
 /**
  * Dibuja el circuito en coordenadas del mundo (metros) a partir de sus datos:
- * césped con franjas, pianos en las curvas, borde blanco, asfalto y línea de meta
- * a cuadros. Es estático: la cámara lo mueve desde el grupo que lo contiene.
+ * césped con franjas, pianos en las curvas, borde blanco, asfalto, línea de meta
+ * a cuadros y el cartel "META". Es estático: la cámara lo mueve desde el grupo que
+ * lo contiene.
  */
 export const TrackLayer = memo(function TrackLayer({ track }: TrackLayerProps) {
   const centerline = useMemo(() => `${openPath(track.centerline)} Z`, [track.centerline]);
@@ -43,18 +57,26 @@ export const TrackLayer = memo(function TrackLayer({ track }: TrackLayerProps) {
     [track],
   );
   const finish = getFinishLine(track);
+  const sign = getFinishSign(track, FINISH_SIGN.length, FINISH_SIGN.depth, FINISH_SIGN.gap);
+  const font = useMemo(signFont, []);
+  const textWidth = font.measureText(FINISH_SIGN.text).width;
 
-  // Cuadros en coordenadas locales de la meta: x a lo ancho de la pista, y en el sentido de la marcha.
+  // Cuadros en coordenadas locales de la meta: x a lo ancho de la pista, y en el sentido de la
+  // marcha. Un número entero de cuadros de cerca de FINISH_SQUARE en cada sentido.
   const finishSquares = useMemo(() => {
-    const columns = Math.round(finish.length / FINISH_SQUARE);
-    const rows = Math.round(finish.thickness / FINISH_SQUARE);
-    const squares: { x: number; y: number; key: string }[] = [];
+    const columns = Math.max(1, Math.round(finish.length / FINISH_SQUARE));
+    const rows = Math.max(1, Math.round(finish.thickness / FINISH_SQUARE));
+    const width = finish.length / columns;
+    const height = finish.thickness / rows;
+    const squares: { x: number; y: number; width: number; height: number; key: string }[] = [];
     for (let column = 0; column < columns; column += 1) {
       for (let row = 0; row < rows; row += 1) {
         if ((column + row) % 2 === 1) {
           squares.push({
-            x: -finish.length / 2 + column * FINISH_SQUARE,
-            y: -finish.thickness / 2 + row * FINISH_SQUARE,
+            x: -finish.length / 2 + column * width,
+            y: -finish.thickness / 2 + row * height,
+            width,
+            height,
             key: `${column}-${row}`,
           });
         }
@@ -130,11 +152,32 @@ export const TrackLayer = memo(function TrackLayer({ track }: TrackLayerProps) {
             key={square.key}
             x={square.x}
             y={square.y}
-            width={FINISH_SQUARE}
-            height={FINISH_SQUARE}
+            width={square.width}
+            height={square.height}
             color={COLORS.finishDark}
           />
         ))}
+      </Group>
+
+      {/* Cartel al costado, del lado de afuera del circuito, girado para leerse derecho. */}
+      <Group
+        transform={[{ translateX: sign.x }, { translateY: sign.z }, { rotate: sign.rotation }]}
+      >
+        <RoundedRect
+          x={-FINISH_SIGN.length / 2}
+          y={-FINISH_SIGN.depth / 2}
+          width={FINISH_SIGN.length}
+          height={FINISH_SIGN.depth}
+          r={FINISH_SIGN.radius}
+          color={COLORS.sign}
+        />
+        <Text
+          x={-textWidth / 2}
+          y={FINISH_SIGN.fontSize * 0.36}
+          text={FINISH_SIGN.text}
+          font={font}
+          color={COLORS.signText}
+        />
       </Group>
     </Group>
   );

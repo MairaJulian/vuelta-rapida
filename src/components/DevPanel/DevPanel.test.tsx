@@ -3,12 +3,13 @@ import type { SharedValue } from 'react-native-reanimated';
 import { getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
+import { DEFAULT_CIRCUIT } from '@/core/Circuits';
 import { createCarState, DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
 import type { CarState } from '@/core/DrivingModel';
 import type { ControlMode } from '@/core/PlayerPreferences';
 import { createTiltState, DEFAULT_TILT_CONFIG } from '@/core/TiltSteering';
 import type { TiltSteeringResult } from '@/core/TiltSteering';
-import { DEFAULT_TRACK } from '@/core/Track';
+import type { TrackData } from '@/core/Track';
 
 import {
   CAMERA_SLIDERS,
@@ -39,7 +40,7 @@ function tiltResult(relativeAngle: number, steer: number): TiltSteeringResult {
 }
 
 async function renderPanel({
-  track = DEFAULT_TRACK,
+  track = DEFAULT_CIRCUIT as TrackData,
   controlMode = 'buttons' as ControlMode,
   tiltConfig = DEFAULT_TILT_CONFIG,
 } = {}) {
@@ -138,8 +139,8 @@ describe('sliders', () => {
       expect(DEFAULT_CAMERA_CONFIG[spec.key]).toBeLessThanOrEqual(spec.max);
     }
     for (const spec of TRACK_SLIDERS) {
-      expect(DEFAULT_TRACK[spec.key]).toBeGreaterThanOrEqual(spec.min);
-      expect(DEFAULT_TRACK[spec.key]).toBeLessThanOrEqual(spec.max);
+      expect(DEFAULT_CIRCUIT[spec.key]).toBeGreaterThanOrEqual(spec.min);
+      expect(DEFAULT_CIRCUIT[spec.key]).toBeLessThanOrEqual(spec.max);
     }
     for (const spec of TILT_SLIDERS) {
       expect(DEFAULT_TILT_CONFIG[spec.key]).toBeGreaterThanOrEqual(spec.min);
@@ -231,7 +232,7 @@ describe('DevPanel', () => {
     const props = await renderPanel();
     await openPanel();
     await slide('width', 1);
-    expect(props.onTrackChange).toHaveBeenLastCalledWith({ ...DEFAULT_TRACK, width: 30 });
+    expect(props.onTrackChange).toHaveBeenLastCalledWith({ ...DEFAULT_CIRCUIT, width: 20 });
   });
 
   it('Restablecer vuelve a los valores por defecto, sin cambiar el trazado', async () => {
@@ -251,7 +252,7 @@ describe('DevPanel', () => {
     expect(props.onCameraConfigChange).toHaveBeenLastCalledWith(DEFAULT_CAMERA_CONFIG);
     expect(props.onTrackChange).toHaveBeenLastCalledWith({
       ...custom,
-      width: DEFAULT_TRACK.width,
+      width: DEFAULT_CIRCUIT.width,
     });
     // Los ajustes de la inclinación vuelven a los valores por defecto; la calibración, no.
     expect(props.onTiltConfigChange).toHaveBeenLastCalledWith({

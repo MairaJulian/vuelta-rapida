@@ -66,7 +66,7 @@ const DevPanel = __DEV__ ? require('@/components/DevPanel').DevPanel : null;
   - Los tiempos de giro y de vuelta al centro (con botones).
   - La pausa y la velocidad de la marcha atrás.
   - La pérdida contra el borde.
-- **Pista:** ancho, de 8 a 30 m. Con 30 m las curvas del óvalo (radio de 50 m) todavía no se cierran por dentro.
+- **Pista:** ancho, de 8 a 20 m. Con más de 20 m, las dos ramas de la horquilla del Autódromo del Lago (a 40 m de centro a centro) dejarían de estar separadas por pasto.
 - **Cámara:**
   - Interruptor "Cámara gira con el auto" (`rotateWithCar`).
   - Zoom, alejar con la velocidad, y la intensidad, el tope y el suavizado de la anticipación.
@@ -75,6 +75,7 @@ const DevPanel = __DEV__ ? require('@/components/DevPanel').DevPanel : null;
 
 ## Decisiones de diseño
 
+- **Debajo del HUD:** el botón "Ajustes" está a 80 dp del borde de arriba, debajo de la píldora "Vuelta" del HUD de carrera, para no taparla.
 - **Fuera de producción:** la pantalla lo carga con `require` detrás de `__DEV__`. En un build de release Metro reemplaza `__DEV__` por `false`, pliega la condición y descarta el `require` antes de resolver dependencias, así que el módulo no entra en el bundle. Se verifica generando el bundle con `npx expo export` y buscando sus textos.
 - **Recalibrar en el momento:** el botón del panel no abre la pantalla 03, para poder probar calibraciones sin salir de la pista. En el juego final, "Recalibrar" del menú de pausa abrirá la calibración completa (anotado en `CLAUDE.md`).
 - **Dos rampas a la vista:** "Tiempo de giro" y "Tiempo de vuelta al centro" (Manejo) se aplican con botones. "Rampa de dirección (inclinación)" las reemplaza en modo inclinación.

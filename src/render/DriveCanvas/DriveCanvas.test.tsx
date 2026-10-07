@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react-native';
 
-import { DEFAULT_TRACK } from '@/core/Track';
+import { OVAL_TRACK } from '@/core/Track';
 
 import { DriveCanvas } from './DriveCanvas';
 import { COLORS } from './DriveCanvas.styles';
@@ -12,7 +12,7 @@ async function renderCanvas() {
   const carTransform = shared([{ translateX: 1 }]);
   const screen = await render(
     <DriveCanvas
-      track={DEFAULT_TRACK}
+      track={OVAL_TRACK}
       cameraTransform={cameraTransform}
       carTransform={carTransform}
     />,

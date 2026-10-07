@@ -4,12 +4,14 @@ import Storage from 'expo-sqlite/kv-store';
 import { getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import { useAnimatedSensor, useFrameCallback } from 'react-native-reanimated';
 
+import { DEFAULT_CIRCUIT } from '@/core/Circuits';
 import { MAX_DEAD_ZONE } from '@/core/TiltSteering';
 import {
   readPlayerPreferences,
   reloadPlayerPreferences,
   updatePlayerPreferences,
 } from '@/hooks/usePlayerPreferences';
+import { COLORS as TRACK_COLORS } from '@/render/TrackLayer/TrackLayer.styles';
 
 import { DriveScreen } from './DriveScreen';
 
@@ -139,5 +141,31 @@ describe('DriveScreen', () => {
     jest.mocked(useFrameCallback).mockClear();
     await render(<DriveScreen />);
     expect(useFrameCallback).toHaveBeenCalled();
+  });
+
+  it('muestra el HUD de vueltas con el récord guardado del circuito', async () => {
+    await act(() => updatePlayerPreferences({ bestLapsMs: { 'autodromo-del-lago': 72480 } }));
+    await render(<DriveScreen />);
+    expect(screen.getByTestId('lap-hud-lap')).toHaveTextContent('1');
+    expect(screen.getByTestId('lap-hud-time')).toHaveTextContent('0:00.000');
+    expect(screen.getByTestId('lap-hud-best')).toHaveTextContent('1:12.480');
+  });
+
+  it('el ancho de pista del panel cambia el circuito sin perder sus datos', async () => {
+    await render(<DriveScreen />);
+    await fireEvent.press(screen.getByLabelText('Abrir el panel de ajuste'));
+    await fireEvent(screen.getByTestId('slider-width-track'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 200, height: 48 } },
+    });
+    const handlers = getByGestureTestId('slider-width-gesture').handlers as {
+      onStart?: (event: { x: number }) => void;
+    };
+    await act(() => handlers.onStart?.({ x: 0 }));
+    // El asfalto se dibuja con el ancho nuevo, sobre el mismo trazado del circuito.
+    const [asphalt] = screen.container.queryAll(
+      (node) => node.type === 'Path' && node.props.color === TRACK_COLORS.asphalt,
+    );
+    expect(asphalt.props.strokeWidth).toBe(8);
+    expect(asphalt.props.path.match(/[ML] /g)).toHaveLength(DEFAULT_CIRCUIT.centerline.length);
   });
 });

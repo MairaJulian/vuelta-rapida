@@ -1,4 +1,5 @@
 import type { CarState } from '@/core/DrivingModel';
+import type { LapState } from '@/core/LapTimer';
 
 /** Estado completo de la simulación. Serializable: solo números y objetos planos. */
 export interface DrivingSimState {
@@ -10,4 +11,11 @@ export interface DrivingSimState {
   tick: number;
   /** Tiempo acumulado que todavía no completa un paso, en ms. */
   accumulatorMs: number;
+  /**
+   * Segmento del trazado más cercano al auto en el último paso; -1 antes del primero.
+   * La búsqueda del paso siguiente empieza ahí.
+   */
+  trackSegment: number;
+  /** Vueltas y tiempos, medidos en pasos de simulación. */
+  laps: LapState;
 }

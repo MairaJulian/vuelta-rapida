@@ -17,7 +17,8 @@ export const COLORS = {
 /** Distancia a los bordes; se suma a los insets del área segura. */
 export const OFFSETS = {
   left: 28,
-  top: 14,
+  /** Debajo de la píldora "Vuelta" del HUD (14 dp del borde + unos 56 de alto). */
+  top: 80,
   /** Deja libres los botones de dirección (76 dp + 18 de margen + aire). */
   bottomClearance: 112,
 } as const;

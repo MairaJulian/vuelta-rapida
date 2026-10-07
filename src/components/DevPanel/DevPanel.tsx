@@ -15,7 +15,7 @@ import type { CarState, DrivingConfig } from '@/core/DrivingModel';
 import type { ControlMode } from '@/core/PlayerPreferences';
 import { DEFAULT_TILT_CONFIG, MAX_DEAD_ZONE, MIN_DEAD_ZONE } from '@/core/TiltSteering';
 import type { TiltSteeringResult } from '@/core/TiltSteering';
-import { DEFAULT_TRACK } from '@/core/Track';
+import { DEFAULT_CIRCUIT } from '@/core/Circuits';
 import { formatSignedDegrees } from '@/render/CalibrationGauge';
 
 import { COLORS, OFFSETS, READING_FLEX, READINGS_INTERVAL_MS, styles } from './DevPanel.styles';
@@ -185,7 +185,7 @@ export const CAMERA_SLIDERS: SliderSpec<NumericCameraKey>[] = [
 
 /** Sliders de la pista. El ancho máximo deja las curvas del óvalo (radio 50 m) sin cerrarse. */
 export const TRACK_SLIDERS: SliderSpec<TrackSliderKey>[] = [
-  { key: 'width', label: 'Ancho de pista', min: 8, max: 30, step: 0.5, format: (v) => `${v} m` },
+  { key: 'width', label: 'Ancho de pista', min: 8, max: 20, step: 0.5, format: (v) => `${v} m` },
 ];
 
 /**
@@ -318,7 +318,7 @@ export function DevPanel({
   const restoreDefaults = () => {
     onDrivingConfigChange(DEFAULT_DRIVING_CONFIG);
     onCameraConfigChange(DEFAULT_CAMERA_CONFIG);
-    onTrackChange({ ...track, width: DEFAULT_TRACK.width });
+    onTrackChange({ ...track, width: DEFAULT_CIRCUIT.width });
     onTiltConfigChange({ ...DEFAULT_TILT_CONFIG, neutralAngle: tiltConfig.neutralAngle });
   };
 
