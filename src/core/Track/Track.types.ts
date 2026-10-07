@@ -58,4 +58,43 @@ export interface CenterlineHit {
   distance: number;
   /** Índice del segmento (de `centerline[segment]` al punto siguiente). */
   segment: number;
+  /** Parte recorrida del segmento, de 0 (en su primer punto) a 1 (en el siguiente). */
+  t: number;
+}
+
+/**
+ * Circuito listo para correr: el trazado más lo necesario para medir el progreso
+ * y las vueltas. Serializable. Se arma con `createCircuit` (o `buildCircuit` desde
+ * puntos de control).
+ */
+export interface Circuit extends TrackData {
+  /** Identificador estable: es la clave del récord guardado. */
+  id: string;
+  /** Nombre para mostrar. */
+  name: string;
+  /** Distancia desde la meta hasta cada punto del trazado, en metros. `distances[0]` es 0. */
+  distances: number[];
+  /** Largo de la vuelta por el trazado central, en metros. */
+  length: number;
+  /** Puntos de control intermedios: distancia desde la meta, en orden, dentro de la vuelta. */
+  checkpoints: number[];
+}
+
+/** Datos para armar un circuito a partir de un trazado ya hecho. */
+export interface CircuitSpec {
+  id: string;
+  name: string;
+  centerline: TrackPoint[];
+  width: number;
+  /** Puntos de control intermedios como fracción de la vuelta, en orden, entre 0 y 1. */
+  checkpointFractions: number[];
+}
+
+/** Ubicación del cartel "META": al costado de la pista, del lado de afuera del circuito. */
+export interface FinishSign {
+  /** Centro del cartel. */
+  x: number;
+  z: number;
+  /** Giro del cartel, en radianes, para que el texto se lea derecho con la cámara fija. */
+  rotation: Radians;
 }

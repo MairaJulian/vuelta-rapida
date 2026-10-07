@@ -1,12 +1,12 @@
 # DriveScreen
 
-Pantalla de manejo libre: el auto acelera solo por el óvalo y se maneja con botones o inclinando el celular. Frena y da marcha atrás, no puede salir de la pista y la cámara lo sigue con anticipación. Todavía sin vueltas ni tiempos.
+Pantalla de manejo: el auto acelera solo por el Autódromo del Lago y se maneja con botones (o, desde el panel de desarrollo, inclinando el celular). Frena y da marcha atrás, no puede salir de la pista y la cámara lo sigue con anticipación. Cuenta las vueltas y los tiempos, y guarda el récord del circuito.
 
 ## Props
 
-Ninguna. El modo de control, la calibración y la sensibilidad salen de las preferencias del jugador (`usePlayerPreferences`). Sin modo elegido, usa botones.
+Ninguna. El modo de control, la calibración, la sensibilidad y el récord salen de las preferencias del jugador (`usePlayerPreferences`). Sin modo elegido, usa botones.
 
-Usa `DEFAULT_TRACK`, arranca con `DEFAULT_DRIVING_CONFIG`, `DEFAULT_CAMERA_CONFIG` y `DEFAULT_TILT_CONFIG`, y toma el tamaño de `useWindowDimensions`.
+Corre en `DEFAULT_CIRCUIT` (`core/Circuits`), arranca con `DEFAULT_DRIVING_CONFIG`, `DEFAULT_CAMERA_CONFIG` y `DEFAULT_TILT_CONFIG`, y toma el tamaño de `useWindowDimensions`.
 
 ## Ejemplo
 
@@ -24,8 +24,10 @@ export default DriveScreen;
 | `useDrivingInput` | Crea la entrada compartida. |
 | `ButtonControls` o `TiltControls` | Escriben la entrada: botones multitáctiles, o inclinación con frenos laterales. |
 | `useTiltOutput` | Crea el resultado de la inclinación, para que lo lean el modo de control y el panel. |
-| `useDrivingLoop` | Avanza la simulación en el hilo de UI y produce las transformaciones. |
+| `useBestLapRecord` | Lee el récord del circuito y guarda las vueltas que lo mejoran. |
+| `useDrivingLoop` | Avanza la simulación (con las vueltas) en el hilo de UI y produce las transformaciones. Avisa a `useBestLapRecord` cuando mejora la mejor vuelta. |
 | `DriveCanvas` | Dibuja pista y auto con Skia. |
+| `LapHud` | HUD provisorio: vuelta, tiempo de la vuelta y mejor vuelta. |
 | `DevPanel` | Solo en desarrollo: ajusta configuración en caliente y muestra lecturas. |
 
 ## Decisiones de diseño
@@ -39,6 +41,8 @@ export default DriveScreen;
   - Los sliders de sensibilidad y de zona muerta las guardan, porque son del jugador (las mismas que elige en la calibración). El filtro y la rampa quedan solo en la sesión.
   - "Recalibrar" toma el ángulo filtrado del momento (`calibrateTilt` sobre el resultado que publica `TiltControls`) y lo guarda.
   - "Calibración completa" navega a `/calibracion`.
-- La configuración del manejo y de la cámara, y la pista, son estado de la pantalla: arrancan en los valores por defecto y el panel de desarrollo las modifica (de la pista, solo el ancho). `useDrivingLoop` las aplica en caliente.
+- La configuración del manejo y de la cámara, y el circuito, son estado de la pantalla: arrancan en los valores por defecto y el panel de desarrollo las modifica (del circuito, solo el ancho). `useDrivingLoop` las aplica en caliente.
+- **Un solo circuito por ahora:** hasta que exista la selección de pista (hito de pantallas), siempre es `DEFAULT_CIRCUIT`. Su `id` es la clave del récord.
+- **"Reiniciar auto" del panel** también reinicia las vueltas: el auto vuelve a la largada, antes de la meta.
 - El panel se carga con `require` detrás de `__DEV__`, para que Metro lo elimine del bundle de producción (ver el README de `DevPanel`).
 - `useKeepAwake` evita que el celular apague la pantalla mientras se maneja sin tocar (la aceleración es automática).

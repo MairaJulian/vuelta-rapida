@@ -4,13 +4,17 @@ import { useMemo, useState } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 
 import type { DevPanel as DevPanelComponent } from '@/components/DevPanel';
+import { LapHud } from '@/components/LapHud';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
+import { DEFAULT_CIRCUIT } from '@/core/Circuits';
 import { DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
+import { DEFAULT_FIXED_STEP_CONFIG } from '@/core/FixedStep';
 import { withTiltPreferences } from '@/core/PlayerPreferences';
 import type { PlayerPreferences } from '@/core/PlayerPreferences';
 import { calibrateTilt, DEFAULT_TILT_CONFIG, withTiltSteering } from '@/core/TiltSteering';
 import type { TiltConfig } from '@/core/TiltSteering';
-import { DEFAULT_TRACK } from '@/core/Track';
+import type { Circuit } from '@/core/Track';
+import { useBestLapRecord } from '@/hooks/useBestLapRecord';
 import { useDrivingLoop } from '@/hooks/useDrivingLoop';
 import { usePlayerPreferences } from '@/hooks/usePlayerPreferences';
 import { useTiltOutput } from '@/hooks/useTiltSteering';
@@ -29,10 +33,12 @@ const DevPanel: typeof DevPanelComponent | null = __DEV__
     require('@/components/DevPanel').DevPanel
   : null;
 
+const STEP_HZ = DEFAULT_FIXED_STEP_CONFIG.stepHz;
+
 /**
- * Pantalla de manejo libre: la pista, el auto, la cámara y el modo de control
- * (botones o inclinación), más el panel de ajuste en desarrollo. Compone piezas;
- * no calcula nada.
+ * Pantalla de manejo: el circuito, el auto, la cámara, el modo de control (botones o
+ * inclinación), las vueltas con su HUD provisorio y el panel de ajuste en desarrollo.
+ * Compone piezas; no calcula nada.
  */
 export function DriveScreen(_props: DriveScreenProps) {
   useKeepAwake();
@@ -42,7 +48,9 @@ export function DriveScreen(_props: DriveScreenProps) {
   const { preferences, updatePreferences } = usePlayerPreferences();
   const [drivingConfig, setDrivingConfig] = useState(DEFAULT_DRIVING_CONFIG);
   const [cameraConfig, setCameraConfig] = useState(DEFAULT_CAMERA_CONFIG);
-  const [track, setTrack] = useState(DEFAULT_TRACK);
+  // El circuito es fijo hasta que exista la selección de pista; el panel cambia el ancho.
+  const [track, setTrack] = useState<Circuit>(DEFAULT_CIRCUIT);
+  const { recordMs, saveLap } = useBestLapRecord({ circuitId: track.id, stepHz: STEP_HZ });
   // Filtro y rampa son ajustes de desarrollo; calibración, sensibilidad y zona muerta, del jugador.
   const [tuning, setTuning] = useState(DEFAULT_TILT_CONFIG);
   const input = useDrivingInput();
@@ -63,6 +71,7 @@ export function DriveScreen(_props: DriveScreenProps) {
     viewport,
     drivingConfig: activeDrivingConfig,
     cameraConfig,
+    onBestLap: saveLap,
   });
 
   // Desde el panel: la sensibilidad y la zona muerta son del jugador y se guardan; el resto
@@ -99,6 +108,7 @@ export function DriveScreen(_props: DriveScreenProps) {
       ) : (
         <ButtonControls input={input} />
       )}
+      <LapHud laps={loop.laps} recordMs={recordMs} stepHz={STEP_HZ} />
       {DevPanel ? (
         <DevPanel
           drivingConfig={drivingConfig}
@@ -106,7 +116,7 @@ export function DriveScreen(_props: DriveScreenProps) {
           cameraConfig={cameraConfig}
           onCameraConfigChange={setCameraConfig}
           track={track}
-          onTrackChange={setTrack}
+          onTrackChange={(next) => setTrack((current) => ({ ...current, width: next.width }))}
           controlMode={controlMode}
           onControlModeChange={(mode) => updatePreferences({ controlMode: mode })}
           tiltConfig={tiltConfig}

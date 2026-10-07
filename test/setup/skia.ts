@@ -28,6 +28,13 @@ jest.mock('@shopify/react-native-skia', () => ({
   LinearGradient: host('LinearGradient'),
   DashPathEffect: host('DashPathEffect'),
   vec: (x = 0, y = 0) => ({ x, y }),
-  matchFont: jest.fn(() => ({ __mockFont: true })),
+  // Fuente simulada: mide cada letra como el 60 % del tamaño, para centrar textos.
+  matchFont: jest.fn((style?: { fontSize?: number }) => {
+    const size = style?.fontSize ?? 14;
+    return {
+      __mockFont: true,
+      measureText: (text: string) => ({ x: 0, y: -size, width: text.length * size * 0.6, height: size }),
+    };
+  }),
   useFont: jest.fn(() => null),
 }));
