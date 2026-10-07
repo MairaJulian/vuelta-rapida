@@ -17,6 +17,8 @@ export default ControlChoiceScreen;
 
 ## Flujo
 
+Hoy la inclinación está desactivada para el jugador (`FEATURE_FLAGS.tiltControl`): el juego arranca directo con botones y esta pantalla no se muestra. Queda en el proyecto, con sus tests, para cuando se reevalúe la inclinación (fase 3D). Con la inclinación activada:
+
 | Elección | Ya calibró | Va a |
 |---|---|---|
 | Inclinación | no | `/calibracion` (push: Volver regresa aquí) |

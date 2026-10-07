@@ -5,6 +5,7 @@ export {
   deadZoneToLevel,
   DEFAULT_PLAYER_PREFERENCES,
   getStartStep,
+  isControlModeAvailable,
   parsePlayerPreferences,
   serializePlayerPreferences,
   withTiltPreferences,

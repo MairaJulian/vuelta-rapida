@@ -390,38 +390,43 @@ export function DevPanel({
               })}
             </View>
 
-            <Text style={styles.sectionTitle}>Inclinación</Text>
-            {TILT_SLIDERS.map((spec) => (
-              <DevSlider
-                key={spec.key}
-                testID={`slider-${spec.key}`}
-                label={spec.label}
-                value={tiltConfig[spec.key]}
-                min={spec.min}
-                max={spec.max}
-                step={spec.step}
-                formatValue={spec.format}
-                onChange={(value) => onTiltConfigChange({ ...tiltConfig, [spec.key]: value })}
-              />
-            ))}
-            <View style={styles.actions}>
-              <Pressable
-                style={[styles.action, !isTilt && styles.actionDisabled]}
-                onPress={onRecalibrate}
-                disabled={!isTilt}
-                accessibilityRole="button"
-                accessibilityState={{ disabled: !isTilt }}
-              >
-                <Text style={styles.actionText}>Recalibrar</Text>
-              </Pressable>
-              <Pressable
-                style={styles.action}
-                onPress={onOpenCalibration}
-                accessibilityRole="button"
-              >
-                <Text style={styles.actionText}>Calibración completa</Text>
-              </Pressable>
-            </View>
+            {/* Solo en modo inclinación: con botones, estos ajustes no hacen nada y confunden. */}
+            {isTilt ? (
+              <>
+                <Text style={styles.sectionTitle}>Inclinación</Text>
+                {TILT_SLIDERS.map((spec) => (
+                  <DevSlider
+                    key={spec.key}
+                    testID={`slider-${spec.key}`}
+                    label={spec.label}
+                    value={tiltConfig[spec.key]}
+                    min={spec.min}
+                    max={spec.max}
+                    step={spec.step}
+                    formatValue={spec.format}
+                    onChange={(value) => onTiltConfigChange({ ...tiltConfig, [spec.key]: value })}
+                  />
+                ))}
+                <View style={styles.actions}>
+                  <Pressable
+                    style={[styles.action, !isTilt && styles.actionDisabled]}
+                    onPress={onRecalibrate}
+                    disabled={!isTilt}
+                    accessibilityRole="button"
+                    accessibilityState={{ disabled: !isTilt }}
+                  >
+                    <Text style={styles.actionText}>Recalibrar</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.action}
+                    onPress={onOpenCalibration}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.actionText}>Calibración completa</Text>
+                  </Pressable>
+                </View>
+              </>
+            ) : null}
 
             <Text style={styles.sectionTitle}>Manejo</Text>
             {DRIVING_SLIDERS.map((spec) => (

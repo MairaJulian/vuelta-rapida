@@ -64,6 +64,14 @@ describe('DriveScreen', () => {
     expect(screen.getByTestId('tilt-controls')).toBeTruthy();
   });
 
+  it('el panel muestra los ajustes de inclinación solo al elegir inclinación', async () => {
+    await render(<DriveScreen />);
+    await fireEvent.press(screen.getByLabelText('Abrir el panel de ajuste'));
+    expect(screen.queryByText('Calibración completa')).toBeNull();
+    await fireEvent.press(screen.getByRole('radio', { name: 'Inclinación' }));
+    expect(screen.getByText('Calibración completa')).toBeTruthy();
+  });
+
   it('Recalibrar del panel guarda la posición actual del celular como derecho', async () => {
     await act(() => updatePlayerPreferences({ controlMode: 'tilt', tiltNeutralAngle: 0 }));
     await render(<DriveScreen />);
@@ -101,6 +109,7 @@ describe('DriveScreen', () => {
   });
 
   it('Calibración completa del panel abre la pantalla de calibración', async () => {
+    await act(() => updatePlayerPreferences({ controlMode: 'tilt', tiltNeutralAngle: 0 }));
     await render(<DriveScreen />);
     await fireEvent.press(screen.getByLabelText('Abrir el panel de ajuste'));
     await fireEvent.press(screen.getByText('Calibración completa'));

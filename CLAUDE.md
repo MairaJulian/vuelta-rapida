@@ -25,7 +25,7 @@ Juego de carreras de monoplazas con vista cenital para Android. Dos fines:
 
 ## Futuro
 
-- Versión 3D con react-native-filament y cámara detrás del auto.
+- Versión 3D con react-native-filament y cámara detrás del auto. Ahí se reevalúa el control por inclinación (hoy desactivado, ver Controles).
 - Más adelante: rivales con IA y multijugador local.
 - El online está fuera del alcance por ahora.
 
@@ -39,15 +39,21 @@ Juego de carreras de monoplazas con vista cenital para Android. Dos fines:
 
 ## Controles
 
-Capa de entrada abstraída con dos implementaciones intercambiables. El jugador elige el modo en la pantalla de elección de control, **sin modo por defecto**: las dos opciones se muestran siempre. Aceleración automática en ambos.
+Capa de entrada abstraída con dos implementaciones intercambiables. Aceleración automática en ambos.
 
-- **Pendiente:** si se oculta la inclinación (y queda solo botones) se decide después de una **segunda prueba con usuarios**, hecha con la corrección de zona muerta y sensibilidad del hito 3. Hasta entonces la inclinación no se oculta ni se desactiva.
-- **Inclinación**: control por posición. El ángulo del celular respecto de la gravedad es el ángulo de dirección. Incluye calibración, zona muerta, suavizado, sensibilidad ajustable y corrección según la orientación horizontal.
+**Los botones son el único control visible.** En dos pruebas con usuarios los testers prefirieron los botones; la segunda se hizo con la inclinación ya corregida (zona muerta y sensibilidad independientes, hito 3).
+
+- La inclinación queda **desactivada** con el interruptor `FEATURE_FLAGS.tiltControl` (`src/core/FeatureFlags`). El juego arranca directo con botones, sin elección de control ni calibración. Si había inclinación guardada, la entrada la pasa a botones.
+- Sigue accesible **solo desde el panel de desarrollo**. Su código, sus pantallas y sus tests quedan en el proyecto: no borrarlos.
+- Se reevalúa en la **fase 3D**, con la cámara detrás del auto. Para activarla, `tiltControl: true`: vuelven la elección de control (sin modo por defecto) y la calibración.
+- **Rampa de los botones, sin cambios:** en la segunda prueba se subió "Rampa de dirección (inclinación)" a 0,33 s y la conducción pareció mejorar. Pero ese parámetro solo se aplica en modo inclinación. Los botones usan "Tiempo de giro" (`steerInTime`, 0,25 s) y "Tiempo de vuelta al centro" (`steerReturnTime`, 0,15 s), del modelo de manejo. Probar los 0,33 s en botones queda pendiente.
+
+- **Inclinación** (desactivada): control por posición. El ángulo del celular respecto de la gravedad es el ángulo de dirección. Incluye calibración, zona muerta, suavizado, sensibilidad ajustable y corrección según la orientación horizontal.
   - La zona muerta es un valor fijo en grados (el jugador elige de 1° a 9°) e independiente de la sensibilidad. La sensibilidad define el rango útil a partir del borde de la zona muerta. Subirla siempre reduce el ángulo necesario y la dirección crece desde 0, sin saltos.
   - Los indicadores (medidor de calibración y HUD) usan una escala fija en grados. Nunca escalarlos con la sensibilidad: la zona muerta parecería crecer.
   - La corrección por orientación se hace una sola vez, en `core/TiltSteering`: el sensor se registra con `adjustToInterfaceOrientation: false`.
   - En el menú de pausa del juego final, "Recalibrar" tiene que abrir la pantalla de calibración completa. El botón "Recalibrar" del panel de desarrollo solo toma la posición del momento.
-- **Botones en pantalla**.
+- **Botones en pantalla** (el control por defecto y el único visible).
 
 ## Marcas
 

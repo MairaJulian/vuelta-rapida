@@ -82,10 +82,23 @@ export function serializePlayerPreferences(preferences: PlayerPreferences): stri
 }
 
 /**
- * Por dónde empieza el juego: primero elegir el control; con inclinación sin
- * calibrar, la calibración; si no, directo a la pista.
+ * Si un modo guardado se puede usar al abrir el juego. Con la inclinación
+ * desactivada (`FEATURE_FLAGS.tiltControl`), una inclinación guardada, de una prueba
+ * anterior o del panel de desarrollo, no vale: el juego arranca con botones.
  */
-export function getStartStep(preferences: PlayerPreferences): StartStep {
+export function isControlModeAvailable(mode: ControlMode | null, tiltEnabled: boolean): boolean {
+  return tiltEnabled || mode !== 'tilt';
+}
+
+/**
+ * Por dónde empieza el juego: primero elegir el control; con inclinación sin
+ * calibrar, la calibración; si no, directo a la pista. Con la inclinación
+ * desactivada no hay nada que elegir ni calibrar: siempre a la pista.
+ */
+export function getStartStep(preferences: PlayerPreferences, tiltEnabled = true): StartStep {
+  if (!tiltEnabled) {
+    return 'drive';
+  }
   if (preferences.controlMode === null) {
     return 'choose-control';
   }

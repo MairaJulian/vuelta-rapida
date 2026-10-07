@@ -172,16 +172,39 @@ describe('DevPanel', () => {
     expect(screen.queryByText('Agarre lateral')).toBeNull();
   });
 
-  it('al abrirlo muestra lecturas y todos los sliders', async () => {
+  it('al abrirlo con botones muestra lecturas y los sliders de botones, manejo, pista y cámara', async () => {
     await renderPanel();
     await openPanel();
     expect(screen.getByTestId('reading-speed')).toHaveTextContent('36 km/h');
     expect(screen.getByTestId('reading-heading')).toHaveTextContent('90°');
     expect(screen.getByTestId('reading-fps')).toHaveTextContent('90');
-    for (const spec of [...TILT_SLIDERS, ...DRIVING_SLIDERS, ...TRACK_SLIDERS, ...CAMERA_SLIDERS]) {
+    for (const spec of [...DRIVING_SLIDERS, ...TRACK_SLIDERS, ...CAMERA_SLIDERS]) {
       expect(screen.getByText(spec.label)).toBeTruthy();
     }
     expect(screen.getByText('Cámara gira con el auto')).toBeTruthy();
+  });
+
+  it('con botones oculta la sección de inclinación', async () => {
+    await renderPanel();
+    await openPanel();
+    // "Inclinación" queda solo en el selector, sin el título de la sección.
+    expect(screen.getAllByText('Inclinación')).toHaveLength(1);
+    expect(screen.getByRole('radio', { name: 'Inclinación' })).toBeTruthy();
+    for (const spec of TILT_SLIDERS) {
+      expect(screen.queryByText(spec.label)).toBeNull();
+    }
+    expect(screen.queryByText('Recalibrar')).toBeNull();
+    expect(screen.queryByText('Calibración completa')).toBeNull();
+  });
+
+  it('en modo inclinación muestra también sus sliders y acciones', async () => {
+    await renderPanel({ controlMode: 'tilt' });
+    await openPanel();
+    for (const spec of [...TILT_SLIDERS, ...DRIVING_SLIDERS, ...TRACK_SLIDERS, ...CAMERA_SLIDERS]) {
+      expect(screen.getByText(spec.label)).toBeTruthy();
+    }
+    expect(screen.getByText('Recalibrar')).toBeTruthy();
+    expect(screen.getByText('Calibración completa')).toBeTruthy();
   });
 
   it('un slider de manejo cambia solo su parámetro', async () => {
@@ -275,12 +298,7 @@ describe('DevPanel', () => {
     expect(screen.queryByTestId('reading-tilt-angle')).toBeNull();
   });
 
-  it('Recalibrar funciona solo en modo inclinación', async () => {
-    const buttons = await renderPanel();
-    await openPanel();
-    await fireEvent.press(screen.getByText('Recalibrar'));
-    expect(buttons.onRecalibrate).not.toHaveBeenCalled();
-
+  it('Recalibrar toma la posición en modo inclinación', async () => {
     const tilt = await renderPanel({ controlMode: 'tilt' });
     await openPanel();
     await fireEvent.press(screen.getByText('Recalibrar'));
@@ -288,7 +306,7 @@ describe('DevPanel', () => {
   });
 
   it('Calibración completa abre la pantalla de calibración', async () => {
-    const props = await renderPanel();
+    const props = await renderPanel({ controlMode: 'tilt' });
     await openPanel();
     await fireEvent.press(screen.getByText('Calibración completa'));
     expect(props.onOpenCalibration).toHaveBeenCalled();
