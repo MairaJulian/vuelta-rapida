@@ -6,6 +6,7 @@ import {
   deadZoneToLevel,
   DEFAULT_PLAYER_PREFERENCES,
   getStartStep,
+  isControlModeAvailable,
   parsePlayerPreferences,
   serializePlayerPreferences,
   withTiltPreferences,
@@ -126,6 +127,27 @@ describe('getStartStep', () => {
   it('con inclinación calibrada o con botones, va directo a la pista', () => {
     expect(getStartStep(saved)).toBe('drive');
     expect(getStartStep({ ...DEFAULT_PLAYER_PREFERENCES, controlMode: 'buttons' })).toBe('drive');
+  });
+
+  it('con la inclinación desactivada, siempre va directo a la pista', () => {
+    expect(getStartStep(DEFAULT_PLAYER_PREFERENCES, false)).toBe('drive');
+    expect(getStartStep({ ...saved, tiltNeutralAngle: null }, false)).toBe('drive');
+    expect(getStartStep(saved, false)).toBe('drive');
+    expect(getStartStep({ ...saved, controlMode: 'buttons' }, false)).toBe('drive');
+  });
+});
+
+describe('isControlModeAvailable', () => {
+  it('con la inclinación activada, cualquier modo sirve', () => {
+    expect(isControlModeAvailable('tilt', true)).toBe(true);
+    expect(isControlModeAvailable('buttons', true)).toBe(true);
+    expect(isControlModeAvailable(null, true)).toBe(true);
+  });
+
+  it('con la inclinación desactivada, una inclinación guardada no sirve', () => {
+    expect(isControlModeAvailable('tilt', false)).toBe(false);
+    expect(isControlModeAvailable('buttons', false)).toBe(true);
+    expect(isControlModeAvailable(null, false)).toBe(true);
   });
 });
 

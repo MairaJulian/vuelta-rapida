@@ -25,6 +25,8 @@ export default CalibrationScreen;
 
 ## Cuándo se muestra
 
+Hoy la inclinación está desactivada para el jugador (`FEATURE_FLAGS.tiltControl`), así que esta pantalla solo se abre desde el panel de desarrollo ("Calibración completa"). Con la inclinación activada:
+
 - La primera vez que el jugador elige inclinación (desde la elección de control).
 - Al abrir el juego en modo inclinación sin calibrar.
 - Para repetirla, desde el panel de desarrollo. En el juego final, "Recalibrar" del menú de pausa abrirá esta pantalla.

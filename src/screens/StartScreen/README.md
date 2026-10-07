@@ -1,10 +1,12 @@
 # StartScreen
 
-Entrada del juego. No dibuja nada: decide a dónde ir con las preferencias guardadas y redirige.
+Entrada del juego. No dibuja nada: decide a dónde ir con las preferencias guardadas y el interruptor de la inclinación, y redirige.
 
 ## Props
 
-Ninguna.
+| Prop | Tipo | Descripción |
+|---|---|---|
+| `tiltEnabled` | `boolean` (opcional) | Si el jugador puede usar la inclinación. Por defecto, `FEATURE_FLAGS.tiltControl` (hoy `false`). La ruta no lo pasa; los tests sí. |
 
 ## Ejemplo
 
@@ -17,17 +19,27 @@ export default StartScreen;
 
 ## Flujo
 
+Con la inclinación **desactivada** (el valor actual de `FEATURE_FLAGS.tiltControl`):
+
+| Preferencias | Va a |
+|---|---|
+| Cualquiera | `/pista`, con botones. Si había inclinación guardada, primero la cambia a botones; la calibración, la sensibilidad y la zona muerta se conservan. |
+
+Con la inclinación **activada**:
+
 | Preferencias | Va a |
 |---|---|
 | Sin modo elegido | `/control` |
 | Inclinación sin calibrar | `/calibracion` |
 | Botones, o inclinación calibrada | `/pista` |
 
-La regla está en `getStartStep` (`core/PlayerPreferences`); aquí solo se traduce a rutas (`START_HREFS`).
+La regla está en `getStartStep` e `isControlModeAvailable` (`core/PlayerPreferences`); aquí solo se traduce a rutas (`START_HREFS`).
 
 ## Decisiones de diseño
 
-- **Sin pantalla de carga:** las preferencias se leen de forma síncrona (`expo-sqlite/kv-store`), así que la redirección ocurre en el primer render.
+- **Sin pantalla de carga:** las preferencias se leen de forma síncrona (`expo-sqlite/kv-store`), así que la redirección ocurre en el primer render. La única excepción es pasar una inclinación guardada a botones: se espera ese cambio (un render vacío) para que la pista no arranque un cuadro con inclinación.
+- **Inclinación desactivada, pero disponible desde el panel:** el selector del panel de desarrollo puede elegir inclinación durante la sesión, y la calibración completa sigue funcionando. Al volver a abrir el juego, esta pantalla lo devuelve a botones. Así una inclinación guardada (de una prueba anterior o del panel) nunca llega al jugador.
+- **El interruptor se lee aquí y no en el almacén de preferencias:** las preferencias guardan lo que hay en el disco tal cual, y la regla de inicio decide.
 - **`Redirect` reemplaza la entrada:** desde la pista, el botón Atrás de Android no vuelve a una pantalla vacía.
 - **Las rutas en `StartScreen.styles.ts`:** la pantalla no tiene estilos, y la convención pide el archivo; guarda su única constante de presentación.
 - Cuando exista la pantalla de Inicio del handoff (01), esta decisión se moverá al botón Correr.
