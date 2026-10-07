@@ -39,9 +39,12 @@ Juego de carreras de monoplazas con vista cenital para Android. Dos fines:
 
 ## Controles
 
-Capa de entrada abstraída con dos implementaciones intercambiables. El jugador elige el modo. Aceleración automática en ambos.
+Capa de entrada abstraída con dos implementaciones intercambiables. El jugador elige el modo en la pantalla de elección de control, **sin modo por defecto**: las dos opciones se muestran siempre. Aceleración automática en ambos.
 
+- **Pendiente:** si se oculta la inclinación (y queda solo botones) se decide después de una **segunda prueba con usuarios**, hecha con la corrección de zona muerta y sensibilidad del hito 3. Hasta entonces la inclinación no se oculta ni se desactiva.
 - **Inclinación**: control por posición. El ángulo del celular respecto de la gravedad es el ángulo de dirección. Incluye calibración, zona muerta, suavizado, sensibilidad ajustable y corrección según la orientación horizontal.
+  - La zona muerta es un valor fijo en grados (el jugador elige de 1° a 9°) e independiente de la sensibilidad. La sensibilidad define el rango útil a partir del borde de la zona muerta. Subirla siempre reduce el ángulo necesario y la dirección crece desde 0, sin saltos.
+  - Los indicadores (medidor de calibración y HUD) usan una escala fija en grados. Nunca escalarlos con la sensibilidad: la zona muerta parecería crecer.
   - La corrección por orientación se hace una sola vez, en `core/TiltSteering`: el sensor se registra con `adjustToInterfaceOrientation: false`.
   - En el menú de pausa del juego final, "Recalibrar" tiene que abrir la pantalla de calibración completa. El botón "Recalibrar" del panel de desarrollo solo toma la posición del momento.
 - **Botones en pantalla**.
