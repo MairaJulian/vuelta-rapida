@@ -121,6 +121,9 @@ Reglas:
 - Cada hito se trabaja en una rama propia (`hito-N-descripcion`), nunca directamente en `main`. La rama base de los PR es `main`.
 - Commits chicos y descriptivos, en español, uno por paso del hito.
 - Los commits requieren mi confirmación: el hook global (`~/.claude/custom-hooks`, `autoCommit: false`) los bloquea hasta que yo los apruebo o los ejecuto. No modificar ese hook ni ese ajuste.
+- **Claude trabaja el hito completo sin frenarse** y yo reviso al final. No pide commits entre pasos ni espera a que commitee. Las únicas pausas son las que yo pida en el enunciado (por ejemplo "Esperá mi confirmación"). Al terminar entrega:
+  - Un bloque de commit por paso, para PowerShell, con rutas explícitas. Si un archivo cambió en más de un paso, va en el commit del último paso que lo tocó, y se aclara.
+  - El comando de push y la descripción del PR (ver abajo).
 - Al cerrar cada hito, **antes del push**: correr `npm run lint`, `npm test` y `npm run typecheck`, y que los tres terminen **sin errores**. Si alguno falla, se corrige antes de dar el comando de push.
 - Claude **no hace push ni abre el PR**. Hace lo siguiente:
   1. Escribe el título y la descripción del PR en `docs/pr/hito-N.md` (resumen de lo hecho y cómo probarlo).
@@ -128,6 +131,21 @@ Reglas:
   3. Yo hago el push, creo el PR desde la web de GitHub (cuenta `MairaJulian`) usando ese archivo, y lo reviso.
 - GitHub CLI (`gh`) no se usa en este proyecto.
 - Nunca fusionar el PR: lo fusiono yo.
+
+## Autorizaciones permanentes
+
+Claude puede hacer lo siguiente sin pedirme permiso. Cada uso se informa al cerrar el trabajo y en la descripción del PR: qué cambió y por qué.
+
+- **Agregar dependencias** (`npm install`). Si una tiene código nativo, avisa que hay que recompilar el dev build (`npm run android`, con el celular conectado; lo hago yo).
+- **Cambiar la configuración nativa** (`app.json`, plugins, prebuild). También avisa que hay que recompilar.
+- **Borrar o renombrar archivos o módulos.** Se sigue respetando lo que pedí conservar explícitamente, por ejemplo el código, las pantallas y los tests de la inclinación.
+- **Cambiar valores del manejo** (rampa, velocidad, agarre, etc.). Solo lo indispensable para que algo se pueda jugar, con los valores de antes y de después.
+- **Crear o reorganizar carpetas**, siguiendo la estructura por componente.
+
+Esto no se habilita nunca, ni con permiso:
+
+- Commits, push y merge: los hago yo, y el hook los bloquea.
+- Modificar la configuración global o el hook (ver Configuración).
 
 ## Configuración
 
