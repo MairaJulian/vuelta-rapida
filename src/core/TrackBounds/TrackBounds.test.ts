@@ -6,14 +6,15 @@ import {
   stepCar,
 } from '@/core/DrivingModel';
 import type { CarState, DrivingInput } from '@/core/DrivingModel';
-import { DEFAULT_TRACK, getNearestOnCenterline, getStartPose } from '@/core/Track';
+import { DEFAULT_CIRCUIT } from '@/core/Circuits';
+import { getNearestOnCenterline, getStartPose, OVAL_TRACK } from '@/core/Track';
 import type { TrackData } from '@/core/Track';
 
-import { constrainToTrack, getTrackLimit } from './TrackBounds';
+import { constrainToHit, constrainToTrack, getTrackLimit } from './TrackBounds';
 
 const DT = 1 / 60;
 const config = DEFAULT_DRIVING_CONFIG;
-const track = DEFAULT_TRACK;
+const track = OVAL_TRACK;
 const limit = getTrackLimit(track, config);
 
 /** Un paso de simulación con el límite de pista, como en DrivingSim. */
@@ -88,16 +89,19 @@ describe('constrainToTrack', () => {
   });
 
   it('con entradas aleatorias de semilla fija, el auto nunca sale de los límites', () => {
-    for (const [seed, onTrack] of [
-      [1, track],
-      [2, track],
-      [3, { ...track, width: 5 }],
+    for (const [seed, onTrack, steps] of [
+      [1, track, 6000],
+      [2, track, 6000],
+      [3, { ...track, width: 5 }, 6000],
+      // También en el circuito del juego, con la chicana y la horquilla.
+      [4, DEFAULT_CIRCUIT, 2400],
+      [5, DEFAULT_CIRCUIT, 2400],
     ] as const) {
       const trackLimit = getTrackLimit(onTrack, config);
       const start = getStartPose(onTrack);
       let car = createCarState(start.x, start.z, start.heading);
       let touched = false;
-      for (const input of seededHeldInputs(seed, 6000)) {
+      for (const input of seededHeldInputs(seed, steps)) {
         car = stepOnTrack(car, input, onTrack);
         const distance = offset(car, onTrack);
         expect(distance).toBeLessThanOrEqual(trackLimit + 1e-9);
@@ -133,6 +137,14 @@ describe('constrainToTrack', () => {
     expect(offset(car)).toBeCloseTo(limit, 9);
     expect(car.x - startX).toBeGreaterThan(40);
     expect(getForwardSpeed(car)).toBeGreaterThan(0);
+  });
+
+  it('constrainToHit con el punto ya buscado da lo mismo que constrainToTrack', () => {
+    const car = { ...createCarState(30, -50 - limit - 2, Math.PI / 2), vx: 10, vz: -3 };
+    const hit = getNearestOnCenterline(track, car.x, car.z);
+    expect(constrainToHit(car, hit, track, config, DT)).toEqual(
+      constrainToTrack(car, track, config, DT),
+    );
   });
 
   it('es determinista y serializable', () => {
