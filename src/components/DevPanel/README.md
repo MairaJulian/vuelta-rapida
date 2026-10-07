@@ -56,10 +56,10 @@ const DevPanel = __DEV__ ? require('@/components/DevPanel').DevPanel : null;
 - **Lecturas:**
   - Velocidad en km/h (negativa en marcha atrás), rumbo, deriva y fps.
   - Con inclinación, además: ángulo leído (ya calibrado, con signo) y dirección resultante (−1 a 1).
-- **Control:** selector Inclinación / Botones. Cambia el modo en caliente y lo guarda como preferencia.
-- **Inclinación:**
+- **Control:** selector Inclinación / Botones. Cambia el modo en caliente y lo guarda como preferencia. Con la inclinación desactivada para el jugador (`FEATURE_FLAGS.tiltControl`), este es el único acceso a la inclinación. Dura hasta volver a abrir el juego: la entrada lo devuelve a botones.
+- **Inclinación** (solo se ve en modo inclinación):
   - Sliders: zona muerta (1° a 9°, el rango del jugador), sensibilidad (1 a 10), filtro del temblor (0 a 0,3 s) y rampa de dirección (0 a 0,5 s).
-  - Botón "Recalibrar": toma la posición del momento. Solo funciona en modo inclinación.
+  - Botón "Recalibrar": toma la posición del momento.
   - Botón "Calibración completa": abre la pantalla 03.
 - **Manejo:** un slider por cada parámetro de `DrivingConfig`, salvo los de `FIXED_DRIVING_KEYS` (`wheelbase` y `collisionRadius`, que salen de las medidas del auto). Incluye:
   - La curva de giro según la velocidad: ángulo máximo en grados, giro a velocidad máxima y exponente de la curva.
@@ -78,6 +78,7 @@ const DevPanel = __DEV__ ? require('@/components/DevPanel').DevPanel : null;
 - **Fuera de producción:** la pantalla lo carga con `require` detrás de `__DEV__`. En un build de release Metro reemplaza `__DEV__` por `false`, pliega la condición y descarta el `require` antes de resolver dependencias, así que el módulo no entra en el bundle. Se verifica generando el bundle con `npx expo export` y buscando sus textos.
 - **Recalibrar en el momento:** el botón del panel no abre la pantalla 03, para poder probar calibraciones sin salir de la pista. En el juego final, "Recalibrar" del menú de pausa abrirá la calibración completa (anotado en `CLAUDE.md`).
 - **Dos rampas a la vista:** "Tiempo de giro" y "Tiempo de vuelta al centro" (Manejo) se aplican con botones. "Rampa de dirección (inclinación)" las reemplaza en modo inclinación.
+- **Con botones, la sección Inclinación se oculta** (no se borra): sus ajustes no hacen nada en ese modo, y en la segunda prueba con usuarios se subió la rampa de inclinación creyendo que afectaba a los botones. Al elegir Inclinación en el selector, vuelve a aparecer. Las lecturas de inclinación ("Ángulo leído" y "Dirección") ya se ocultaban igual. "Restablecer" sigue llevando también los ajustes ocultos a sus valores por defecto.
 - **Lecturas a 5 Hz y solo con el panel abierto:** re-renderizar React en cada cuadro competiría con el juego en el hilo de JS.
 - **No tapa los controles:** ocupa la parte superior izquierda y termina por encima de los controles, así se puede manejar mientras se ajusta.
 - **Scroll de gesture-handler:** convive con los gestos horizontales de los sliders.
