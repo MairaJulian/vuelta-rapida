@@ -32,11 +32,11 @@ export default DriveScreen;
 
 - La pantalla solo compone: la entrada, la simulación y el dibujo son piezas independientes que se comunican por valores compartidos.
 - **Rampa según el modo:** con inclinación, el loop recibe `withTiltSteering(drivingConfig, tiltConfig)`, con la rampa de dirección corta, porque la señal ya llega continua y filtrada. Con botones usa la rampa normal.
-- **Dos orígenes para la inclinación:** la calibración y la sensibilidad son del jugador y vienen de las preferencias guardadas; la zona muerta, el filtro y la rampa son ajustes de desarrollo y viven en la pantalla. `withTiltPreferences` los junta.
+- **Dos orígenes para la inclinación:** la calibración, la sensibilidad y la zona muerta son del jugador y vienen de las preferencias guardadas; el filtro y la rampa son ajustes de desarrollo y viven en la pantalla. `withTiltPreferences` los junta.
 - **El modo cambia en caliente:** si las preferencias cambian (por ejemplo, desde el panel), la pantalla monta el otro modo de control sin reiniciar la carrera.
 - **Acciones del panel:**
   - El selector de modo guarda la preferencia.
-  - El slider de sensibilidad la guarda, porque es del jugador. La zona muerta, el filtro y la rampa quedan solo en la sesión.
+  - Los sliders de sensibilidad y de zona muerta las guardan, porque son del jugador (las mismas que elige en la calibración). El filtro y la rampa quedan solo en la sesión.
   - "Recalibrar" toma el ángulo filtrado del momento (`calibrateTilt` sobre el resultado que publica `TiltControls`) y lo guarda.
   - "Calibración completa" navega a `/calibracion`.
 - La configuración del manejo y de la cámara, y la pista, son estado de la pantalla: arrancan en los valores por defecto y el panel de desarrollo las modifica (de la pista, solo el ancho). `useDrivingLoop` las aplica en caliente.

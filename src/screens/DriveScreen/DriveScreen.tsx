@@ -7,6 +7,7 @@ import type { DevPanel as DevPanelComponent } from '@/components/DevPanel';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
 import { DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
 import { withTiltPreferences } from '@/core/PlayerPreferences';
+import type { PlayerPreferences } from '@/core/PlayerPreferences';
 import { calibrateTilt, DEFAULT_TILT_CONFIG, withTiltSteering } from '@/core/TiltSteering';
 import type { TiltConfig } from '@/core/TiltSteering';
 import { DEFAULT_TRACK } from '@/core/Track';
@@ -42,7 +43,7 @@ export function DriveScreen(_props: DriveScreenProps) {
   const [drivingConfig, setDrivingConfig] = useState(DEFAULT_DRIVING_CONFIG);
   const [cameraConfig, setCameraConfig] = useState(DEFAULT_CAMERA_CONFIG);
   const [track, setTrack] = useState(DEFAULT_TRACK);
-  // Zona muerta, filtro y rampa son ajustes de desarrollo; calibración y sensibilidad, del jugador.
+  // Filtro y rampa son ajustes de desarrollo; calibración, sensibilidad y zona muerta, del jugador.
   const [tuning, setTuning] = useState(DEFAULT_TILT_CONFIG);
   const input = useDrivingInput();
   const tiltOutput = useTiltOutput();
@@ -64,12 +65,20 @@ export function DriveScreen(_props: DriveScreenProps) {
     cameraConfig,
   });
 
-  // Desde el panel: la sensibilidad es del jugador y se guarda; el resto queda en la sesión.
-  // La calibración y la sensibilidad de `tuning` no se usan: las pisan las preferencias.
+  // Desde el panel: la sensibilidad y la zona muerta son del jugador y se guardan; el resto
+  // queda en la sesión. La calibración, la sensibilidad y la zona muerta de `tuning` no se
+  // usan: las pisan las preferencias.
   const changeTiltConfig = (next: TiltConfig) => {
     setTuning(next);
+    const changes: Partial<PlayerPreferences> = {};
     if (next.sensitivity !== preferences.tiltSensitivity) {
-      updatePreferences({ tiltSensitivity: next.sensitivity });
+      changes.tiltSensitivity = next.sensitivity;
+    }
+    if (next.deadZone !== preferences.tiltDeadZone) {
+      changes.tiltDeadZone = next.deadZone;
+    }
+    if (Object.keys(changes).length > 0) {
+      updatePreferences(changes);
     }
   };
 

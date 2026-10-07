@@ -11,6 +11,11 @@ export interface PlayerPreferences {
   tiltNeutralAngle: Radians | null;
   /** Sensibilidad de la inclinación, de 1 (suave) a 10 (rápida). */
   tiltSensitivity: number;
+  /**
+   * Zona muerta de la inclinación a cada lado del neutro, en radianes, de 1° a 9°.
+   * Independiente de la sensibilidad.
+   */
+  tiltDeadZone: Radians;
 }
 
 /** Primer paso al abrir el juego, según lo que ya está guardado. */

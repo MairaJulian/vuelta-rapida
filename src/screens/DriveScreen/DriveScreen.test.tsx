@@ -1,8 +1,10 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import Storage from 'expo-sqlite/kv-store';
+import { getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import { useAnimatedSensor, useFrameCallback } from 'react-native-reanimated';
 
+import { MAX_DEAD_ZONE } from '@/core/TiltSteering';
 import {
   readPlayerPreferences,
   reloadPlayerPreferences,
@@ -80,6 +82,22 @@ describe('DriveScreen', () => {
     await fireEvent.press(screen.getByLabelText('Abrir el panel de ajuste'));
     await fireEvent.press(screen.getByText('Recalibrar'));
     expect(readPlayerPreferences().tiltNeutralAngle).toBeCloseTo(angle, 6);
+  });
+
+  it('la zona muerta del panel se guarda sin tocar la sensibilidad', async () => {
+    await act(() => updatePlayerPreferences({ controlMode: 'tilt', tiltNeutralAngle: 0 }));
+    await render(<DriveScreen />);
+    await fireEvent.press(screen.getByLabelText('Abrir el panel de ajuste'));
+    await fireEvent(screen.getByTestId('slider-deadZone-track'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 200, height: 48 } },
+    });
+    const handlers = getByGestureTestId('slider-deadZone-gesture').handlers as {
+      onStart?: (event: { x: number }) => void;
+    };
+    await act(() => handlers.onStart?.({ x: 200 }));
+    // DevSlider redondea a 6 decimales.
+    expect(readPlayerPreferences().tiltDeadZone).toBeCloseTo(MAX_DEAD_ZONE, 5);
+    expect(readPlayerPreferences().tiltSensitivity).toBe(5);
   });
 
   it('Calibración completa del panel abre la pantalla de calibración', async () => {

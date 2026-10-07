@@ -1,6 +1,6 @@
 # usePlayerPreferences
 
-Guarda y lee las preferencias del jugador entre partidas: modo de control, calibración de la inclinación y sensibilidad. Usa el almacenamiento clave-valor de expo-sqlite (`expo-sqlite/kv-store`), con lectura síncrona. Las reglas y la validación están en `core/PlayerPreferences`.
+Guarda y lee las preferencias del jugador entre partidas: modo de control, calibración de la inclinación, sensibilidad y zona muerta. Usa el almacenamiento clave-valor de expo-sqlite (`expo-sqlite/kv-store`), con lectura síncrona. Las reglas y la validación están en `core/PlayerPreferences`.
 
 ## Devuelve
 
@@ -33,5 +33,5 @@ updatePreferences({ controlMode: 'tilt' });
 - **Un solo valor JSON** bajo `player-preferences`: se lee y se valida de una vez con `parsePlayerPreferences`.
 - **`useSyncExternalStore` con una copia en memoria:** el disco se lee una sola vez. Cada cambio se guarda en el momento y avisa a todas las pantallas montadas, sin un proveedor de contexto.
 - **Nunca rompe el juego:** si el almacenamiento falla al leer, se juega con los valores por defecto; si falla al guardar, el cambio vale igual para la sesión.
-- **Escrituras pocas y síncronas:** solo al elegir, calibrar o mover la sensibilidad. Nunca por cuadro.
+- **Escrituras pocas y síncronas:** solo al elegir, calibrar o mover la sensibilidad o la zona muerta. Nunca por cuadro.
 - **Tests:** `test/setup/kv-store.ts` reemplaza el módulo nativo por un mapa en memoria.

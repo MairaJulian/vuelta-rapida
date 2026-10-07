@@ -1,5 +1,8 @@
 export {
   CONTROL_MODES,
+  DEAD_ZONE_LEVELS,
+  deadZoneFromLevel,
+  deadZoneToLevel,
   DEFAULT_PLAYER_PREFERENCES,
   getStartStep,
   parsePlayerPreferences,

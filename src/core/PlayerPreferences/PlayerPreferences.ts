@@ -1,19 +1,40 @@
 import { clamp } from '@/core/MathUtils';
+import type { Radians } from '@/core/MathUtils';
+import { DEFAULT_TILT_CONFIG, MAX_DEAD_ZONE, MIN_DEAD_ZONE } from '@/core/TiltSteering';
 import type { TiltConfig } from '@/core/TiltSteering';
 
 import type { ControlMode, PlayerPreferences, StartStep } from './PlayerPreferences.types';
 
 export const CONTROL_MODES: readonly ControlMode[] = ['tilt', 'buttons'];
 
-/** Sin elegir ni calibrar, con la sensibilidad del medio. */
+/** Sin elegir ni calibrar, con la sensibilidad del medio y la zona muerta inicial (5°). */
 export const DEFAULT_PLAYER_PREFERENCES: PlayerPreferences = Object.freeze({
   controlMode: null,
   tiltNeutralAngle: null,
   tiltSensitivity: 5,
+  tiltDeadZone: DEFAULT_TILT_CONFIG.deadZone,
 });
 
 const MIN_SENSITIVITY = 1;
 const MAX_SENSITIVITY = 10;
+
+/**
+ * Niveles de la zona muerta para el jugador: de 1 (chica, `MIN_DEAD_ZONE`, 1°) a 5
+ * (grande, `MAX_DEAD_ZONE`, 9°), parejos de a 2°. El nivel 3 son los 5° iniciales.
+ */
+export const DEAD_ZONE_LEVELS = 5;
+
+/** Zona muerta, en radianes, de un nivel de la escala del jugador. */
+export function deadZoneFromLevel(level: number): Radians {
+  const t = clamp((level - 1) / (DEAD_ZONE_LEVELS - 1), 0, 1);
+  return MIN_DEAD_ZONE + t * (MAX_DEAD_ZONE - MIN_DEAD_ZONE);
+}
+
+/** Nivel de la escala del jugador para una zona muerta en radianes (puede no ser entero). */
+export function deadZoneToLevel(deadZone: Radians): number {
+  const t = clamp((deadZone - MIN_DEAD_ZONE) / (MAX_DEAD_ZONE - MIN_DEAD_ZONE), 0, 1);
+  return 1 + t * (DEAD_ZONE_LEVELS - 1);
+}
 
 function isControlMode(value: unknown): value is ControlMode {
   return CONTROL_MODES.includes(value as ControlMode);
@@ -44,6 +65,9 @@ export function parsePlayerPreferences(raw: string | null): PlayerPreferences {
     tiltSensitivity: isFiniteNumber(fields.tiltSensitivity)
       ? clamp(fields.tiltSensitivity, MIN_SENSITIVITY, MAX_SENSITIVITY)
       : DEFAULT_PLAYER_PREFERENCES.tiltSensitivity,
+    tiltDeadZone: isFiniteNumber(fields.tiltDeadZone)
+      ? clamp(fields.tiltDeadZone, MIN_DEAD_ZONE, MAX_DEAD_ZONE)
+      : DEFAULT_PLAYER_PREFERENCES.tiltDeadZone,
   };
 }
 
@@ -53,6 +77,7 @@ export function serializePlayerPreferences(preferences: PlayerPreferences): stri
     controlMode: preferences.controlMode,
     tiltNeutralAngle: preferences.tiltNeutralAngle,
     tiltSensitivity: preferences.tiltSensitivity,
+    tiltDeadZone: preferences.tiltDeadZone,
   });
 }
 
@@ -70,7 +95,10 @@ export function getStartStep(preferences: PlayerPreferences): StartStep {
   return 'drive';
 }
 
-/** Lleva la calibración y la sensibilidad guardadas a la configuración de la inclinación. */
+/**
+ * Lleva la calibración, la sensibilidad y la zona muerta guardadas a la
+ * configuración de la inclinación. Cada preferencia va a su propio campo.
+ */
 export function withTiltPreferences(
   config: TiltConfig,
   preferences: PlayerPreferences,
@@ -79,5 +107,6 @@ export function withTiltPreferences(
     ...config,
     neutralAngle: preferences.tiltNeutralAngle ?? 0,
     sensitivity: preferences.tiltSensitivity,
+    deadZone: preferences.tiltDeadZone,
   };
 }

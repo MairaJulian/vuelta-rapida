@@ -31,13 +31,19 @@ describe('usePlayerPreferences', () => {
   it('lee de forma síncrona lo que estaba guardado', () => {
     storage.setItemSync(
       PREFERENCES_KEY,
-      JSON.stringify({ controlMode: 'tilt', tiltNeutralAngle: 0.1, tiltSensitivity: 6 }),
+      JSON.stringify({
+        controlMode: 'tilt',
+        tiltNeutralAngle: 0.1,
+        tiltSensitivity: 6,
+        tiltDeadZone: 0.05,
+      }),
     );
     reloadPlayerPreferences();
     expect(readPlayerPreferences()).toEqual({
       controlMode: 'tilt',
       tiltNeutralAngle: 0.1,
       tiltSensitivity: 6,
+      tiltDeadZone: 0.05,
     });
   });
 

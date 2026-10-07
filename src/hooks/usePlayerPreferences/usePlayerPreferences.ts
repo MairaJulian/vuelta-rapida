@@ -51,9 +51,9 @@ function subscribe(listener: () => void): () => void {
 }
 
 /**
- * Preferencias del jugador guardadas entre partidas (modo de control, calibración
- * y sensibilidad). La lectura es síncrona, así que la primera pantalla decide sin
- * estado de carga.
+ * Preferencias del jugador guardadas entre partidas (modo de control, calibración,
+ * sensibilidad y zona muerta). La lectura es síncrona, así que la primera pantalla
+ * decide sin estado de carga.
  */
 export function usePlayerPreferences(): UsePlayerPreferencesResult {
   const preferences = useSyncExternalStore(subscribe, readPlayerPreferences);

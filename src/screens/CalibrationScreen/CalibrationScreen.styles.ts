@@ -45,11 +45,12 @@ export const styles = StyleSheet.create({
     color: COLORS.muted,
     fontSize: 12,
     marginTop: 6,
+    textAlign: 'center',
   },
+  // Compacta para que los dos sliders y Listo entren en un celular de 360 dp de alto.
   card: {
     width: 230,
-    padding: 16,
-    gap: 4,
+    padding: 14,
     borderRadius: 20,
     backgroundColor: COLORS.card,
     // Sombra sm del handoff.
@@ -58,7 +59,7 @@ export const styles = StyleSheet.create({
   scale: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 6,
   },
   scaleLabel: {
     color: COLORS.muted,
