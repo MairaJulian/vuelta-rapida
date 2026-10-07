@@ -4,5 +4,7 @@ export {
   CalibrationGauge,
   formatSignedDegrees,
   gaugeAngle,
+  getGaugeMarks,
+  tickPath,
 } from './CalibrationGauge';
-export type { CalibrationGaugeProps, GaugePoint } from './CalibrationGauge.types';
+export type { CalibrationGaugeProps, GaugeMarks, GaugePoint } from './CalibrationGauge.types';

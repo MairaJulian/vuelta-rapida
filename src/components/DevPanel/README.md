@@ -58,7 +58,7 @@ const DevPanel = __DEV__ ? require('@/components/DevPanel').DevPanel : null;
   - Con inclinación, además: ángulo leído (ya calibrado, con signo) y dirección resultante (−1 a 1).
 - **Control:** selector Inclinación / Botones. Cambia el modo en caliente y lo guarda como preferencia.
 - **Inclinación:**
-  - Sliders: zona muerta (0 a 15°), sensibilidad (1 a 10), filtro del temblor (0 a 0,3 s) y rampa de dirección (0 a 0,5 s).
+  - Sliders: zona muerta (1° a 9°, el rango del jugador), sensibilidad (1 a 10), filtro del temblor (0 a 0,3 s) y rampa de dirección (0 a 0,5 s).
   - Botón "Recalibrar": toma la posición del momento. Solo funciona en modo inclinación.
   - Botón "Calibración completa": abre la pantalla 03.
 - **Manejo:** un slider por cada parámetro de `DrivingConfig`, salvo los de `FIXED_DRIVING_KEYS` (`wheelbase` y `collisionRadius`, que salen de las medidas del auto). Incluye:

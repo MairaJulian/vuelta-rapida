@@ -7,7 +7,11 @@ import {
   DEFAULT_TILT_CONFIG,
   getFullTurnAngle,
   getScreenTilt,
+  getSteerRange,
   getTiltConfidence,
+  MAX_DEAD_ZONE,
+  MAX_FULL_TURN_ANGLE,
+  MIN_DEAD_ZONE,
   stepTiltSteering,
   toScreenGravity,
   withTiltSteering,
@@ -94,50 +98,138 @@ describe('toScreenGravity y getScreenTilt', () => {
   });
 });
 
-describe('getFullTurnAngle', () => {
-  it('va de 45° con sensibilidad 1 a 12° con 10, y 5 equivale a 25°', () => {
-    expect(getFullTurnAngle(1)).toBeCloseTo(45 * DEG, 12);
-    expect(getFullTurnAngle(10)).toBeCloseTo(12 * DEG, 12);
-    expect(getFullTurnAngle(5) / DEG).toBeCloseTo(25, 1);
+describe('getSteerRange y getFullTurnAngle', () => {
+  it('el rango útil va de 40° con sensibilidad 1 a 8° con 10, y 5 equivale a unos 19,6°', () => {
+    expect(getSteerRange(1)).toBeCloseTo(40 * DEG, 12);
+    expect(getSteerRange(10)).toBeCloseTo(8 * DEG, 12);
+    expect(getSteerRange(5) / DEG).toBeCloseTo(19.6, 1);
   });
 
-  it('a más sensibilidad, menos ángulo para girar a fondo', () => {
-    for (let sensitivity = 1; sensitivity < 10; sensitivity += 1) {
-      expect(getFullTurnAngle(sensitivity + 1)).toBeLessThan(getFullTurnAngle(sensitivity));
+  it('a más sensibilidad, menos ángulo para girar a fondo, con cualquier zona muerta', () => {
+    for (const deadZone of [0, MIN_DEAD_ZONE, 5 * DEG, MAX_DEAD_ZONE]) {
+      for (let sensitivity = 1; sensitivity < 10; sensitivity += 1) {
+        expect(getFullTurnAngle(deadZone, sensitivity + 1)).toBeLessThan(
+          getFullTurnAngle(deadZone, sensitivity),
+        );
+      }
     }
   });
 
+  it('el giro completo es la zona muerta más el rango útil', () => {
+    expect(getFullTurnAngle(5 * DEG, 5)).toBeCloseTo(5 * DEG + getSteerRange(5), 12);
+    expect(getFullTurnAngle(MAX_DEAD_ZONE, 1)).toBeCloseTo(MAX_FULL_TURN_ANGLE, 12);
+  });
+
   it('limita valores fuera de rango', () => {
-    expect(getFullTurnAngle(0)).toBe(getFullTurnAngle(1));
-    expect(getFullTurnAngle(15)).toBe(getFullTurnAngle(10));
+    expect(getSteerRange(0)).toBe(getSteerRange(1));
+    expect(getSteerRange(15)).toBe(getSteerRange(10));
   });
 });
 
 describe('angleToSteer', () => {
   const deadZone = 5 * DEG;
-  const fullTurn = 25 * DEG;
+  const steerRange = 20 * DEG;
 
   it('dentro de la zona muerta da 0, también en el borde', () => {
-    expect(angleToSteer(0, deadZone, fullTurn)).toBe(0);
-    expect(angleToSteer(4 * DEG, deadZone, fullTurn)).toBe(0);
-    expect(angleToSteer(-5 * DEG, deadZone, fullTurn)).toBe(0);
+    expect(angleToSteer(0, deadZone, steerRange)).toBe(0);
+    expect(angleToSteer(4 * DEG, deadZone, steerRange)).toBe(0);
+    expect(angleToSteer(-5 * DEG, deadZone, steerRange)).toBe(0);
   });
 
   it('crece desde el borde de la zona muerta, sin saltos', () => {
-    expect(angleToSteer(5.1 * DEG, deadZone, fullTurn)).toBeCloseTo(0.005, 9);
-    expect(angleToSteer(15 * DEG, deadZone, fullTurn)).toBeCloseTo(0.5, 12);
-    expect(angleToSteer(-15 * DEG, deadZone, fullTurn)).toBeCloseTo(-0.5, 12);
+    expect(angleToSteer(5.1 * DEG, deadZone, steerRange)).toBeCloseTo(0.005, 9);
+    expect(angleToSteer(15 * DEG, deadZone, steerRange)).toBeCloseTo(0.5, 12);
+    expect(angleToSteer(-15 * DEG, deadZone, steerRange)).toBeCloseTo(-0.5, 12);
   });
 
   it('se limita a -1 y 1', () => {
-    expect(angleToSteer(25 * DEG, deadZone, fullTurn)).toBe(1);
-    expect(angleToSteer(80 * DEG, deadZone, fullTurn)).toBe(1);
-    expect(angleToSteer(-80 * DEG, deadZone, fullTurn)).toBe(-1);
+    expect(angleToSteer(25 * DEG, deadZone, steerRange)).toBe(1);
+    expect(angleToSteer(80 * DEG, deadZone, steerRange)).toBe(1);
+    expect(angleToSteer(-80 * DEG, deadZone, steerRange)).toBe(-1);
+  });
+});
+
+/**
+ * Feedback de la prueba con usuarios: "aumento la sensibilidad y la zona muerta se
+ * aumenta también". Estos tests recorren el cálculo real (`stepTiltSteering`) con
+ * todas las combinaciones de zona muerta y sensibilidad.
+ */
+describe('zona muerta y sensibilidad son independientes', () => {
+  const DEAD_ZONES = [MIN_DEAD_ZONE, 3 * DEG, 5 * DEG, 7 * DEG, MAX_DEAD_ZONE];
+  // De 1 a 10 de a medio punto.
+  const SENSITIVITIES = Array.from({ length: 19 }, (_, i) => 1 + i / 2);
+  // De 0° a 60° de a cuarto de grado.
+  const ANGLES = Array.from({ length: 241 }, (_, i) => i / 4);
+
+  /** Dirección con la primera lectura, que se toma sin filtrar: el ángulo llega tal cual. */
+  function steerAt(degrees: number, deadZone: number, sensitivity: number): number {
+    const tiltConfig = { ...config, deadZone, sensitivity };
+    return stepTiltSteering(createTiltState(), pose(degrees), tiltConfig, DT).steer;
+  }
+
+  it('fuera de la zona muerta, más sensibilidad da igual o más dirección, en todo el recorrido', () => {
+    for (const deadZone of DEAD_ZONES) {
+      for (const degrees of ANGLES.filter((a) => a * DEG > deadZone)) {
+        for (let i = 1; i < SENSITIVITIES.length; i += 1) {
+          const softer = steerAt(degrees, deadZone, SENSITIVITIES[i - 1]);
+          const sharper = steerAt(degrees, deadZone, SENSITIVITIES[i]);
+          expect(sharper).toBeGreaterThanOrEqual(softer);
+          // Antes del tope, estrictamente más: subir la sensibilidad siempre se nota.
+          if (softer < 1) {
+            expect(sharper).toBeGreaterThan(softer);
+          }
+          // Hacia la izquierda, lo mismo con el signo opuesto.
+          expect(steerAt(-degrees, deadZone, SENSITIVITIES[i])).toBeCloseTo(-sharper, 12);
+        }
+      }
+    }
   });
 
-  it('si la zona muerta llega al giro completo, fuera de ella gira a fondo', () => {
-    expect(angleToSteer(30 * DEG, 30 * DEG, 20 * DEG)).toBe(0);
-    expect(angleToSteer(31 * DEG, 30 * DEG, 20 * DEG)).toBe(1);
+  it('cambiar la sensibilidad no mueve el borde de la zona muerta', () => {
+    for (const deadZone of DEAD_ZONES) {
+      const edge = deadZone / DEG;
+      for (const sensitivity of SENSITIVITIES) {
+        expect(steerAt(edge - 0.05, deadZone, sensitivity)).toBe(0);
+        expect(steerAt(edge + 0.05, deadZone, sensitivity)).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('cambiar la zona muerta no cambia la sensibilidad: la curva solo se desplaza', () => {
+    for (const sensitivity of SENSITIVITIES) {
+      const reference = DEAD_ZONES[0] / DEG;
+      for (const deadZone of DEAD_ZONES) {
+        const edge = deadZone / DEG;
+        for (const beyond of [0.5, 2, 5, 10, 20, 30]) {
+          expect(steerAt(edge + beyond, deadZone, sensitivity)).toBeCloseTo(
+            steerAt(reference + beyond, DEAD_ZONES[0], sensitivity),
+            9,
+          );
+        }
+        expect(getFullTurnAngle(deadZone, sensitivity) - deadZone).toBeCloseTo(
+          getSteerRange(sensitivity),
+          12,
+        );
+      }
+    }
+  });
+
+  it('al salir de la zona muerta la dirección crece desde 0, sin saltos', () => {
+    const STEP = 0.01;
+    // Lo más que puede cambiar la dirección en un paso: con el rango útil más corto (8°).
+    const maxChange = STEP / 8 + 1e-9;
+    for (const deadZone of DEAD_ZONES) {
+      const edge = deadZone / DEG;
+      for (const sensitivity of SENSITIVITIES) {
+        expect(steerAt(edge, deadZone, sensitivity)).toBeCloseTo(0, 9);
+        let previous = steerAt(edge - 1, deadZone, sensitivity);
+        for (let degrees = edge - 1 + STEP; degrees <= edge + 1; degrees += STEP) {
+          const current = steerAt(degrees, deadZone, sensitivity);
+          expect(Math.abs(current - previous)).toBeLessThanOrEqual(maxChange);
+          previous = current;
+        }
+      }
+    }
   });
 });
 
@@ -169,7 +261,7 @@ describe('stepTiltSteering', () => {
     expect(feed([pose(10)], calibrated).relativeAngle).toBeCloseTo(0, 12);
     // Sin calibrar, 10° ya saldría de la zona muerta.
     expect(feed([pose(10)]).steer).toBeGreaterThan(0);
-    // 10° + 25° (giro completo con sensibilidad 5) es giro completo.
+    // 10° + 5° de zona muerta + 19,6° de rango (sensibilidad 5) es giro completo.
     expect(feed([pose(36)], calibrated).steer).toBe(1);
   });
 

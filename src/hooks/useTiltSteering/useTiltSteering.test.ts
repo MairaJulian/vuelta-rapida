@@ -4,7 +4,7 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import { SensorType, useAnimatedSensor, useFrameCallback } from 'react-native-reanimated';
 
 import type { DrivingInput } from '@/core/DrivingModel';
-import { DEFAULT_TILT_CONFIG } from '@/core/TiltSteering';
+import { DEFAULT_TILT_CONFIG, getSteerRange } from '@/core/TiltSteering';
 
 import {
   FALLBACK_DELAY_MS,
@@ -96,8 +96,9 @@ describe('useTiltSteering', () => {
     lastSensor().set(landscapeGravity(15));
     runFrames(30);
     expect(result.current.output.value.relativeAngle).toBeCloseTo(15 * DEG, 6);
-    // 15° con zona muerta de 5° y giro completo cerca de 25°: la mitad.
-    expect(input.get().steer).toBeCloseTo(0.5, 3);
+    // 15° con zona muerta de 5°: 10° del rango útil de la sensibilidad 5 (unos 19,6°), algo más de la mitad.
+    const expected = (10 * DEG) / getSteerRange(DEFAULT_TILT_CONFIG.sensitivity);
+    expect(input.get().steer).toBeCloseTo(expected, 3);
     expect(input.get().brake).toBe(1);
   });
 

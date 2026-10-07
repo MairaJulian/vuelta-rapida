@@ -7,6 +7,8 @@ export const COLORS = {
   deadZone: '#B5C8F2',
   /** blue */
   dot: '#2F6BDD',
+  /** muted: marcas de giro completo */
+  fullTurn: '#5D6472',
 } as const;
 
 /** Píldora de 168 × 24 dp con un punto de 16 dp y 4 dp de margen interno. */
@@ -16,10 +18,18 @@ export const SIZES = {
   dot: 16,
   padding: 4,
   deadZoneHeight: 8,
+  tickWidth: 2,
+  tickHeight: 12,
 } as const;
 
 /** Recorrido del centro del punto a cada lado, en dp. */
 export const TRAVEL = (SIZES.width - 2 * SIZES.padding - SIZES.dot) / 2;
+
+/**
+ * Escala fija: grados de inclinación que llevan el punto al borde. La misma que el
+ * medidor de calibración; alcanza para el giro completo más suave posible (49°).
+ */
+export const SCALE_DEGREES = 50;
 
 /** Opacidad del punto con el celular plano (sin lectura confiable). */
 export const FLAT_OPACITY = 0.35;
@@ -40,6 +50,13 @@ export const styles = StyleSheet.create({
     height: SIZES.deadZoneHeight,
     borderRadius: SIZES.deadZoneHeight / 2,
     backgroundColor: COLORS.deadZone,
+  },
+  fullTurn: {
+    position: 'absolute',
+    width: SIZES.tickWidth,
+    height: SIZES.tickHeight,
+    borderRadius: SIZES.tickWidth / 2,
+    backgroundColor: COLORS.fullTurn,
   },
   dot: {
     position: 'absolute',

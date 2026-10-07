@@ -13,7 +13,7 @@ import {
 } from '@/core/DrivingModel';
 import type { CarState, DrivingConfig } from '@/core/DrivingModel';
 import type { ControlMode } from '@/core/PlayerPreferences';
-import { DEFAULT_TILT_CONFIG } from '@/core/TiltSteering';
+import { DEFAULT_TILT_CONFIG, MAX_DEAD_ZONE, MIN_DEAD_ZONE } from '@/core/TiltSteering';
 import type { TiltSteeringResult } from '@/core/TiltSteering';
 import { DEFAULT_TRACK } from '@/core/Track';
 import { formatSignedDegrees } from '@/render/CalibrationGauge';
@@ -188,13 +188,16 @@ export const TRACK_SLIDERS: SliderSpec<TrackSliderKey>[] = [
   { key: 'width', label: 'Ancho de pista', min: 8, max: 30, step: 0.5, format: (v) => `${v} m` },
 ];
 
-/** Sliders de la inclinación. La zona muerta se guarda en radianes y se muestra en grados. */
+/**
+ * Sliders de la inclinación. La zona muerta se guarda en radianes y se muestra en
+ * grados, en el mismo rango que puede elegir el jugador.
+ */
 export const TILT_SLIDERS: SliderSpec<TiltSliderKey>[] = [
   {
     key: 'deadZone',
     label: 'Zona muerta',
-    min: 0,
-    max: 15 * DEG,
+    min: MIN_DEAD_ZONE,
+    max: MAX_DEAD_ZONE,
     step: 0.5 * DEG,
     format: (v) => `±${(v / DEG).toFixed(1)}°`,
   },

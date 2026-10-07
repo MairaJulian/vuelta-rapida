@@ -37,9 +37,15 @@ export interface ScreenTilt {
 export interface TiltConfig {
   /** Ángulo que cuenta como derecho, capturado al calibrar, en radianes. */
   neutralAngle: Radians;
-  /** Zona muerta a cada lado del ángulo neutro, en radianes: dentro, el auto va derecho. */
+  /**
+   * Zona muerta a cada lado del ángulo neutro, en radianes: dentro, el auto va derecho.
+   * Fija en grados, no depende de la sensibilidad.
+   */
   deadZone: Radians;
-  /** Sensibilidad de 1 (suave) a 10 (rápida). Define el ángulo que equivale a giro completo. */
+  /**
+   * Sensibilidad de 1 (suave) a 10 (rápida). Define cuántos grados más allá de la zona
+   * muerta equivalen a giro completo; no cambia la zona muerta.
+   */
   sensitivity: number;
   /** Constante de tiempo del filtro contra el temblor, en segundos. 0 = sin filtro. */
   smoothing: number;

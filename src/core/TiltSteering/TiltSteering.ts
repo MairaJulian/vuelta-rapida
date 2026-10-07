@@ -12,9 +12,22 @@ import type {
 
 const DEGREE = Math.PI / 180;
 
-/** Ángulo de giro completo con la sensibilidad mínima (1) y máxima (10). */
-const SOFTEST_FULL_TURN = 45 * DEGREE;
-const SHARPEST_FULL_TURN = 12 * DEGREE;
+/**
+ * Rango útil (del borde de la zona muerta al giro completo) con la sensibilidad
+ * mínima (1) y máxima (10). La zona muerta se suma aparte: nunca le quita grados.
+ */
+const SOFTEST_STEER_RANGE = 40 * DEGREE;
+const SHARPEST_STEER_RANGE = 8 * DEGREE;
+
+/** Zona muerta admitida a cada lado del neutro, en radianes. */
+export const MIN_DEAD_ZONE = 1 * DEGREE;
+export const MAX_DEAD_ZONE = 9 * DEGREE;
+
+/**
+ * Giro completo más suave posible (zona muerta máxima y sensibilidad mínima): 49°.
+ * Los indicadores lo usan para dimensionar su escala fija.
+ */
+export const MAX_FULL_TURN_ANGLE = MAX_DEAD_ZONE + SOFTEST_STEER_RANGE;
 
 /**
  * Por debajo de esta parte de la gravedad sobre la pantalla (unos 15° de la
@@ -74,29 +87,34 @@ export function getScreenTilt(reading: GravityReading): ScreenTilt {
 }
 
 /**
- * Ángulo que equivale a giro completo según la sensibilidad: 1 → 45°, 10 → 12°,
- * en escala geométrica (cada punto achica el ángulo en la misma proporción). 5 → 25°.
+ * Grados que hay que girar más allá de la zona muerta para llegar a giro completo,
+ * según la sensibilidad: 1 → 40°, 10 → 8°, en escala geométrica (cada punto achica
+ * el rango en la misma proporción). 5 → unos 19,6°. No depende de la zona muerta.
  */
-export function getFullTurnAngle(sensitivity: number): Radians {
+export function getSteerRange(sensitivity: number): Radians {
   'worklet';
   const t = clamp((sensitivity - 1) / 9, 0, 1);
-  return SOFTEST_FULL_TURN * Math.pow(SHARPEST_FULL_TURN / SOFTEST_FULL_TURN, t);
+  return SOFTEST_STEER_RANGE * Math.pow(SHARPEST_STEER_RANGE / SOFTEST_STEER_RANGE, t);
+}
+
+/** Ángulo de giro completo: la zona muerta más el rango útil de la sensibilidad. */
+export function getFullTurnAngle(deadZone: Radians, sensitivity: number): Radians {
+  'worklet';
+  return deadZone + getSteerRange(sensitivity);
 }
 
 /**
  * Convierte un ángulo calibrado en dirección de -1 a 1. Dentro de la zona muerta
- * da 0; fuera, crece en línea recta desde el borde de la zona hasta el giro
- * completo, así no hay un salto al salir de ella.
+ * da 0; fuera, crece en línea recta desde 0 en el borde de la zona y llega a 1 tras
+ * recorrer `steerRange` (positivo), así no hay un salto al salir de ella.
  */
-export function angleToSteer(angle: Radians, deadZone: Radians, fullTurnAngle: Radians): number {
+export function angleToSteer(angle: Radians, deadZone: Radians, steerRange: Radians): number {
   'worklet';
   const magnitude = Math.abs(angle);
   if (magnitude <= deadZone) {
     return 0;
   }
-  const span = fullTurnAngle - deadZone;
-  const amount = span > 0 ? (magnitude - deadZone) / span : 1;
-  return Math.sign(angle) * Math.min(amount, 1);
+  return Math.sign(angle) * Math.min((magnitude - deadZone) / steerRange, 1);
 }
 
 /** Confianza de la lectura según la parte de la gravedad sobre la pantalla (0 plano, 1 confiable). */
@@ -140,7 +158,7 @@ export function stepTiltSteering(
 
   const relativeAngle = wrapAngle(next.angle - config.neutralAngle);
   const steer = next.hasReading
-    ? angleToSteer(relativeAngle, config.deadZone, getFullTurnAngle(config.sensitivity)) *
+    ? angleToSteer(relativeAngle, config.deadZone, getSteerRange(config.sensitivity)) *
         confidence || 0
     : 0;
   return { state: next, steer, relativeAngle, confidence };

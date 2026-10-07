@@ -11,8 +11,11 @@ Mapeo de la inclinación del celular a la dirección del auto: control por **pos
 | `calibrateTilt(state, config)` | Toma el ángulo filtrado actual como el nuevo "derecho". |
 | `toScreenGravity(reading)` | Pasa el vector del sensor a coordenadas de pantalla según la rotación. |
 | `getScreenTilt(reading)` | Ángulo de volante y parte de la gravedad sobre la pantalla. |
-| `getFullTurnAngle(sensitivity)` | Ángulo para girar a fondo: 1 → 45°, 5 → 25°, 10 → 12°. |
-| `angleToSteer(angle, deadZone, fullTurnAngle)` | Zona muerta y sensibilidad: ángulo calibrado a dirección de -1 a 1. |
+| `getSteerRange(sensitivity)` | Grados más allá de la zona muerta para girar a fondo: 1 → 40°, 5 → 19,6°, 10 → 8°. |
+| `getFullTurnAngle(deadZone, sensitivity)` | Ángulo de giro completo: zona muerta + rango útil. |
+| `angleToSteer(angle, deadZone, steerRange)` | Zona muerta y sensibilidad: ángulo calibrado a dirección de -1 a 1. |
+| `MIN_DEAD_ZONE`, `MAX_DEAD_ZONE` | Zona muerta admitida: de 1° a 9°. |
+| `MAX_FULL_TURN_ANGLE` | Giro completo más suave posible (49°), para dimensionar los indicadores. |
 | `getTiltConfidence(planar)` | 0 con el celular plano, 1 con la pantalla bien inclinada. |
 | `withTiltSteering(drivingConfig, tiltConfig)` | Configuración del manejo para el modo inclinación (rampa corta). |
 | `DEFAULT_TILT_CONFIG` | Valores iniciales (ver tabla). |
@@ -28,8 +31,8 @@ Mapeo de la inclinación del celular a la dirección del auto: control por **pos
 | Parámetro | Inicial | Efecto |
 |---|---|---|
 | `neutralAngle` | 0 | Ángulo que cuenta como derecho. Lo fija la calibración. |
-| `deadZone` | 5° | Zona muerta a cada lado del neutro, como pide el handoff. |
-| `sensitivity` | 5 | De 1 (suave) a 10 (rápida). Con 5, girar 25° es girar a fondo. |
+| `deadZone` | 5° | Zona muerta a cada lado del neutro, como pide el handoff. Fija en grados; el jugador la elige de 1° a 9°. |
+| `sensitivity` | 5 | De 1 (suave) a 10 (rápida). Con 5, girar 19,6° más allá de la zona muerta es girar a fondo. |
 | `smoothing` | 0,06 s | Filtro contra el temblor: constante de tiempo del filtro exponencial. |
 | `steerRampTime` | 0,08 s | Rampa de la dirección del modelo de manejo en modo inclinación. |
 
@@ -54,13 +57,17 @@ tiltConfig = calibrateTilt(state, tiltConfig);
 3. **Celular plano:** si menos del 25 % de la gravedad cae sobre la pantalla (unos 15° de la horizontal), el ángulo no es confiable. El filtro se congela y la dirección es 0. Entre el 25 % y el 40 % se atenúa de forma gradual.
 4. **Filtro:** exponencial sobre el ángulo, por el camino corto al cruzar ±180°. Si cambió la orientación, se reinicia con el ángulo nuevo en lugar de recorrer la diferencia.
 5. **Calibración:** se resta `neutralAngle`.
-6. **Zona muerta y sensibilidad:** 0 dentro de la zona; fuera, crece en línea recta desde el borde de la zona hasta el ángulo de giro completo, y se limita a ±1.
+6. **Zona muerta y sensibilidad:** 0 dentro de la zona; fuera, crece en línea recta desde 0 en el borde de la zona y llega a ±1 tras recorrer el rango útil de la sensibilidad.
 
 ## Decisiones de diseño
 
 - **Posición, no velocidad angular:** se usa el vector gravedad, nunca el giroscopio integrado. Lo que el jugador ve (el celular girado X grados) es lo que el auto hace, sin deriva con el tiempo.
 - **Una sola corrección por orientación, aquí:** el sensor se registra con el ajuste automático de Reanimated desactivado (`adjustToInterfaceOrientation: false`). Si se corrigiera dos veces, el ángulo quedaría girado 90°; un test lo cubre.
 - **La calibración vive en el marco de la pantalla:** sigue valiendo si el jugador da vuelta el celular.
-- **Sensibilidad en escala geométrica:** cada punto achica el ángulo de giro completo en la misma proporción, que se percibe más pareja que restar grados fijos.
+- **Zona muerta y sensibilidad independientes** (cambio tras la primera prueba con usuarios):
+  - Antes, la sensibilidad fijaba el ángulo de giro completo (45° a 12°) y la zona muerta se descontaba de ahí. Con sensibilidad 10, la zona muerta ocupaba 5° de 12° y el auto pasaba de recto a giro completo en 7°: se sentía como un interruptor.
+  - Ahora la sensibilidad fija el **rango útil** que empieza en el borde de la zona muerta, y la zona muerta se suma aparte. Cambiar una no toca la otra: la sensibilidad cambia la pendiente y la zona muerta solo desplaza la curva.
+  - Subir la sensibilidad reduce el ángulo necesario para cualquier dirección. La zona muerta nunca le gana al giro completo, así que no puede haber un salto de 0 a giro completo. Los tests recorren todas las combinaciones.
+- **Sensibilidad en escala geométrica:** cada punto achica el rango útil en la misma proporción, que se percibe más pareja que restar grados fijos.
 - **Rampa propia para la inclinación:** la rampa de 0,25 s del modelo está pensada para botones digitales y con una señal continua se sentiría como retraso. `withTiltSteering` la baja a 0,08 s sin que el modelo sepa qué control se usa.
 - Las funciones que corren por cuadro llevan `'worklet'` porque se llaman desde el hilo de UI. Es un texto, no un import.

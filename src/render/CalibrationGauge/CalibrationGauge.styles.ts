@@ -6,6 +6,8 @@ export const COLORS = {
   track: '#E3E6EB',
   /** blue-zone */
   deadZone: '#B5C8F2',
+  /** muted: marcas de giro completo */
+  fullTurn: '#5D6472',
   /** blue */
   marker: '#2F6BDD',
   ring: '#FFFFFF',
@@ -22,8 +24,16 @@ export const GAUGE = {
   centerY: 150,
   radius: 116,
   stroke: 14,
-  /** Hasta dónde llega el marcador a cada lado de arriba con la dirección a fondo, en grados. */
+  /** Hasta dónde llega el marcador a cada lado de arriba, en grados del arco. */
   span: 75,
+  /**
+   * Escala fija: grados de inclinación del celular que equivalen a `span`. Alcanza
+   * para el giro completo más suave posible (49°, `MAX_FULL_TURN_ANGLE`).
+   */
+  scaleDegrees: 50,
+  /** Marcas de giro completo: trazos que cruzan el arco, centrados en él. */
+  tickLength: 22,
+  tickWidth: 3,
   markerRadius: 9,
   ringRadius: 12,
 } as const;
