@@ -25,7 +25,7 @@ Cámara cenital que sigue al auto con anticipación: se adelanta en la direcció
 | `lookAheadSeconds` | 0.5 | Intensidad de la anticipación: cuántos segundos de recorrido se adelanta la cámara. |
 | `maxLookAheadFraction` | 0.3 | Tope del adelanto: 30 % del lado menor de la pantalla. |
 | `lookAheadSmoothing` | 0.5 | Suavizado del adelanto, en segundos: en ese tiempo recorre el 63 % de la diferencia con el objetivo. 0 = instantáneo. |
-| `rotateWithCar` | false | Si es true, el mundo gira y el auto mira siempre hacia arriba. Se prueba en el hito 3 con la inclinación. |
+| `rotateWithCar` | false | Si es true, el mundo gira y el auto mira siempre hacia arriba. Se activa con un interruptor del panel de desarrollo, para probarlo con la inclinación. |
 
 ## Ejemplo
 
@@ -44,5 +44,5 @@ const view = getCameraView(car, camera, DEFAULT_CAMERA_CONFIG, maxSpeed);
 - **Adelanto suavizado:** sin suavizar, el adelanto copiaba la velocidad al instante. Al frenar, al chocar con el borde o al pasar a marcha atrás, la velocidad cambia de golpe y la cámara saltaba. Ahora se acerca al objetivo con un filtro exponencial (`1 − e^(−dt/lookAheadSmoothing)`), que da el mismo resultado a 60, 90 o 120 Hz.
 - **En la dirección del movimiento, no del rumbo:** en marcha atrás la cámara mira hacia atrás del auto, que es hacia donde va.
 - **Fuera de la simulación:** la cámara es presentación. Avanza con el tiempo de cada cuadro sobre el auto interpolado y no entra en el estado determinista de la carrera.
-- **Rotación como opción de configuración:** con botones, el norte fijo es más fácil de leer; con inclinación puede convenir que el auto mire siempre hacia arriba. Se decide en el hito 3.
+- **Rotación como opción de configuración:** con botones, el norte fijo es más fácil de leer; con inclinación puede convenir que el auto mire siempre hacia arriba. Desde el hito 3 se prueba con el interruptor del panel; queda desactivada por defecto hasta decidirlo jugando.
 - `worldToScreen` replica exactamente la transformación que aplica el render; los tests la usan para comprobar dónde aparece el auto en pantalla.

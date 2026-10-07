@@ -1,6 +1,6 @@
 # DevSlider
 
-Control deslizante simple para el panel de desarrollo: etiqueta, valor formateado y una pista con su marcador.
+Control deslizante simple para el panel de desarrollo: etiqueta, valor formateado y una pista con su marcador. También lo usa la sensibilidad de la calibración, porque ya tiene la pista, el relleno azul y el pulgar del handoff; a diferencia del panel, esa pantalla sí está en producción.
 
 ## Props
 

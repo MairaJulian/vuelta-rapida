@@ -1,2 +1,2 @@
-export { NEUTRAL_INPUT, useDrivingInput } from './InputControls';
+export { createHoldGesture, NEUTRAL_INPUT, useDrivingInput, vibrateOnBrake } from './InputControls';
 export type { InputControlsComponent, InputControlsProps, InputMode } from './InputControls.types';

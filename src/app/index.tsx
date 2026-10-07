@@ -1,3 +1,3 @@
-import { DriveScreen } from '@/screens/DriveScreen';
+import { StartScreen } from '@/screens/StartScreen';
 
-export default DriveScreen;
+export default StartScreen;
