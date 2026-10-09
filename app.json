@@ -28,7 +28,17 @@
           }
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "react-native-audio-api",
+        {
+          "iosBackgroundMode": false,
+          "androidForegroundService": false,
+          "androidPermissions": [],
+          "disableFFmpeg": true,
+          "disableStaticExternalLibs": true
+        }
+      ]
     ],
     "scheme": "vueltarapida",
     "experiments": {
