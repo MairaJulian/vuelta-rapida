@@ -1,23 +1,29 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import type { SharedValue } from 'react-native-reanimated';
 import { getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 
+import { DEFAULT_RACE_AUDIO_MIX } from '@/audio/RaceAudio';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
 import { DEFAULT_CIRCUIT } from '@/core/Circuits';
 import { createCarState, DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
 import type { CarState } from '@/core/DrivingModel';
 import type { ControlMode } from '@/core/PlayerPreferences';
+import { DEFAULT_RACE_CONFIG } from '@/core/RaceFlow';
 import { createTiltState, DEFAULT_TILT_CONFIG } from '@/core/TiltSteering';
 import type { TiltSteeringResult } from '@/core/TiltSteering';
 import type { TrackData } from '@/core/Track';
+import { DEFAULT_RACE_HAPTICS } from '@/haptics/RaceHaptics';
 
 import {
+  AUDIO_SLIDERS,
   CAMERA_SLIDERS,
   DevPanel,
   DRIVING_SLIDERS,
   FIXED_DRIVING_KEYS,
   formatReadings,
   formatTiltReadings,
+  HAPTIC_MOMENTS,
+  RACE_SLIDERS,
   TILT_SLIDERS,
   TRACK_SLIDERS,
 } from './DevPanel';
@@ -62,6 +68,12 @@ async function renderPanel({
     car: car as unknown as SharedValue<CarState>,
     fps: shared(89.6) as unknown as SharedValue<number>,
     onResetCar: jest.fn(),
+    raceConfig: DEFAULT_RACE_CONFIG,
+    onRaceConfigChange: jest.fn(),
+    audioMix: DEFAULT_RACE_AUDIO_MIX,
+    onAudioMixChange: jest.fn(),
+    hapticsConfig: DEFAULT_RACE_HAPTICS,
+    onHapticsConfigChange: jest.fn(),
   };
   await render(<DevPanel {...props} />);
   return { ...props, car };
@@ -258,6 +270,65 @@ describe('DevPanel', () => {
     expect(props.onTiltConfigChange).toHaveBeenLastCalledWith({
       ...DEFAULT_TILT_CONFIG,
       neutralAngle: 0.2,
+    });
+    expect(props.onRaceConfigChange).toHaveBeenLastCalledWith(DEFAULT_RACE_CONFIG);
+    expect(props.onAudioMixChange).toHaveBeenLastCalledWith(DEFAULT_RACE_AUDIO_MIX);
+    expect(props.onHapticsConfigChange).toHaveBeenLastCalledWith(DEFAULT_RACE_HAPTICS);
+  });
+
+  it('las vueltas van de 1 a 5, de a una, e incluyen las de la carrera por defecto', () => {
+    const [laps] = RACE_SLIDERS;
+    expect(laps).toMatchObject({ key: 'totalLaps', min: 1, max: 5, step: 1 });
+    expect(DEFAULT_RACE_CONFIG.totalLaps).toBeGreaterThanOrEqual(laps.min);
+    expect(DEFAULT_RACE_CONFIG.totalLaps).toBeLessThanOrEqual(laps.max);
+  });
+
+  it('el slider de vueltas cambia las de la próxima carrera', async () => {
+    const props = await renderPanel();
+    await openPanel();
+    await slide('totalLaps', 1);
+    expect(props.onRaceConfigChange).toHaveBeenLastCalledWith({
+      ...DEFAULT_RACE_CONFIG,
+      totalLaps: 5,
+    });
+  });
+
+  it('los rangos del sonido contienen la mezcla por defecto', () => {
+    for (const spec of AUDIO_SLIDERS) {
+      expect(DEFAULT_RACE_AUDIO_MIX[spec.key]).toBeGreaterThanOrEqual(spec.min);
+      expect(DEFAULT_RACE_AUDIO_MIX[spec.key]).toBeLessThanOrEqual(spec.max);
+    }
+  });
+
+  it('los sliders del sonido cambian la mezcla en caliente', async () => {
+    const props = await renderPanel();
+    await openPanel();
+    await slide('engineVolume', 0);
+    expect(props.onAudioMixChange).toHaveBeenLastCalledWith({
+      ...DEFAULT_RACE_AUDIO_MIX,
+      engineVolume: 0,
+    });
+    expect(screen.getByText('Tono del motor a fondo')).toBeTruthy();
+  });
+
+  it('cada momento de la vibración elige entre las cinco intensidades', async () => {
+    const props = await renderPanel();
+    await openPanel();
+    expect(HAPTIC_MOMENTS.map(([, label]) => label)).toEqual([
+      'Piano',
+      'Borde',
+      'Largada',
+      'Llegada',
+    ]);
+    const border = within(screen.getByTestId('haptics-border'));
+    expect(border.getAllByRole('radio')).toHaveLength(5);
+    expect(border.getByRole('radio', { name: 'Fuerte' })).toHaveProp('accessibilityState', {
+      checked: true,
+    });
+    await fireEvent.press(border.getByRole('radio', { name: 'Doble' }));
+    expect(props.onHapticsConfigChange).toHaveBeenLastCalledWith({
+      ...DEFAULT_RACE_HAPTICS,
+      border: 'double',
     });
   });
 

@@ -3,6 +3,9 @@ import { Pressable, Switch, Text, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { DEFAULT_RACE_AUDIO_MIX } from '@/audio/RaceAudio';
+import type { RaceAudioMix } from '@/audio/RaceAudio';
+import { DevSegmented } from '@/components/DevSegmented';
 import { DevSlider } from '@/components/DevSlider';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
 import {
@@ -13,9 +16,12 @@ import {
 } from '@/core/DrivingModel';
 import type { CarState, DrivingConfig } from '@/core/DrivingModel';
 import type { ControlMode } from '@/core/PlayerPreferences';
+import { DEFAULT_RACE_CONFIG } from '@/core/RaceFlow';
 import { DEFAULT_TILT_CONFIG, MAX_DEAD_ZONE, MIN_DEAD_ZONE } from '@/core/TiltSteering';
 import type { TiltSteeringResult } from '@/core/TiltSteering';
 import { DEFAULT_CIRCUIT } from '@/core/Circuits';
+import { DEFAULT_RACE_HAPTICS, HAPTIC_LEVELS } from '@/haptics/RaceHaptics';
+import type { HapticMoment } from '@/haptics/RaceHaptics';
 import { formatSignedDegrees } from '@/render/CalibrationGauge';
 
 import { COLORS, OFFSETS, READING_FLEX, READINGS_INTERVAL_MS, styles } from './DevPanel.styles';
@@ -23,6 +29,7 @@ import type {
   DevPanelProps,
   DevReadings,
   NumericCameraKey,
+  RaceSliderKey,
   SliderSpec,
   TiltReadings,
   TiltSliderKey,
@@ -227,9 +234,55 @@ export const TILT_SLIDERS: SliderSpec<TiltSliderKey>[] = [
   },
 ];
 
-const CONTROL_MODE_LABELS: [ControlMode, string][] = [
-  ['tilt', 'Inclinación'],
-  ['buttons', 'Botones'],
+/** Sliders de la carrera. Las vueltas valen desde la próxima carrera (Reiniciar auto). */
+export const RACE_SLIDERS: SliderSpec<RaceSliderKey>[] = [
+  { key: 'totalLaps', label: 'Vueltas', min: 1, max: 5, step: 1, format: String },
+];
+
+const pitch = (value: number) => `×${value.toFixed(2)}`;
+
+/** Sliders del sonido: volúmenes de 0 a 100 % y tono del motor como velocidad del loop. */
+export const AUDIO_SLIDERS: SliderSpec<keyof RaceAudioMix>[] = [
+  { key: 'engineVolume', label: 'Volumen del motor', min: 0, max: 1, step: 0.05, format: percent },
+  {
+    key: 'effectsVolume',
+    label: 'Volumen de los efectos',
+    min: 0,
+    max: 1,
+    step: 0.05,
+    format: percent,
+  },
+  {
+    key: 'enginePitchMin',
+    label: 'Tono del motor detenido',
+    min: 0.25,
+    max: 2,
+    step: 0.05,
+    format: pitch,
+  },
+  {
+    key: 'enginePitchMax',
+    label: 'Tono del motor a fondo',
+    min: 0.5,
+    max: 4,
+    step: 0.05,
+    format: pitch,
+  },
+];
+
+/** Momentos que vibran, en el orden del panel. */
+export const HAPTIC_MOMENTS: [HapticMoment, string][] = [
+  ['kerb', 'Piano'],
+  ['border', 'Borde'],
+  ['start', 'Largada'],
+  ['finish', 'Llegada'],
+];
+
+const HAPTIC_OPTIONS = HAPTIC_LEVELS.map(({ level, label }) => ({ value: level, label }));
+
+const CONTROL_MODE_OPTIONS: { value: ControlMode; label: string }[] = [
+  { value: 'tilt', label: 'Inclinación' },
+  { value: 'buttons', label: 'Botones' },
 ];
 
 const READING_LABELS: [keyof DevReadings, string][] = [
@@ -290,6 +343,12 @@ export function DevPanel({
   car,
   fps,
   onResetCar,
+  raceConfig,
+  onRaceConfigChange,
+  audioMix,
+  onAudioMixChange,
+  hapticsConfig,
+  onHapticsConfigChange,
 }: DevPanelProps) {
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
@@ -320,6 +379,9 @@ export function DevPanel({
     onCameraConfigChange(DEFAULT_CAMERA_CONFIG);
     onTrackChange({ ...track, width: DEFAULT_CIRCUIT.width });
     onTiltConfigChange({ ...DEFAULT_TILT_CONFIG, neutralAngle: tiltConfig.neutralAngle });
+    onRaceConfigChange({ ...raceConfig, totalLaps: DEFAULT_RACE_CONFIG.totalLaps });
+    onAudioMixChange(DEFAULT_RACE_AUDIO_MIX);
+    onHapticsConfigChange(DEFAULT_RACE_HAPTICS);
   };
 
   return (
@@ -370,25 +432,12 @@ export function DevPanel({
             ) : null}
 
             <Text style={styles.sectionTitle}>Control</Text>
-            <View style={styles.segmented} accessibilityRole="radiogroup">
-              {CONTROL_MODE_LABELS.map(([mode, label]) => {
-                const selected = controlMode === mode;
-                return (
-                  <Pressable
-                    key={mode}
-                    style={[styles.segment, selected && styles.segmentSelected]}
-                    onPress={() => onControlModeChange(mode)}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked: selected }}
-                    accessibilityLabel={label}
-                  >
-                    <Text style={[styles.segmentText, selected && styles.segmentTextSelected]}>
-                      {label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+            <DevSegmented
+              label="Control"
+              options={CONTROL_MODE_OPTIONS}
+              value={controlMode}
+              onChange={onControlModeChange}
+            />
 
             {/* Solo en modo inclinación: con botones, estos ajustes no hacen nada y confunden. */}
             {isTilt ? (
@@ -427,6 +476,52 @@ export function DevPanel({
                 </View>
               </>
             ) : null}
+
+            <Text style={styles.sectionTitle}>Carrera</Text>
+            {RACE_SLIDERS.map((spec) => (
+              <DevSlider
+                key={spec.key}
+                testID={`slider-${spec.key}`}
+                label={spec.label}
+                value={raceConfig[spec.key]}
+                min={spec.min}
+                max={spec.max}
+                step={spec.step}
+                formatValue={spec.format}
+                onChange={(value) => onRaceConfigChange({ ...raceConfig, [spec.key]: value })}
+              />
+            ))}
+            <Text style={styles.note}>Las vueltas valen desde la próxima carrera.</Text>
+
+            <Text style={styles.sectionTitle}>Sonido</Text>
+            {AUDIO_SLIDERS.map((spec) => (
+              <DevSlider
+                key={spec.key}
+                testID={`slider-${spec.key}`}
+                label={spec.label}
+                value={audioMix[spec.key]}
+                min={spec.min}
+                max={spec.max}
+                step={spec.step}
+                formatValue={spec.format}
+                onChange={(value) => onAudioMixChange({ ...audioMix, [spec.key]: value })}
+              />
+            ))}
+
+            <Text style={styles.sectionTitle}>Vibración</Text>
+            {HAPTIC_MOMENTS.map(([moment, label]) => (
+              <View key={moment} style={styles.optionRow}>
+                <Text style={styles.switchLabel}>{label}</Text>
+                <DevSegmented
+                  label={label}
+                  testID={`haptics-${moment}`}
+                  options={HAPTIC_OPTIONS}
+                  value={hapticsConfig[moment]}
+                  onChange={(level) => onHapticsConfigChange({ ...hapticsConfig, [moment]: level })}
+                  compact
+                />
+              </View>
+            ))}
 
             <Text style={styles.sectionTitle}>Manejo</Text>
             {DRIVING_SLIDERS.map((spec) => (

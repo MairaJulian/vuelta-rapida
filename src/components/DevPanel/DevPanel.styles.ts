@@ -115,30 +115,14 @@ export const styles = StyleSheet.create({
     opacity: 0.45,
   },
   // Selector de modo de control: dos opciones en una píldora.
-  segmented: {
-    flexDirection: 'row',
-    padding: 4,
+  note: {
+    color: COLORS.muted,
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  optionRow: {
     gap: 4,
-    borderRadius: 999,
-    backgroundColor: COLORS.soft,
-  },
-  segment: {
-    flex: 1,
-    minHeight: 40,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  segmentSelected: {
-    backgroundColor: COLORS.primary,
-  },
-  segmentText: {
-    color: COLORS.text,
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  segmentTextSelected: {
-    color: COLORS.primaryText,
+    marginBottom: 6,
   },
   switchRow: {
     flexDirection: 'row',
