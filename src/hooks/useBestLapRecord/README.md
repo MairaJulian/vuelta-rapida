@@ -20,13 +20,14 @@ Récord de un circuito: lo lee de las preferencias guardadas y guarda una vuelta
 
 ```tsx
 const { recordMs, saveLap } = useBestLapRecord({ circuitId: circuit.id, stepHz: 60 });
-const loop = useDrivingLoop({ ..., track: circuit, onBestLap: saveLap });
-<LapHud laps={loop.laps} recordMs={recordMs} stepHz={60} />
+const loop = useRaceLoop({ ..., track: circuit, onEvents: bus.emitAll });
+useEffect(() => bus.on('newRecord', (event) => saveLap(event.lapTicks)), [bus, saveLap]);
+<LapHud lapView={loop.lapView} recordMs={recordMs} stepHz={60} />
 ```
 
 ## Decisiones de diseño
 
-- **El loop avisa, el hook decide:** la simulación (hilo de UI) solo sabe cuál es la mejor vuelta de la sesión. Cuando mejora, `useDrivingLoop` llama a `saveLap` en el hilo de JS con `scheduleOnRN`, y aquí se compara con el récord guardado.
+- **La carrera avisa, el hook guarda:** la carrera (hilo de UI) recibe el récord al empezar y emite `newRecord` cuando una vuelta lo mejora. La pantalla escucha ese evento en el bus y llama a `saveLap`, que igual vuelve a comparar con el récord guardado.
 - **Compara con las preferencias del momento** (`readPlayerPreferences`), no con las del último render, y la regla está en `withBestLap` (`core/PlayerPreferences`).
-- **`saveLap` es estable:** el loop la captura en su worklet, así que no cambia cuando cambian las preferencias.
+- **`saveLap` es estable:** no cambia cuando cambian las preferencias, así la suscripción al bus no se rehace.
 - **Se guarda en milisegundos:** el récord sigue valiendo aunque cambie la frecuencia de la física.

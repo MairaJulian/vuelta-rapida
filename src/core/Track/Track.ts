@@ -7,6 +7,7 @@ import type {
   CircuitSpec,
   FinishLine,
   FinishSign,
+  KerbSection,
   OvalSpec,
   Pose,
   TrackData,
@@ -19,6 +20,15 @@ const START_GAP = 15;
 const FINISH_LINE_THICKNESS = 1.8;
 /** Radio por debajo del cual un tramo cuenta como curva y lleva pianos, en metros. */
 export const CURVE_MAX_RADIUS = 150;
+/** Ancho del borde blanco respecto del asfalto (handoff: trazo de 120 sobre 110). */
+export const EDGE_WIDTH_RATIO = 120 / 110;
+/** Ancho de los pianos respecto del asfalto (handoff: trazo de 138 sobre 110). */
+export const KERB_WIDTH_RATIO = 138 / 110;
+/**
+ * Metros en que el piano pisable crece desde cada punta hasta su ancho completo.
+ * Sin esta transición, un auto que sale del piano a fondo saltaría hacia adentro.
+ */
+export const KERB_TAPER = 4;
 
 /** Quita el ruido de coma flotante de seno y coseno (precisión de un nanómetro). */
 const tidy = (value: number) => Math.round(value * 1e9) / 1e9 || 0;
@@ -67,46 +77,6 @@ export const OVAL_TRACK: TrackData = createOvalTrack({
   segmentsPerCurve: 32,
 });
 
-/**
- * Arma un circuito a partir de un trazado: calcula la distancia desde la meta
- * hasta cada punto, el largo de la vuelta y dónde caen los puntos de control.
- */
-export function createCircuit({
-  id,
-  name,
-  centerline,
-  width,
-  checkpointFractions,
-}: CircuitSpec): Circuit {
-  const distances = [0];
-  for (let i = 1; i < centerline.length; i += 1) {
-    const a = centerline[i - 1];
-    const b = centerline[i];
-    distances.push(distances[i - 1] + Math.hypot(b.x - a.x, b.z - a.z));
-  }
-  const last = centerline[centerline.length - 1];
-  const first = centerline[0];
-  const length = distances[distances.length - 1] + Math.hypot(first.x - last.x, first.z - last.z);
-  return {
-    id,
-    name,
-    centerline,
-    width,
-    distances,
-    length,
-    checkpoints: checkpointFractions.map((fraction) => fraction * length),
-  };
-}
-
-/** El óvalo de prueba como circuito, con puntos de control en los tercios de la vuelta. */
-export const OVAL_CIRCUIT: Circuit = createCircuit({
-  id: 'ovalo-de-prueba',
-  name: 'Óvalo de prueba',
-  centerline: OVAL_TRACK.centerline,
-  width: OVAL_TRACK.width,
-  checkpointFractions: [1 / 3, 2 / 3],
-});
-
 /** Rumbo para ir de un punto a otro (0 hacia -z, positivo en sentido horario). */
 function headingBetween(from: TrackPoint, to: TrackPoint): Radians {
   return wrapAngle(Math.atan2(to.x - from.x, from.z - to.z));
@@ -123,19 +93,22 @@ export const CURVE_MERGE_GAP = 24;
 /** Un tramo curvo más corto que esto, en metros, no lleva piano. */
 export const CURVE_MIN_LENGTH = 20;
 
+/** Tramo curvo como puntos seguidos del trazado: `count` puntos desde `first` (con vuelta). */
+interface CurveRun {
+  first: number;
+  count: number;
+}
+
 /**
- * Tramos curvos del trazado, para dibujar los pianos. Un punto es curvo si la
- * curvatura (el giro entre los puntos a unos `CURVATURE_WINDOW` metros antes y
- * después, dividido por el largo medio de esos dos tramos) supera `1 / maxRadius`.
- * Con puntos más separados que la ventana se usan los vecinos inmediatos. Los tramos
- * separados por menos de `CURVE_MERGE_GAP` se unen, y los más cortos que
- * `CURVE_MIN_LENGTH` se descartan. Cada tramo incluye un punto más a cada lado, para
- * cubrir la curva de punta a punta. Un trazado todo curvo devuelve la vuelta entera.
+ * Tramos curvos del trazado. Un punto es curvo si la curvatura (el giro entre los
+ * puntos a unos `CURVATURE_WINDOW` metros antes y después, dividido por el largo
+ * medio de esos dos tramos) supera `1 / maxRadius`. Con puntos más separados que la
+ * ventana se usan los vecinos inmediatos. Los tramos separados por menos de
+ * `CURVE_MERGE_GAP` se unen, y los más cortos que `CURVE_MIN_LENGTH` se descartan.
+ * Cada tramo incluye un punto más a cada lado, para cubrir la curva de punta a
+ * punta. Un trazado todo curvo devuelve la vuelta entera (un punto más que el trazado).
  */
-export function getCurveSections(
-  track: TrackData,
-  maxRadius: number = CURVE_MAX_RADIUS,
-): TrackPoint[][] {
+function getCurveRuns(track: TrackData, maxRadius: number): CurveRun[] {
   const points = track.centerline;
   const count = points.length;
   if (count < 3) {
@@ -160,7 +133,7 @@ export function getCurveSections(
 
   const firstStraight = curved.indexOf(false);
   if (firstStraight < 0) {
-    return [[...points, points[0]]];
+    return [{ first: 0, count: count + 1 }];
   }
   // Los tramos se cuentan en pasos desde el primer punto recto, así ninguna curva
   // queda partida en dos por el punto 0. `along[s]` es lo recorrido hasta el paso s.
@@ -205,13 +178,112 @@ export function getCurveSections(
   // Descarta los tramos sueltos demasiado cortos para leerse como un piano.
   runs = merged.filter((run) => along[run.end] - along[run.start] >= CURVE_MIN_LENGTH);
 
-  return runs.map(({ start: from, end: to }) => {
-    const section: TrackPoint[] = [];
-    for (let step = from - 1; step <= to + 1; step += 1) {
-      section.push(points[indexAt(step + count)]);
+  return runs.map(({ start: from, end: to }) => ({
+    first: indexAt(from - 1 + count),
+    count: to - from + 3,
+  }));
+}
+
+/**
+ * Tramos curvos del trazado, para dibujar los pianos: los puntos de cada uno, de
+ * punta a punta (ver `getCurveRuns`). Un trazado todo curvo devuelve la vuelta
+ * entera, cerrada.
+ */
+export function getCurveSections(
+  track: TrackData,
+  maxRadius: number = CURVE_MAX_RADIUS,
+): TrackPoint[][] {
+  const points = track.centerline;
+  return getCurveRuns(track, maxRadius).map(({ first, count }) =>
+    Array.from({ length: count }, (_, i) => points[(first + i) % points.length]),
+  );
+}
+
+/**
+ * Tramos con pianos medidos sobre el trazado: los mismos tramos curvos que se
+ * dibujan, como distancia desde la meta y largo. Con ellos la simulación sabe
+ * dónde se puede pisar el piano.
+ */
+export function getKerbSections(
+  track: TrackData,
+  distances: number[],
+  lapLength: number,
+  maxRadius: number = CURVE_MAX_RADIUS,
+): KerbSection[] {
+  const count = track.centerline.length;
+  return getCurveRuns(track, maxRadius).map(({ first, count: points }) => {
+    if (points > count) {
+      return { start: 0, length: lapLength };
     }
-    return section;
+    const last = (first + points - 1) % count;
+    const span = distances[last] - distances[first];
+    return { start: distances[first], length: span < 0 ? span + lapLength : span };
   });
+}
+
+/**
+ * Arma un circuito a partir de un trazado: calcula la distancia desde la meta
+ * hasta cada punto, el largo de la vuelta, dónde caen los puntos de control y
+ * dónde están los pianos.
+ */
+export function createCircuit({
+  id,
+  name,
+  centerline,
+  width,
+  checkpointFractions,
+}: CircuitSpec): Circuit {
+  const distances = [0];
+  for (let i = 1; i < centerline.length; i += 1) {
+    const a = centerline[i - 1];
+    const b = centerline[i];
+    distances.push(distances[i - 1] + Math.hypot(b.x - a.x, b.z - a.z));
+  }
+  const last = centerline[centerline.length - 1];
+  const first = centerline[0];
+  const length = distances[distances.length - 1] + Math.hypot(first.x - last.x, first.z - last.z);
+  return {
+    id,
+    name,
+    centerline,
+    width,
+    distances,
+    length,
+    checkpoints: checkpointFractions.map((fraction) => fraction * length),
+    kerbs: getKerbSections({ centerline, width }, distances, length),
+  };
+}
+
+/** El óvalo de prueba como circuito, con puntos de control en los tercios de la vuelta. */
+export const OVAL_CIRCUIT: Circuit = createCircuit({
+  id: 'ovalo-de-prueba',
+  name: 'Óvalo de prueba',
+  centerline: OVAL_TRACK.centerline,
+  width: OVAL_TRACK.width,
+  checkpointFractions: [1 / 3, 2 / 3],
+});
+
+/**
+ * Cuánto del piano se puede pisar en un punto de la vuelta, de 0 a 1: 0 fuera de
+ * los pianos, 1 en el medio, y en cada punta crece a lo largo de `KERB_TAPER`
+ * metros. `progress` es la distancia desde la meta. Worklet.
+ */
+export function getKerbFactor(kerbs: KerbSection[], lapLength: number, progress: number): number {
+  'worklet';
+  let factor = 0;
+  for (let i = 0; i < kerbs.length; i += 1) {
+    const kerb = kerbs[i];
+    if (kerb.length >= lapLength) {
+      return 1;
+    }
+    const offset = (((progress - kerb.start) % lapLength) + lapLength) % lapLength;
+    if (offset <= kerb.length) {
+      const edge = Math.min(offset, kerb.length - offset);
+      const value = KERB_TAPER > 0 ? Math.min(edge / KERB_TAPER, 1) : 1;
+      factor = Math.max(factor, value);
+    }
+  }
+  return factor;
 }
 
 /** Línea de meta en el punto 0, perpendicular al primer tramo. */

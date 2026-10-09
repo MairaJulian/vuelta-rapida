@@ -1,3 +1,4 @@
+import { KERB_WIDTH_RATIO } from '@/core/Track';
 import type { Circuit, TrackData, TrackPoint } from '@/core/Track';
 
 import type { TrackIssue, TrackValidationOptions } from './TrackValidation.types';
@@ -128,6 +129,8 @@ export function validateTrack(
   }
 
   // Radio medido entre puntos a `radiusWindow` metros, para no confundir el ruido con curvas.
+  // Tiene que superar hasta dónde se puede ir: en las curvas, el borde exterior del piano.
+  const reach = (track.width / 2) * KERB_WIDTH_RATIO;
   const averageStep = length / count;
   const window = Math.max(1, Math.round(options.radiusWindow / averageStep));
   let tightest: { index: number; radius: number } | null = null;
@@ -137,7 +140,7 @@ export function validateTrack(
       points[i],
       points[(i + window) % count],
     );
-    if (radius <= track.width / 2 && (tightest === null || radius < tightest.radius)) {
+    if (radius <= reach && (tightest === null || radius < tightest.radius)) {
       tightest = { index: i, radius };
     }
   }

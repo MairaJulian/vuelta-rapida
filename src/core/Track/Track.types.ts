@@ -78,6 +78,19 @@ export interface Circuit extends TrackData {
   length: number;
   /** Puntos de control intermedios: distancia desde la meta, en orden, dentro de la vuelta. */
   checkpoints: number[];
+  /** Tramos con pianos (uno por curva), en el orden de la vuelta. Se pueden pisar. */
+  kerbs: KerbSection[];
+}
+
+/**
+ * Tramo con pianos a los dos lados de la pista, medido sobre el trazado central.
+ * Puede cruzar la meta: termina en `(start + length) % length de la vuelta`.
+ */
+export interface KerbSection {
+  /** Distancia desde la meta hasta el comienzo del piano, en metros. */
+  start: number;
+  /** Largo del piano, en metros. Igual al largo de la vuelta si toda la pista es curva. */
+  length: number;
 }
 
 /** Datos para armar un circuito a partir de un trazado ya hecho. */

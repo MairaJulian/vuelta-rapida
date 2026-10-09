@@ -1,5 +1,6 @@
 import type { CarState } from '@/core/DrivingModel';
 import type { LapState } from '@/core/LapTimer';
+import type { TrackContact } from '@/core/TrackBounds';
 
 /** Estado completo de la simulación. Serializable: solo números y objetos planos. */
 export interface DrivingSimState {
@@ -18,4 +19,6 @@ export interface DrivingSimState {
   trackSegment: number;
   /** Vueltas y tiempos, medidos en pasos de simulación. */
   laps: LapState;
+  /** Contacto con los bordes y los pianos en el último paso. */
+  contact: TrackContact;
 }

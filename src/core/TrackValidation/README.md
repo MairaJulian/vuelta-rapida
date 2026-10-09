@@ -21,7 +21,7 @@ Revisa que un trazado sirva como circuito. Devuelve la lista de problemas, vací
 | `not-closed` | El tramo que vuelve al punto 0 es más largo que cualquier otro: los datos describen un camino abierto, que se cerraría con un salto. |
 | `self-crossing` | Dos segmentos no vecinos se cortan. |
 | `sections-too-close` | Dos tramos distintos (a más de 4 anchos de distancia por el trazado) quedan a menos de 2 anchos de pista, de centro a centro. |
-| `curve-too-tight` | Una curva de radio menor o igual a medio ancho: el borde interior se plegaría. El radio se mide entre puntos a unos 4 m, para no confundir ruido con curvas. |
+| `curve-too-tight` | Una curva de radio menor o igual a lo que se puede alejar el auto del trazado (medio ancho más el piano, que se puede pisar): el borde interior se plegaría. El radio se mide entre puntos a unos 4 m, para no confundir ruido con curvas. |
 | `checkpoints-out-of-order` | Puntos de control fuera de la vuelta o desordenados (solo `validateCircuit`). |
 
 ## Ejemplo

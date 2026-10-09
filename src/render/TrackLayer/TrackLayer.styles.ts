@@ -1,3 +1,5 @@
+import { EDGE_WIDTH_RATIO, KERB_WIDTH_RATIO } from '@/core/Track';
+
 /**
  * Constantes visuales de la pista. Colores de docs/design (EscenaPista y README),
  * convertidos de oklch a hex. Grosores relativos al ancho del asfalto, con la
@@ -23,10 +25,13 @@ export const COLORS = {
   signText: '#14171F',
 } as const;
 
-/** Grosor del borde blanco respecto del asfalto. */
-export const EDGE_RATIO = 120 / 110;
-/** Grosor de los pianos (solo en curvas) respecto del asfalto. */
-export const CURB_RATIO = 138 / 110;
+/**
+ * Grosor del borde blanco y de los pianos (solo en curvas) respecto del asfalto.
+ * Vienen de `core/Track`: la simulación usa las mismas medidas para saber cuándo
+ * el auto pisa un piano y hasta dónde puede ir.
+ */
+export const EDGE_RATIO = EDGE_WIDTH_RATIO;
+export const CURB_RATIO = KERB_WIDTH_RATIO;
 /** Largo de cada raya del piano, en metros (12 dp del handoff a escala). */
 export const CURB_DASH = 0.9;
 
