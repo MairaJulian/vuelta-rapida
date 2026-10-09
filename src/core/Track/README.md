@@ -11,6 +11,7 @@ Los circuitos del juego se definen con puntos de control en `core/Circuits`; aqu
   - `distances[i]`: distancia desde la meta hasta el punto `i`.
   - `checkpoints`: los puntos de control intermedios, en metros desde la meta.
   - `kerbs`: los pianos (`KerbSection`: `{ start, length }`, en metros sobre el trazado). Un piano puede cruzar la meta.
+  - `scenery` (opcional): la escenografía (`core/Scenery`). La suman `withScenery` o `withCircuitScenery`; la simulación no la usa.
   - Es lo que reciben la simulación y las vueltas. Serializable.
 - `CircuitSpec`: `{ id, name, centerline, width, checkpointFractions }`, para armar un `Circuit`.
 - `TrackPoint`: `{ x, z }`.

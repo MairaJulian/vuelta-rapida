@@ -1,0 +1,28 @@
+export {
+  CLEARANCE_CELL_SIZE,
+  createTrackClearance,
+  DEFAULT_RUNOFF,
+  fitsClearance,
+  getClearanceAt,
+  getClearanceOverlap,
+  getMainStraight,
+  getPointAtDistance,
+  getReadableRotation,
+  getSegmentAtDistance,
+  getSidePoint,
+  getSignedCurvature,
+  getStraights,
+  getTightCorners,
+  isWithinSection,
+  TIGHT_CORNER_MERGE_GAP,
+  TIGHT_CORNER_MIN_LENGTH,
+  TIGHT_CORNER_RADIUS,
+} from './TrackFeatures';
+export type {
+  RunoffConfig,
+  TightCorner,
+  TrackClearance,
+  TrackSample,
+  TrackSide,
+  TrackStraight,
+} from './TrackFeatures.types';

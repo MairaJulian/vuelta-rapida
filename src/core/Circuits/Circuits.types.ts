@@ -1,3 +1,4 @@
+import type { ScenerySpec } from '@/core/Scenery';
 import type { TrackPoint } from '@/core/Track';
 
 /**
@@ -15,4 +16,6 @@ export interface CircuitDefinition {
   width: number;
   /** Puntos de control intermedios como fracción de la vuelta, en orden, entre 0 y 1. */
   checkpointFractions: number[];
+  /** Semilla y densidad de la escenografía: con los mismos valores, los mismos árboles. */
+  scenery: ScenerySpec;
 }

@@ -1,4 +1,5 @@
 import { resampleClosedPolyline, sampleClosedCatmullRom } from '@/core/CatmullRom';
+import { DEFAULT_SCENERY_SPEC, withScenery } from '@/core/Scenery';
 import { createCircuit } from '@/core/Track';
 import type { Circuit } from '@/core/Track';
 
@@ -14,7 +15,8 @@ const toMillimeters = (value: number) => Math.round(value * 1000) / 1000 || 0;
 
 /**
  * Arma el circuito: suaviza los puntos de control con una Catmull-Rom centrípeta
- * cerrada y la remuestrea cada `TRACK_SPACING` metros. El punto 0 es la meta.
+ * cerrada y la remuestrea cada `TRACK_SPACING` metros. El punto 0 es la meta. Sin
+ * escenografía: esa la suma `withCircuitScenery`.
  */
 export function buildCircuit(definition: CircuitDefinition): Circuit {
   const smooth = sampleClosedCatmullRom(definition.controlPoints, SAMPLES_PER_SEGMENT);
@@ -26,6 +28,17 @@ export function buildCircuit(definition: CircuitDefinition): Circuit {
     width: definition.width,
     checkpointFractions: definition.checkpointFractions,
   });
+}
+
+/**
+ * El circuito con su escenografía, generada con la semilla y la densidad de su
+ * definición (se busca por `id`; un circuito sin definición usa la de por defecto).
+ * La pantalla de carrera la pide al abrirse: generarla tarda unos cientos de
+ * milisegundos en el celular y no tiene sentido pagarlo al iniciar la app.
+ */
+export function withCircuitScenery(circuit: Circuit): Circuit {
+  const definition = CIRCUIT_DEFINITIONS.find((item) => item.id === circuit.id);
+  return withScenery(circuit, definition?.scenery ?? DEFAULT_SCENERY_SPEC);
 }
 
 /**
@@ -43,6 +56,7 @@ export const AUTODROMO_DEL_LAGO: CircuitDefinition = {
   name: 'Autódromo del Lago',
   width: 14,
   checkpointFractions: [1 / 3, 2 / 3],
+  scenery: { seed: 7, treeDensity: 1 },
   controlPoints: [
     { x: -93.5, z: 165 }, // Meta, donde la marca el handoff.
     { x: 22, z: 165 },
