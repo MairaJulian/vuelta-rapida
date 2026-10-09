@@ -153,3 +153,24 @@ export function formatLapTime(ms: number): string {
   const millis = total % 1000;
   return `${minutes}:${String(seconds).padStart(2, '0')}.${String(millis).padStart(3, '0')}`;
 }
+
+/** Signo menos tipográfico (U+2212), como pide el handoff para los deltas. */
+export const MINUS_SIGN = '−';
+
+/**
+ * Diferencia de tiempo como en el handoff, siempre con signo: "−0.578" si es a
+ * favor (negativa), "+0.236" si es en contra, "±0.000" si es igual. Desde un
+ * minuto, con minutos: "+1:02.345".
+ */
+export function formatLapDelta(ms: number): string {
+  const total = Number.isFinite(ms) ? Math.round(ms) : 0;
+  if (total === 0) {
+    return '±0.000';
+  }
+  const sign = total < 0 ? MINUS_SIGN : '+';
+  const abs = Math.abs(total);
+  if (abs >= 60000) {
+    return `${sign}${formatLapTime(abs)}`;
+  }
+  return `${sign}${Math.floor(abs / 1000)}.${String(abs % 1000).padStart(3, '0')}`;
+}

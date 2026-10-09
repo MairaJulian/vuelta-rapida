@@ -6,8 +6,8 @@ import type { TrackData } from '@/core/Track';
 export interface DriveCanvasProps {
   /** Circuito a dibujar. */
   track: TrackData;
-  /** Transformación de la cámara (de `useDrivingLoop`). */
+  /** Transformación de la cámara (de `useRaceLoop`). */
   cameraTransform: SharedValue<Transforms3d>;
-  /** Posición y rumbo del auto en el mundo (de `useDrivingLoop`). */
+  /** Posición y rumbo del auto en el mundo (de `useRaceLoop`). */
   carTransform: SharedValue<Transforms3d>;
 }

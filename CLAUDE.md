@@ -69,7 +69,11 @@ El handoff está en [docs/design](docs/design). Es la referencia visual para tod
 
 ## Assets
 
-Packs CC0 de estilo plano/low-poly. Registrar la fuente y licencia de cada asset en un archivo de créditos.
+Packs CC0 de estilo plano/low-poly. Registrar la fuente y licencia de cada asset en [CREDITOS.md](CREDITOS.md).
+
+- **Sonidos en WAV mono** (`assets/sounds/`): sin FFmpeg ni las bibliotecas externas de react-native-audio-api (`app.json`), el decodificador solo lee WAV, MP3 y FLAC. OGG no sirve.
+- Los efectos se sintetizan con `node scripts/generate-sounds.mjs`; el motor se pasa a mono con `--engine <ruta>` (ver CREDITOS.md).
+- **Ícono de la app** en `assets/icono/`, tal cual lo entrega el handoff (`docs/design/.../icono/`). Si cambia, hay que regenerar `android/` (`npx expo prebuild --platform android`) y recompilar.
 
 ## Estructura de carpetas
 
@@ -80,19 +84,26 @@ src/
   app/        rutas de Expo Router; archivos finos que solo renderizan screens/
   core/       TS puro (sin React/RN/Skia): manejo, carrera, vueltas, fantasma
   input/      capa de entrada abstraída (inclinación, botones)
+  audio/      sonido sobre react-native-audio-api (motor y efectos)
+  haptics/    vibraciones sobre expo-haptics
   render/     componentes Skia; solo leen estado
   components/ UI genérica (HUD, botones)
   hooks/      conectan core con Reanimated/React
   screens/    pantallas completas
-test/setup/   mocks y setup global de Jest (Skia, Reanimated)
+assets/icono/  ícono de la app (capas del ícono adaptativo de Android)
+assets/sounds/ sonidos WAV (ver CREDITOS.md)
+scripts/      herramientas de Node sin dependencias (generar sonidos)
+test/setup/   mocks y setup global de Jest (Skia, Reanimated, audio, almacenamiento)
 ```
+
+- La carrera avisa lo que pasa por un bus de eventos (`core/EventBus`): el semáforo, la pausa, los resultados, el sonido y la vibración lo escuchan. `core` no importa `audio/` ni `haptics/` (regla de ESLint).
 
 Las carpetas se crean cuando hacen falta, no antes.
 
 ## Tests
 
 - `npm test` corre Jest (preset `jest-expo`, React Native Testing Library 14, que es asíncrona: usar `await render(...)` y `await renderHook(...)`).
-- Skia se sustituye por un mock propio (`test/setup/skia.ts`); Reanimated usa su mock oficial ampliado con `useFrameCallback` (`test/setup/reanimated.ts`).
+- Skia se sustituye por un mock propio (`test/setup/skia.ts`); Reanimated usa su mock oficial ampliado con `useFrameCallback`, `modify` y valores compartidos que duran toda la vida del componente (`test/setup/reanimated.ts`); react-native-audio-api usa su mock oficial (`test/setup/audio-api.ts`).
 - `npm run typecheck` corre `tsc --noEmit`.
 - `npm run lint` corre `expo lint` (ESLint 9 con `eslint-config-expo` y `eslint-plugin-prettier`, config en `eslint.config.js`; ignora `docs/`, `android/`, `.expo/` y `dist/`). Las diferencias de formato cuentan como errores de lint. `npm run lint:fix` corrige lo automático.
 - `npm run format` aplica Prettier (`.prettierrc`); `npm run format:check` solo verifica.
@@ -100,7 +111,9 @@ Las carpetas se crean cuando hacen falta, no antes.
 
 ## Estructura por componente
 
-Cada componente, pantalla, hook o módulo vive en su propia carpeta con:
+Cada componente, pantalla, hook o módulo vive en su propia carpeta. Hay dos niveles.
+
+**Convención completa (seis archivos):** módulos de `core` y componentes principales, es decir, pantallas y componentes reutilizables.
 
 - `NombreComponente.tsx` (o `.ts`)
 - `NombreComponente.styles.ts`
@@ -109,19 +122,30 @@ Cada componente, pantalla, hook o módulo vive en su propia carpeta con:
 - `README.md` con la documentación: propósito, props o parámetros, ejemplo de uso y decisiones de diseño
 - `index.ts` que exporta el componente y sus tipos
 
+**Componentes chicos de interfaz:** solo `NombreComponente.tsx`, `NombreComponente.styles.ts`, `NombreComponente.types.ts` e `index.ts`.
+
+- Llevan test únicamente si tienen lógica.
+- No llevan README propio: se documentan en el README de la pantalla o del módulo que los usa.
+
 Reglas:
 
-- **Excepción:** las rutas de `src/app/` no siguen esta convención de seis archivos, porque no contienen lógica (solo reexportan o renderizan una pantalla de `screens/`). Si una ruta necesita lógica, esa lógica va a una pantalla, hook o módulo que sí cumpla la convención.
-- Los hooks y los módulos de `core` no llevan archivo de estilos.
+- **Excepción:** las rutas de `src/app/` no siguen esta convención, porque no contienen lógica (solo reexportan o renderizan una pantalla de `screens/`). Si una ruta necesita lógica, esa lógica va a una pantalla, hook o módulo que sí cumpla la convención.
+- Los hooks y los módulos sin interfaz (`core`, `input`, etc.) siguen la convención completa, sin archivo de estilos.
 - En componentes de Skia, el archivo de estilos contiene las constantes visuales (colores, tamaños, grosores).
-- Nunca crear un componente sin sus tests y su README.
+- Nunca crear un módulo de `core`, un hook ni un componente principal sin sus tests y su README.
+- Los componentes creados antes de esta regla (hito 5) quedan como están: no se adaptan a la convención nueva.
 
 ## Flujo de git
 
 - Cada hito se trabaja en una rama propia (`hito-N-descripcion`), nunca directamente en `main`. La rama base de los PR es `main`.
-- Commits chicos y descriptivos, en español, uno por paso del hito.
+- Un commit por paso del hito, no uno por cada cambio. Descriptivos y en español.
 - Los commits requieren mi confirmación: el hook global (`~/.claude/custom-hooks`, `autoCommit: false`) los bloquea hasta que yo los apruebo o los ejecuto. No modificar ese hook ni ese ajuste.
-- **Claude trabaja el hito completo sin frenarse** y yo reviso al final. No pide commits entre pasos ni espera a que commitee. Las únicas pausas son las que yo pida en el enunciado (por ejemplo "Esperá mi confirmación"). Al terminar entrega:
+- **Claude trabaja el hito completo sin frenarse** y yo reviso al final. No pide commits entre pasos ni espera a que commitee. Solo frena en estos casos:
+  - Las pausas que yo pida en el enunciado (por ejemplo "Esperá mi confirmación").
+  - Decisiones de arquitectura (estructura de capas, módulos nuevos que cambian cómo se conectan las partes, cambios a la regla de `core` puro, etc.).
+  - Dependencias nuevas.
+
+  Para el resto, avanza y explica las decisiones en la descripción del PR. Al terminar entrega:
   - Un bloque de commit por paso, para PowerShell, con rutas explícitas. Si un archivo cambió en más de un paso, va en el commit del último paso que lo tocó, y se aclara.
   - El comando de push y la descripción del PR (ver abajo).
 - Al cerrar cada hito, **antes del push**: correr `npm run lint`, `npm test` y `npm run typecheck`, y que los tres terminen **sin errores**. Si alguno falla, se corrige antes de dar el comando de push.
@@ -136,11 +160,15 @@ Reglas:
 
 Claude puede hacer lo siguiente sin pedirme permiso. Cada uso se informa al cerrar el trabajo y en la descripción del PR: qué cambió y por qué.
 
-- **Agregar dependencias** (`npm install`). Si una tiene código nativo, avisa que hay que recompilar el dev build (`npm run android`, con el celular conectado; lo hago yo).
-- **Cambiar la configuración nativa** (`app.json`, plugins, prebuild). También avisa que hay que recompilar.
+- **Cambiar la configuración nativa** (`app.json`, plugins, prebuild). Avisa que hay que recompilar el dev build (`npm run android`, con el celular conectado; lo hago yo).
 - **Borrar o renombrar archivos o módulos.** Se sigue respetando lo que pedí conservar explícitamente, por ejemplo el código, las pantallas y los tests de la inclinación.
 - **Cambiar valores del manejo** (rampa, velocidad, agarre, etc.). Solo lo indispensable para que algo se pueda jugar, con los valores de antes y de después.
 - **Crear o reorganizar carpetas**, siguiendo la estructura por componente.
+
+Esto requiere mi confirmación antes de hacerlo:
+
+- **Agregar dependencias** (`npm install`). Al pedirla, aclarar si tiene código nativo (hay que recompilar el dev build).
+- **Decisiones de arquitectura** (ver Flujo de git).
 
 Esto no se habilita nunca, ni con permiso:
 

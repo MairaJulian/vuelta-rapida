@@ -7,9 +7,10 @@ Los circuitos del juego se definen con puntos de control en `core/Circuits`; aqu
 ## Tipos
 
 - `TrackData`: `{ centerline: TrackPoint[], width }`, en metros. El punto 0 es la meta; la carrera avanza en el orden de los índices y el último punto se une con el primero. Serializable.
-- `Circuit`: `TrackData` más `{ id, name, distances, length, checkpoints }`.
+- `Circuit`: `TrackData` más `{ id, name, distances, length, checkpoints, kerbs }`.
   - `distances[i]`: distancia desde la meta hasta el punto `i`.
   - `checkpoints`: los puntos de control intermedios, en metros desde la meta.
+  - `kerbs`: los pianos (`KerbSection`: `{ start, length }`, en metros sobre el trazado). Un piano puede cruzar la meta.
   - Es lo que reciben la simulación y las vueltas. Serializable.
 - `CircuitSpec`: `{ id, name, centerline, width, checkpointFractions }`, para armar un `Circuit`.
 - `TrackPoint`: `{ x, z }`.
@@ -33,7 +34,10 @@ Los circuitos del juego se definen con puntos de control en `core/Circuits`; aqu
 | `getFinishSign(track, length, depth, gap)` | Dónde va el cartel "META": afuera del circuito, justo después de la línea, con el texto derecho. |
 | `getLapDirection(track)` | 1 si la vuelta es en sentido horario (vista desde arriba), −1 si es antihorario. |
 | `getStartPose(track)` | Largada: 15 m antes de la meta medidos sobre el trazado, mirando hacia ella. |
-| `getCurveSections(track, maxRadius?)` | Tramos curvos (radio menor que `CURVE_MAX_RADIUS`, 150 m), de punta a punta, para los pianos. Une los que están separados por poco y descarta los muy cortos. |
+| `getCurveSections(track, maxRadius?)` | Tramos curvos (radio menor que `CURVE_MAX_RADIUS`, 150 m), de punta a punta, para dibujar los pianos. Une los que están separados por poco y descarta los muy cortos. |
+| `getKerbSections(track, distances, length, maxRadius?)` | Los mismos tramos medidos sobre el trazado. `createCircuit` los guarda en `kerbs`. |
+| `getKerbFactor(kerbs, length, progress)` | Cuánto del piano se puede pisar en ese punto, de 0 a 1: crece a lo largo de `KERB_TAPER` (4 m) en cada punta. Worklet. |
+| `EDGE_WIDTH_RATIO` / `KERB_WIDTH_RATIO` | Ancho del borde blanco (120/110) y de los pianos (138/110) respecto del asfalto. Los usan el dibujo y el límite de pista. |
 | `OVAL_TRACK` / `OVAL_CIRCUIT` | Óvalo de prueba para los tests: rectas de 200 m, curvas de 50 m de radio, 14 m de ancho (unos 714 m). |
 | `createOvalTrack(spec)` / `createOvalCenterline(spec)` | Óvalo tipo estadio, o solo sus puntos. |
 
@@ -62,6 +66,7 @@ const advanced = getProgressDelta(before, after, DEFAULT_CIRCUIT.length);
   - los de menos de 20 m se descartan.
   
   Quedan 6 pianos, uno por curva. En el óvalo, con puntos más separados, el resultado es el mismo de antes.
+- **Pianos como datos del circuito:** salen de la misma detección de curvas con que se dibujan, una sola vez al armar el circuito. La simulación los consulta con el progreso del auto en cada paso (seis tramos: una cuenta barata).
 - **El punto 0 es la meta** y el orden de los puntos es el sentido de la carrera: la largada, la meta y las vueltas salen de ahí.
 - **14 m de ancho** (unos 7 autos). Más ancho que la proporción del handoff, para que la pista perdone más mientras se aprende a manejar.
 - **El cartel "META" va afuera del circuito:** el lado se deduce del sentido de la vuelta. En sentido horario el interior queda a la derecha de la marcha.

@@ -1,5 +1,6 @@
 import {
   createLapState,
+  formatLapDelta,
   formatLapTime,
   getCurrentLap,
   getCurrentLapTicks,
@@ -156,5 +157,23 @@ describe('ticksToMs y formatLapTime', () => {
     expect(formatLapTime(0)).toBe('0:00.000');
     expect(formatLapTime(-5)).toBe('0:00.000');
     expect(formatLapTime(Number.NaN)).toBe('0:00.000');
+  });
+});
+
+describe('formatLapDelta', () => {
+  it('siempre lleva signo, con el menos tipográfico', () => {
+    expect(formatLapDelta(-578)).toBe('−' + '0.578');
+    expect(formatLapDelta(236)).toBe('+0.236');
+    expect(formatLapDelta(1312.4)).toBe('+1.312');
+    expect(formatLapDelta(0)).toBe('±0.000');
+  });
+
+  it('desde un minuto muestra los minutos', () => {
+    expect(formatLapDelta(62345)).toBe('+1:02.345');
+    expect(formatLapDelta(-60000)).toBe('−' + '1:00.000');
+  });
+
+  it('un valor inválido cuenta como 0', () => {
+    expect(formatLapDelta(Number.NaN)).toBe('±0.000');
   });
 });

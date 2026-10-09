@@ -8,8 +8,8 @@ import type { ControlMode, PlayerPreferences, StartStep } from './PlayerPreferen
 export const CONTROL_MODES: readonly ControlMode[] = ['tilt', 'buttons'];
 
 /**
- * Sin elegir ni calibrar, con la sensibilidad del medio, la zona muerta inicial (5°)
- * y sin récords.
+ * Sin elegir ni calibrar, con la sensibilidad del medio, la zona muerta inicial (5°),
+ * sin récords y con sonido y vibración.
  */
 export const DEFAULT_PLAYER_PREFERENCES: PlayerPreferences = Object.freeze({
   controlMode: null,
@@ -17,6 +17,8 @@ export const DEFAULT_PLAYER_PREFERENCES: PlayerPreferences = Object.freeze({
   tiltSensitivity: 5,
   tiltDeadZone: DEFAULT_TILT_CONFIG.deadZone,
   bestLapsMs: Object.freeze({}),
+  soundEnabled: true,
+  vibrationEnabled: true,
 });
 
 const MIN_SENSITIVITY = 1;
@@ -88,6 +90,14 @@ export function parsePlayerPreferences(raw: string | null): PlayerPreferences {
       ? clamp(fields.tiltDeadZone, MIN_DEAD_ZONE, MAX_DEAD_ZONE)
       : DEFAULT_PLAYER_PREFERENCES.tiltDeadZone,
     bestLapsMs: parseBestLaps(fields.bestLapsMs),
+    soundEnabled:
+      typeof fields.soundEnabled === 'boolean'
+        ? fields.soundEnabled
+        : DEFAULT_PLAYER_PREFERENCES.soundEnabled,
+    vibrationEnabled:
+      typeof fields.vibrationEnabled === 'boolean'
+        ? fields.vibrationEnabled
+        : DEFAULT_PLAYER_PREFERENCES.vibrationEnabled,
   };
 }
 
@@ -99,6 +109,8 @@ export function serializePlayerPreferences(preferences: PlayerPreferences): stri
     tiltSensitivity: preferences.tiltSensitivity,
     tiltDeadZone: preferences.tiltDeadZone,
     bestLapsMs: preferences.bestLapsMs,
+    soundEnabled: preferences.soundEnabled,
+    vibrationEnabled: preferences.vibrationEnabled,
   });
 }
 

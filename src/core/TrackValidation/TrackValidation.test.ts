@@ -62,6 +62,15 @@ describe('validateTrack', () => {
     );
   });
 
+  it('cuenta el piano: una curva apenas más abierta que medio ancho también es inválida', () => {
+    // 8 m de radio con 14 m de ancho: el asfalto entra, pero el piano (hasta 8,8 m) no.
+    const issues = validateTrack({ centerline: ring(40, 8), width: 14 });
+    expect(issues).toContainEqual(expect.objectContaining({ kind: 'curve-too-tight' }));
+    expect(validateTrack({ centerline: ring(40, 8), width: 12 })).not.toContainEqual(
+      expect.objectContaining({ kind: 'curve-too-tight' }),
+    );
+  });
+
   it('detecta una vuelta abierta: el tramo que cierra es el más largo', () => {
     const line: TrackData = {
       centerline: [

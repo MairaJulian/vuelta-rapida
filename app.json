@@ -1,19 +1,19 @@
 {
   "expo": {
-    "name": "vuelta-rapida",
+    "name": "Vuelta Rápida",
     "slug": "vuelta-rapida",
     "version": "1.0.0",
     "orientation": "landscape",
     "platforms": ["android"],
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icono/icon-1024.png",
     "userInterfaceStyle": "light",
     "android": {
       "package": "com.mairajulian.vueltarapida",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#2F6BDD",
+        "foregroundImage": "./assets/icono/adaptive-foreground.png",
+        "backgroundImage": "./assets/icono/adaptive-background.png",
+        "monochromeImage": "./assets/icono/adaptive-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
     },
@@ -28,7 +28,17 @@
           }
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "react-native-audio-api",
+        {
+          "iosBackgroundMode": false,
+          "androidForegroundService": false,
+          "androidPermissions": [],
+          "disableFFmpeg": true,
+          "disableStaticExternalLibs": true
+        }
+      ]
     ],
     "scheme": "vueltarapida",
     "experiments": {

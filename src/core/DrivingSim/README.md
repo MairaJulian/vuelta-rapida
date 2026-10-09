@@ -13,10 +13,11 @@ Simulación de manejo de paso fijo. Une varias piezas y ofrece el estado interpo
 |---|---|
 | `createDrivingSim(car)` | Simulación nueva en el tick 0, con las vueltas sin empezar. |
 | `advanceDrivingSim(sim, frameMs, input, drivingConfig, circuit, stepConfig)` | Avanza con el tiempo de un cuadro. En cada paso fijo aplica el límite de pista y actualiza las vueltas. Devuelve un estado nuevo. |
+| `stepDrivingSim(sim, input, drivingConfig, circuit, dt)` | Un solo paso fijo, sin tocar el tiempo acumulado. Lo usa `RaceFlow`, que maneja sus propios pasos (el semáforo avanza sin mover el auto). |
 | `getRenderCar(sim, stepConfig)` | Estado del auto a dibujar, interpolado entre los dos últimos pasos. |
 | `interpolateCar(previous, current, alpha)` | Mezcla dos estados (el rumbo por el arco corto). |
 
-`DrivingSimState`: `{ car, previousCar, tick, accumulatorMs, trackSegment, laps }`. Serializable.
+`DrivingSimState`: `{ car, previousCar, tick, accumulatorMs, trackSegment, laps, contact }`. Serializable. `contact` es el contacto con los bordes y los pianos del último paso (`TrackContact`).
 
 ## Ejemplo
 
@@ -31,7 +32,7 @@ const lap = getCurrentLap(sim.laps);
 
 1. `stepCar` mueve el auto.
 2. Se busca el punto del trazado más cercano, una sola vez, empezando por el segmento del paso anterior (`trackSegment`).
-3. `constrainToHit` mantiene el auto dentro de la pista con ese punto.
+3. Con el progreso de ese punto se ve si hay piano (`getKerbFactor`), y `resolveTrackContact` mantiene el auto dentro de la pista (sobre los pianos, hasta su borde exterior) y cuenta el contacto.
 4. Con el mismo punto se calcula el progreso, y `stepLapTimer` actualiza las vueltas con el número de paso.
 
 ## Decisiones de diseño

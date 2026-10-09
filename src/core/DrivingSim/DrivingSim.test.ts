@@ -5,16 +5,29 @@ import { DEFAULT_FIXED_STEP_CONFIG, getStepMs } from '@/core/FixedStep';
 import { createLapState, getCurrentLap } from '@/core/LapTimer';
 import { clamp, wrapAngle } from '@/core/MathUtils';
 import {
+  getKerbFactor,
   getNearestOnCenterline,
+  getProgressAt,
   getProgressDelta,
   getStartPose,
   getTrackProgress,
   OVAL_CIRCUIT,
 } from '@/core/Track';
 import type { Circuit } from '@/core/Track';
-import { getTrackLimit } from '@/core/TrackBounds';
+import {
+  getKerbContactDistance,
+  getKerbReach,
+  getTrackLimit,
+  NO_CONTACT,
+} from '@/core/TrackBounds';
 
-import { advanceDrivingSim, createDrivingSim, getRenderCar, interpolateCar } from './DrivingSim';
+import {
+  advanceDrivingSim,
+  createDrivingSim,
+  getRenderCar,
+  interpolateCar,
+  stepDrivingSim,
+} from './DrivingSim';
 import type { DrivingSimState } from './DrivingSim.types';
 
 const stepConfig = DEFAULT_FIXED_STEP_CONFIG;
@@ -56,6 +69,7 @@ describe('DrivingSim', () => {
       accumulatorMs: 0,
       trackSegment: -1,
       laps: createLapState(),
+      contact: NO_CONTACT,
     });
   });
 
@@ -102,9 +116,10 @@ describe('DrivingSim', () => {
     expect(next.accumulatorMs).toBeCloseTo(sim.accumulatorMs + 4, 9);
   });
 
-  it('mantiene el auto dentro de la pista en cada paso', () => {
+  it('mantiene el auto dentro de la pista en cada paso; en los pianos, hasta su borde', () => {
     // Dirección a fondo durante 10 s: sin límites, el auto saldría del óvalo.
     const limit = getTrackLimit(track, DEFAULT_DRIVING_CONFIG);
+    const reach = getKerbReach(track);
     let sim = runFrames([], INPUT);
     for (const frameMs of irregularFrames(10000)) {
       sim = advanceDrivingSim(
@@ -115,8 +130,9 @@ describe('DrivingSim', () => {
         track,
         stepConfig,
       );
-      const { distance } = getNearestOnCenterline(track, sim.car.x, sim.car.z);
-      expect(distance).toBeLessThanOrEqual(limit + 1e-9);
+      const hit = getNearestOnCenterline(track, sim.car.x, sim.car.z);
+      const kerb = getKerbFactor(track.kerbs, track.length, getProgressAt(track, hit));
+      expect(hit.distance).toBeLessThanOrEqual(limit + kerb * reach + 1e-9);
     }
   });
 
@@ -202,6 +218,58 @@ describe('DrivingSim: progreso y vueltas', () => {
   it('la búsqueda del paso empieza en el segmento del paso anterior', () => {
     const sim = runFrames(Array(30).fill(1000 / 60), INPUT);
     expect(sim.trackSegment).toBe(getNearestOnCenterline(track, sim.car.x, sim.car.z).segment);
+  });
+});
+
+describe('stepDrivingSim: bordes y pianos', () => {
+  const dt = 1 / stepConfig.stepHz;
+  const STILL: DrivingInput = { steer: 0, brake: 1 };
+
+  /** Un paso desde un auto puesto a mano, con la búsqueda completa del punto más cercano. */
+  function stepFrom(car: CarState, input: DrivingInput = STILL) {
+    return stepDrivingSim(createDrivingSim(car), input, DEFAULT_DRIVING_CONFIG, track, dt);
+  }
+
+  it('avanza un paso y no toca el tiempo acumulado', () => {
+    const sim = { ...createDrivingSim(createCarState(0, -50, Math.PI / 2)), accumulatorMs: 3 };
+    const next = stepDrivingSim(sim, INPUT, DEFAULT_DRIVING_CONFIG, track, dt);
+    expect(next.tick).toBe(1);
+    expect(next.previousCar).toBe(sim.car);
+    expect(next.accumulatorMs).toBe(3);
+  });
+
+  it('en la recta, pasar el borde es un toque con la velocidad hacia afuera como golpe', () => {
+    // Recta de arriba del óvalo (z = -50): el auto va hacia afuera (-z) a 10 m/s.
+    const car = { ...createCarState(0, -56.5, 0), vz: -10 };
+    const { contact, car: after } = stepFrom(car, { steer: 0, brake: 0 });
+    expect(contact.touching).toBe(true);
+    expect(contact.onKerb).toBe(false);
+    expect(contact.impactSpeed).toBeGreaterThan(9);
+    expect(getNearestOnCenterline(track, after.x, after.z).distance).toBeCloseTo(
+      getTrackLimit(track, DEFAULT_DRIVING_CONFIG),
+      9,
+    );
+  });
+
+  it('adentro del asfalto no hay contacto', () => {
+    expect(stepFrom(createCarState(0, -50, Math.PI / 2)).contact).toEqual(NO_CONTACT);
+  });
+
+  it('en la curva, el auto puede pisar el piano sin tocar el límite', () => {
+    // Mitad de la curva derecha (radio 50, centro en x = 100): afuera es +x.
+    const distance = (getKerbContactDistance(track, DEFAULT_DRIVING_CONFIG) + 7.7) / 2;
+    expect(distance).toBeGreaterThan(getTrackLimit(track, DEFAULT_DRIVING_CONFIG));
+    const { contact, car } = stepFrom(createCarState(150 + distance, 0, Math.PI));
+    expect(contact).toEqual({ touching: false, impactSpeed: 0, onKerb: true });
+    expect(car.x).toBeCloseTo(150 + distance, 9);
+  });
+
+  it('en la curva, el límite es el borde exterior del piano', () => {
+    const { contact, car } = stepFrom(createCarState(150 + 9, 0, Math.PI));
+    expect(contact.touching).toBe(true);
+    expect(contact.onKerb).toBe(true);
+    const limit = getTrackLimit(track, DEFAULT_DRIVING_CONFIG) + getKerbReach(track);
+    expect(car.x - 150).toBeCloseTo(limit, 9);
   });
 });
 

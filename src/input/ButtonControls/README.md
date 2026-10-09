@@ -7,6 +7,7 @@ Modo de control con botones en pantalla: izquierda, derecha y freno. Implementa 
 | Prop | Tipo | Descripción |
 |---|---|---|
 | `input` | `SharedValue<DrivingInput>` | Entrada que escriben los botones y lee la simulación. |
+| `brakeVibration` | `boolean` (opcional) | Vibración corta al empezar a frenar; la pantalla pasa la preferencia del jugador. Por defecto, sí. |
 
 También exporta `buttonsToInput(pressed)`, el mapeo puro de botones presionados a `DrivingInput`.
 

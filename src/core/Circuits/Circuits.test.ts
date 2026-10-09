@@ -108,6 +108,15 @@ describe('AUTODROMO_DEL_LAGO', () => {
     expect(Math.min(...lengths)).toBeGreaterThanOrEqual(50);
   });
 
+  it('trae los seis pianos como datos, para pisarlos en la simulación', () => {
+    expect(DEFAULT_CIRCUIT.kerbs).toHaveLength(6);
+    DEFAULT_CIRCUIT.kerbs.forEach((kerb) => {
+      expect(kerb.start).toBeGreaterThanOrEqual(0);
+      expect(kerb.start).toBeLessThan(DEFAULT_CIRCUIT.length);
+      expect(kerb.length).toBeGreaterThanOrEqual(50);
+    });
+  });
+
   it('es el circuito por defecto, de 14 m de ancho', () => {
     expect(DEFAULT_CIRCUIT.id).toBe('autodromo-del-lago');
     expect(DEFAULT_CIRCUIT.name).toBe('Autódromo del Lago');

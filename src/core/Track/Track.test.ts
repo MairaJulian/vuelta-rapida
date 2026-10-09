@@ -7,11 +7,13 @@ import {
   getCurveSections,
   getFinishLine,
   getFinishSign,
+  getKerbFactor,
   getLapDirection,
   getNearestOnCenterline,
   getProgressDelta,
   getStartPose,
   getTrackProgress,
+  KERB_TAPER,
   OVAL_CIRCUIT,
   OVAL_TRACK,
 } from './Track';
@@ -320,5 +322,80 @@ describe('getCurveSections', () => {
     const sections = getCurveSections(shifted);
     expect(sections).toHaveLength(2);
     expect(sections.map((section) => section.length)).toEqual([33, 33]);
+  });
+});
+
+describe('pianos: getKerbSections y getKerbFactor', () => {
+  const circuit = OVAL_CIRCUIT;
+  // Cada curva del óvalo es medio polígono de 64 lados de 50 m de radio.
+  const arc = 32 * 2 * 50 * Math.sin(Math.PI / 64);
+
+  it('el óvalo tiene un piano por curva, medido sobre el trazado', () => {
+    expect(circuit.kerbs).toHaveLength(2);
+    const [right, left] = circuit.kerbs;
+    expect(right.start).toBeCloseTo(100, 9);
+    expect(right.length).toBeCloseTo(arc, 9);
+    expect(left.start).toBeCloseTo(100 + arc + 200, 9);
+    expect(left.length).toBeCloseTo(arc, 9);
+  });
+
+  it('son los mismos tramos que se dibujan', () => {
+    const sections = getCurveSections(circuit);
+    circuit.kerbs.forEach((kerb, i) => {
+      const first = sections[i][0];
+      const last = sections[i][sections[i].length - 1];
+      expect(getTrackProgress(circuit, first.x, first.z)).toBeCloseTo(kerb.start, 9);
+      expect(getTrackProgress(circuit, last.x, last.z)).toBeCloseTo(kerb.start + kerb.length, 9);
+    });
+  });
+
+  it('un piano que cruza la meta termina después de dar la vuelta', () => {
+    const shifted = createCircuit({
+      id: 'corrido',
+      name: 'Corrido',
+      centerline: [...points.slice(17), ...points.slice(0, 17)],
+      width: track.width,
+      checkpointFractions: [],
+    });
+    const crossing = shifted.kerbs.find((kerb) => kerb.start + kerb.length > shifted.length);
+    expect(crossing).toBeDefined();
+    expect(crossing!.length).toBeCloseTo(arc, 9);
+  });
+
+  it('una pista toda curva es un solo piano de la vuelta entera', () => {
+    const circle = createCircuit({
+      id: 'circulo',
+      name: 'Círculo',
+      centerline: Array.from({ length: 24 }, (_, i) => ({
+        x: 30 * Math.cos((i * Math.PI) / 12),
+        z: 30 * Math.sin((i * Math.PI) / 12),
+      })),
+      width: 10,
+      checkpointFractions: [],
+    });
+    expect(circle.kerbs).toEqual([{ start: 0, length: circle.length }]);
+    expect(getKerbFactor(circle.kerbs, circle.length, 0)).toBe(1);
+  });
+
+  it('el factor es 0 en las rectas, 1 en la curva y crece en las puntas', () => {
+    const { kerbs, length } = circuit;
+    const [right] = kerbs;
+    expect(getKerbFactor(kerbs, length, 50)).toBe(0);
+    expect(getKerbFactor(kerbs, length, right.start + right.length / 2)).toBe(1);
+    expect(getKerbFactor(kerbs, length, right.start)).toBe(0);
+    expect(getKerbFactor(kerbs, length, right.start + KERB_TAPER / 2)).toBeCloseTo(0.5, 9);
+    expect(getKerbFactor(kerbs, length, right.start + right.length - KERB_TAPER / 4)).toBeCloseTo(
+      0.25,
+      9,
+    );
+    expect(getKerbFactor(kerbs, length, right.start + right.length + 1)).toBe(0);
+  });
+
+  it('el factor da la vuelta por la meta', () => {
+    const kerbs = [{ start: 90, length: 20 }];
+    expect(getKerbFactor(kerbs, 100, 5)).toBe(1);
+    expect(getKerbFactor(kerbs, 100, 105)).toBe(1);
+    expect(getKerbFactor(kerbs, 100, 92)).toBeCloseTo(0.5, 9);
+    expect(getKerbFactor(kerbs, 100, 50)).toBe(0);
   });
 });

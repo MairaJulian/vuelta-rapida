@@ -27,7 +27,7 @@ export function brakesToInput(pressed: PressedBrakes): number {
  * `useTiltSteering` en cada cuadro; los frenos escriben solo `brake`. Todo corre
  * en el hilo de UI.
  */
-export function TiltControls({ input, config, output }: TiltControlsProps) {
+export function TiltControls({ input, config, output, brakeVibration = true }: TiltControlsProps) {
   const insets = useSafeAreaInsets();
   const pressed = useSharedValue<PressedBrakes>(RELEASED);
   const tilt = useTiltSteering({ config, input, output });
@@ -41,7 +41,7 @@ export function TiltControls({ input, config, output }: TiltControlsProps) {
       const brake = brakesToInput(next);
       input.set({ steer: input.get().steer, brake });
       // Vibra solo al empezar a frenar: apoyar el segundo pulgar no vuelve a vibrar.
-      if (brake > 0 && brakesToInput(current) === 0) {
+      if (brakeVibration && brake > 0 && brakesToInput(current) === 0) {
         scheduleOnRN(vibrateOnBrake);
       }
     };
@@ -55,7 +55,7 @@ export function TiltControls({ input, config, output }: TiltControlsProps) {
         setBrake('right', isDown);
       }),
     };
-  }, [input, pressed]);
+  }, [brakeVibration, input, pressed]);
 
   // Si el modo de control se desmonta con un freno apretado o el celular girado, el auto no debe seguir así.
   useEffect(() => () => input.set(NEUTRAL_INPUT), [input]);

@@ -4,9 +4,9 @@ import { consumeFrameTime, getStepAlpha } from '@/core/FixedStep';
 import type { FixedStepConfig } from '@/core/FixedStep';
 import { createLapState, stepLapTimer } from '@/core/LapTimer';
 import { lerp, lerpAngle } from '@/core/MathUtils';
-import { getNearestOnCenterline, getProgressAt } from '@/core/Track';
+import { getKerbFactor, getNearestOnCenterline, getProgressAt } from '@/core/Track';
 import type { Circuit } from '@/core/Track';
-import { constrainToHit } from '@/core/TrackBounds';
+import { NO_CONTACT, resolveTrackContact } from '@/core/TrackBounds';
 
 import type { DrivingSimState } from './DrivingSim.types';
 
@@ -20,15 +20,45 @@ export function createDrivingSim(car: CarState): DrivingSimState {
     accumulatorMs: 0,
     trackSegment: -1,
     laps: createLapState(),
+    contact: NO_CONTACT,
+  };
+}
+
+/**
+ * Un paso fijo de `dt` segundos: mueve el auto, busca una vez el punto más
+ * cercano del trazado (cerca del segmento del paso anterior), mantiene el auto
+ * dentro de la pista (sobre los pianos, hasta su borde exterior) y actualiza las
+ * vueltas con el progreso de ese mismo punto. No toca el tiempo acumulado.
+ */
+export function stepDrivingSim(
+  sim: DrivingSimState,
+  input: DrivingInput,
+  drivingConfig: DrivingConfig,
+  circuit: Circuit,
+  dt: number,
+): DrivingSimState {
+  'worklet';
+  const moved = stepCar(sim.car, input, drivingConfig, dt);
+  const hit = getNearestOnCenterline(circuit, moved.x, moved.z, sim.trackSegment);
+  const progress = getProgressAt(circuit, hit);
+  const kerbFactor = getKerbFactor(circuit.kerbs, circuit.length, progress);
+  const { car, contact } = resolveTrackContact(moved, hit, circuit, drivingConfig, dt, kerbFactor);
+  const tick = sim.tick + 1;
+  return {
+    car,
+    previousCar: sim.car,
+    tick,
+    accumulatorMs: sim.accumulatorMs,
+    trackSegment: hit.segment,
+    laps: stepLapTimer(sim.laps, progress, circuit, tick),
+    contact,
   };
 }
 
 /**
  * Avanza la simulación con el tiempo de un cuadro. Ejecuta tantos pasos fijos
- * como correspondan; la entrada se mantiene durante todos los pasos del cuadro.
- * En cada paso: mueve el auto, busca una vez el punto más cercano del trazado
- * (cerca del segmento del paso anterior), mantiene el auto dentro de la pista y
- * actualiza las vueltas con el progreso de ese mismo punto.
+ * (`stepDrivingSim`) como correspondan; la entrada se mantiene durante todos los
+ * pasos del cuadro.
  */
 export function advanceDrivingSim(
   sim: DrivingSimState,
@@ -40,25 +70,12 @@ export function advanceDrivingSim(
 ): DrivingSimState {
   'worklet';
   const { steps, accumulatorMs } = consumeFrameTime(sim.accumulatorMs, frameMs, stepConfig);
-  if (steps === 0) {
-    return { ...sim, accumulatorMs };
-  }
   const dt = 1 / stepConfig.stepHz;
-  let car = sim.car;
-  let previousCar = sim.previousCar;
-  let trackSegment = sim.trackSegment;
-  let laps = sim.laps;
-  let tick = sim.tick;
+  let next = sim;
   for (let i = 0; i < steps; i += 1) {
-    previousCar = car;
-    const moved = stepCar(car, input, drivingConfig, dt);
-    const hit = getNearestOnCenterline(circuit, moved.x, moved.z, trackSegment);
-    car = constrainToHit(moved, hit, circuit, drivingConfig, dt);
-    trackSegment = hit.segment;
-    tick += 1;
-    laps = stepLapTimer(laps, getProgressAt(circuit, hit), circuit, tick);
+    next = stepDrivingSim(next, input, drivingConfig, circuit, dt);
   }
-  return { car, previousCar, tick, accumulatorMs, trackSegment, laps };
+  return { ...next, accumulatorMs };
 }
 
 /** Mezcla dos estados del auto. `alpha` = 0 devuelve `previous`; 1 devuelve `current`. */

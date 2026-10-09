@@ -1,8 +1,11 @@
 import type { SharedValue } from 'react-native-reanimated';
 
+import type { RaceAudioMix } from '@/audio/RaceAudio';
 import type { CameraConfig } from '@/core/Camera';
 import type { CarState, DrivingConfig } from '@/core/DrivingModel';
 import type { ControlMode } from '@/core/PlayerPreferences';
+import type { RaceConfig } from '@/core/RaceFlow';
+import type { RaceHapticsConfig } from '@/haptics/RaceHaptics';
 import type { TiltConfig, TiltSteeringResult } from '@/core/TiltSteering';
 import type { TrackData } from '@/core/Track';
 
@@ -33,6 +36,15 @@ export interface DevPanelProps {
   fps: SharedValue<number>;
   /** Vuelve el auto a la largada. */
   onResetCar: () => void;
+  /** Reglas de la carrera; el panel solo cambia las vueltas, que valen desde la próxima carrera. */
+  raceConfig: RaceConfig;
+  onRaceConfigChange: (config: RaceConfig) => void;
+  /** Volúmenes y tono del motor (solo la sesión). */
+  audioMix: RaceAudioMix;
+  onAudioMixChange: (mix: RaceAudioMix) => void;
+  /** Intensidad de vibración de cada momento (solo la sesión). */
+  hapticsConfig: RaceHapticsConfig;
+  onHapticsConfigChange: (config: RaceHapticsConfig) => void;
 }
 
 /** Lecturas ya formateadas para mostrar. */
@@ -66,6 +78,9 @@ export type NumericCameraKey = Exclude<keyof CameraConfig, 'rotateWithCar'>;
 
 /** Parámetros de la pista que se ajustan en el panel (el trazado no). */
 export type TrackSliderKey = 'width';
+
+/** Reglas de la carrera que se ajustan en el panel. */
+export type RaceSliderKey = 'totalLaps';
 
 /** Parámetros de la inclinación con slider. La calibración va con su propio botón. */
 export type TiltSliderKey = Exclude<keyof TiltConfig, 'neutralAngle'>;

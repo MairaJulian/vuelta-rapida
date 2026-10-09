@@ -10,7 +10,15 @@ import { DEFAULT_CIRCUIT } from '@/core/Circuits';
 import { getNearestOnCenterline, getStartPose, OVAL_TRACK } from '@/core/Track';
 import type { TrackData } from '@/core/Track';
 
-import { constrainToHit, constrainToTrack, getTrackLimit } from './TrackBounds';
+import {
+  constrainToHit,
+  constrainToTrack,
+  getKerbContactDistance,
+  getKerbReach,
+  getTrackLimit,
+  NO_CONTACT,
+  resolveTrackContact,
+} from './TrackBounds';
 
 const DT = 1 / 60;
 const config = DEFAULT_DRIVING_CONFIG;
@@ -160,5 +168,81 @@ describe('constrainToTrack', () => {
     const first = run();
     expect(run()).toEqual(first);
     expect(JSON.parse(JSON.stringify(first))).toEqual(first);
+  });
+});
+
+describe('pianos: getKerbReach y getKerbContactDistance', () => {
+  it('el piano se puede pisar hasta su borde exterior (138/110 del asfalto)', () => {
+    expect(getKerbReach(track)).toBeCloseTo(7 * (138 / 110 - 1), 12);
+  });
+
+  it('la carrocería pisa el piano después del borde blanco (120/110)', () => {
+    expect(getKerbContactDistance(track, config)).toBeCloseTo(
+      7 * (120 / 110) - config.collisionRadius,
+      12,
+    );
+    // Sin piano, el auto no llega: el límite del asfalto está antes.
+    expect(getKerbContactDistance(track, config)).toBeGreaterThan(limit);
+  });
+});
+
+describe('resolveTrackContact', () => {
+  /** Auto en la recta superior (afuera es -z), a `distance` del trazado. */
+  const carAt = (distance: number, vz = 0) => ({
+    ...createCarState(30, -50 - distance, Math.PI / 2),
+    vx: 10,
+    vz,
+  });
+  const hitOf = (car: CarState) => getNearestOnCenterline(track, car.x, car.z);
+
+  it('sin piano, corrige igual que constrainToHit y cuenta el golpe', () => {
+    const car = carAt(limit + 1, -4);
+    const result = resolveTrackContact(car, hitOf(car), track, config, DT);
+    expect(result.car).toEqual(constrainToHit(car, hitOf(car), track, config, DT));
+    expect(result.contact).toEqual({ touching: true, impactSpeed: 4, onKerb: false });
+  });
+
+  it('si ya vuelve hacia adentro, toca pero sin golpe', () => {
+    const car = carAt(limit + 1, 3);
+    expect(resolveTrackContact(car, hitOf(car), track, config, DT).contact.impactSpeed).toBe(0);
+  });
+
+  it('adentro y sin piano no hay contacto', () => {
+    const car = carAt(limit - 1);
+    const result = resolveTrackContact(car, hitOf(car), track, config, DT);
+    expect(result.car).toBe(car);
+    expect(result.contact).toEqual(NO_CONTACT);
+  });
+
+  it('con el piano a pleno, pasar el asfalto no es un toque y cuenta como piano', () => {
+    const car = carAt(limit + 1);
+    const result = resolveTrackContact(car, hitOf(car), track, config, DT, 1);
+    expect(result.car).toBe(car);
+    expect(result.contact).toEqual({ touching: false, impactSpeed: 0, onKerb: true });
+  });
+
+  it('sobre el piano pero antes del borde blanco, todavía no lo pisa', () => {
+    const car = carAt((limit + getKerbContactDistance(track, config)) / 2);
+    expect(resolveTrackContact(car, hitOf(car), track, config, DT, 1).contact.onKerb).toBe(false);
+  });
+
+  it('con el piano, el límite es su borde exterior', () => {
+    const car = carAt(limit + getKerbReach(track) + 1, -2);
+    const result = resolveTrackContact(car, hitOf(car), track, config, DT, 1);
+    expect(offset(result.car)).toBeCloseTo(limit + getKerbReach(track), 9);
+    expect(result.contact).toEqual({ touching: true, impactSpeed: 2, onKerb: true });
+  });
+
+  it('en la punta del piano el límite crece con el factor', () => {
+    const car = carAt(limit + 1.5, -2);
+    const result = resolveTrackContact(car, hitOf(car), track, config, DT, 0.5);
+    expect(offset(result.car)).toBeCloseTo(limit + getKerbReach(track) / 2, 9);
+    expect(result.contact.touching).toBe(true);
+  });
+
+  it('el contacto es serializable', () => {
+    const car = carAt(limit + 1, -4);
+    const { contact } = resolveTrackContact(car, hitOf(car), track, config, DT, 1);
+    expect(JSON.parse(JSON.stringify(contact))).toEqual(contact);
   });
 });

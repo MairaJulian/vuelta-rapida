@@ -1,5 +1,7 @@
 /**
  * Extiende el mock oficial de Reanimated:
+ * - useSharedValue suma `modify(modificador)`, que aplica el modificador en el momento,
+ *   y devuelve el mismo valor en todos los renders del componente, como en la app.
  * - useFrameCallback no existe en el mock; se agrega como jest.fn para que los tests
  *   lean el callback registrado y lo disparen a mano:
  *
@@ -18,6 +20,30 @@ jest.mock('react-native-reanimated', () => {
   const mock = require('react-native-reanimated/mock');
   return {
     ...mock,
+    // El mock no trae `modify`; en la app corre el modificador en el hilo de UI.
+    // Aquí se aplica en el momento, sobre el valor actual.
+    // El mock crea un valor nuevo en cada render; en la app es el mismo durante toda
+    // la vida del componente. `useRef` lo conserva, como en la app.
+    useSharedValue: <Value>(initial: Value) => {
+      const { useRef } = require('react');
+      const ref = useRef(null);
+      if (ref.current === null) {
+        const shared = mock.useSharedValue(initial);
+        ref.current = new Proxy(shared, {
+          get(target, prop, receiver) {
+            if (prop === 'modify') {
+              return (modifier?: (value: Value) => Value) => {
+                if (modifier) {
+                  target.set(modifier(target.get()));
+                }
+              };
+            }
+            return Reflect.get(target, prop, receiver);
+          },
+        });
+      }
+      return ref.current;
+    },
     useAnimatedSensor: jest.fn((_type: unknown, config?: Record<string, unknown>) => {
       const sensor = {
         value: { x: 0, y: 0, z: 0, interfaceOrientation: 0 } as Record<string, number>,

@@ -25,12 +25,14 @@ function release(testId: string) {
   (getByGestureTestId(testId).handlers as GestureHandlers).onFinalize?.();
 }
 
-async function renderControls() {
+async function renderControls(brakeVibration?: boolean) {
   const input = { value: { ...NEUTRAL_INPUT } as DrivingInput, set: jest.fn() };
   input.set.mockImplementation((next: DrivingInput) => {
     input.value = next;
   });
-  const utils = await render(<ButtonControls input={input as never} />);
+  const utils = await render(
+    <ButtonControls input={input as never} brakeVibration={brakeVibration} />,
+  );
   return { input, ...utils };
 }
 
@@ -110,6 +112,13 @@ describe('ButtonControls', () => {
     press('button-brake');
     await Promise.resolve();
     expect(Haptics.impactAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('con la vibración apagada no vibra al frenar', async () => {
+    await renderControls(false);
+    press('button-brake');
+    await Promise.resolve();
+    expect(Haptics.impactAsync).not.toHaveBeenCalled();
   });
 
   it('no vibra al doblar', async () => {

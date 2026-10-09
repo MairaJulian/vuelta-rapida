@@ -1,9 +1,11 @@
 export {
   createLapState,
+  formatLapDelta,
   formatLapTime,
   getCurrentLap,
   getCurrentLapTicks,
   MAX_PROGRESS_STEP,
+  MINUS_SIGN,
   stepLapTimer,
   ticksToMs,
 } from './LapTimer';

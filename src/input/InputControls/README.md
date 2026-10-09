@@ -7,6 +7,7 @@ Contrato común de la capa de entrada. Define cómo se conecta cualquier modo de
 ```ts
 interface InputControlsProps {
   input: SharedValue<DrivingInput>; // { steer: -1..1, brake: 0..1 }
+  brakeVibration?: boolean; // vibrar al empezar a frenar; por defecto, sí
 }
 ```
 
@@ -30,7 +31,7 @@ interface InputControlsProps {
 
 ```tsx
 const input = useDrivingInput();
-useDrivingLoop({ input, ... });
+useRaceLoop({ input, ... });
 
 return controlMode === 'tilt'
   ? <TiltControls input={input} config={tiltConfig} />

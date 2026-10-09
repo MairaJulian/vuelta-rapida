@@ -34,7 +34,7 @@ const press = (testId: string) =>
 const release = (testId: string) =>
   (getByGestureTestId(testId).handlers as GestureHandlers).onFinalize?.();
 
-async function renderControls() {
+async function renderControls(brakeVibration?: boolean) {
   const input = {
     value: { ...NEUTRAL_INPUT } as DrivingInput,
     get: () => input.value,
@@ -42,7 +42,13 @@ async function renderControls() {
       input.value = next;
     }),
   };
-  const utils = await render(<TiltControls input={input as never} config={DEFAULT_TILT_CONFIG} />);
+  const utils = await render(
+    <TiltControls
+      input={input as never}
+      config={DEFAULT_TILT_CONFIG}
+      brakeVibration={brakeVibration}
+    />,
+  );
   return { input, ...utils };
 }
 
@@ -91,6 +97,13 @@ describe('TiltControls', () => {
     input.value = { steer: 0.4, brake: 0 };
     press('brake-right');
     expect(input.value).toEqual({ steer: 0.4, brake: 1 });
+  });
+
+  it('con la vibración apagada no vibra al frenar', async () => {
+    await renderControls(false);
+    press('brake-left');
+    await Promise.resolve();
+    expect(Haptics.impactAsync).not.toHaveBeenCalled();
   });
 
   it('vibra una sola vez al empezar a frenar, aunque se apoyen los dos pulgares', async () => {
