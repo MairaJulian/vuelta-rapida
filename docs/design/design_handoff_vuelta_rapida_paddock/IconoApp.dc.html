@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,400..900;1,62..125,400..900&display=swap">
+<script src="_ds/broadsheet-7c504617-25a5-4a0c-943d-4f14e61773c1/_ds_bundle.js"></script>
+</helmet>
+<div style="position:relative;width:{{ px }};height:{{ px }};border-radius:{{ radio }};overflow:hidden;flex:none">
+  <sc-if value="{{ esAuto }}" hint-placeholder-val="{{ false }}">
+    <svg viewBox="0 0 108 108" width="100%" height="100%" style="position:absolute;inset:0;display:block">
+      <rect width="108" height="108" style="fill:oklch(0.56 0.2 258)"></rect>
+      <path d="M -10 96 L 96 -10" style="fill:none;stroke:#ffffff;stroke-width:16"></path>
+      <path d="M -10 96 L 96 -10" style="fill:none;stroke:oklch(0.6 0.21 28);stroke-width:16;stroke-dasharray:7 7"></path>
+      <path d="M 12 118 L 118 12" style="fill:none;stroke:oklch(0.62 0.19 258);stroke-width:30"></path>
+    </svg>
+    <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(45deg)">
+      <dc-import name="Monoplaza" color="#ffffff" numero="27" ancho="{{ autoAncho }}" hint-size="20px,45px"></dc-import>
+    </div>
+  </sc-if>
+  <sc-if value="{{ esNumero }}" hint-placeholder-val="{{ false }}">
+    <svg viewBox="0 0 108 108" width="100%" height="100%" style="position:absolute;inset:0;display:block">
+      <rect width="108" height="108" style="fill:oklch(0.56 0.2 258)"></rect>
+      <polygon points="4,19 21,19 31,68 41,19 58,19 40,89 22,89" style="fill:oklch(0.63 0.19 258)"></polygon>
+      <path d="M61 19 L94 19 L105 30 L105 46 L95 56 L106 89 L89 89 L80 58 L77 58 L77 89 L61 89 Z M77 32 L87 32 L89 35 L89 42 L87 45 L77 45 Z" style="fill:oklch(0.63 0.19 258);fill-rule:evenodd"></path>
+    </svg>
+    <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-24deg)">
+      <dc-import name="Monoplaza" color="#ffffff" numero="7" ancho="{{ autoAncho }}" hint-size="20px,45px"></dc-import>
+    </div>
+  </sc-if>
+  <sc-if value="{{ esEsquinas }}" hint-placeholder-val="{{ false }}">
+    <svg viewBox="0 0 108 108" width="100%" height="100%" style="position:absolute;inset:0;display:block">
+      <rect width="108" height="108" style="fill:oklch(0.56 0.2 258)"></rect>
+      <g transform="translate(-10 -16)"><polygon points="4,19 21,19 31,68 41,19 58,19 40,89 22,89" style="fill:oklch(0.63 0.19 258)"></polygon></g>
+      <g transform="translate(12 30)"><path d="M61 19 L94 19 L105 30 L105 46 L95 56 L106 89 L89 89 L80 58 L77 58 L77 89 L61 89 Z M77 32 L87 32 L89 35 L89 42 L87 45 L77 45 Z" style="fill:oklch(0.63 0.19 258);fill-rule:evenodd"></path></g>
+    </svg>
+    <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(40deg)">
+      <dc-import name="Monoplaza" color="#ffffff" numero="7" ancho="{{ autoAncho }}" hint-size="20px,45px"></dc-import>
+    </div>
+  </sc-if>
+  <sc-if value="{{ esCombo }}" hint-placeholder-val="{{ false }}">
+    <svg viewBox="0 0 108 108" width="100%" height="100%" style="position:absolute;inset:0;display:block">
+      <rect width="108" height="108" style="fill:oklch(0.56 0.2 258)"></rect>
+      <text x="-2" y="62" style="font-family:'Archivo',sans-serif;font-weight:900;font-style:italic;font-stretch:62%;font-size:84px;fill:oklch(0.63 0.19 258)">V</text>
+      <text x="110" y="112" text-anchor="end" style="font-family:'Archivo',sans-serif;font-weight:900;font-style:italic;font-stretch:62%;font-size:84px;fill:oklch(0.63 0.19 258)">R</text>
+    </svg>
+    <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(40deg)">
+      <dc-import name="Monoplaza" color="#ffffff" numero="7" ancho="{{ autoAncho }}" hint-size="20px,45px"></dc-import>
+    </div>
+  </sc-if>
+  <sc-if value="{{ esItalica }}" hint-placeholder-val="{{ false }}">
+    <svg viewBox="0 0 108 108" width="100%" height="100%" style="position:absolute;inset:0;display:block">
+      <rect width="108" height="108" style="fill:oklch(0.56 0.2 258)"></rect>
+      <text x="56" y="110" text-anchor="middle" style="font-family:'Archivo',sans-serif;font-weight:900;font-style:italic;font-stretch:62%;font-size:104px;letter-spacing:-3px;fill:oklch(0.63 0.19 258)">VR</text>
+    </svg>
+    <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-24deg)">
+      <dc-import name="Monoplaza" color="#ffffff" numero="7" ancho="{{ autoAncho }}" hint-size="20px,45px"></dc-import>
+    </div>
+  </sc-if>
+  <sc-if value="{{ esMonograma }}" hint-placeholder-val="{{ false }}">
+    <svg viewBox="0 0 108 108" width="100%" height="100%" style="position:absolute;inset:0;display:block">
+      <rect width="108" height="108" style="fill:#14171f"></rect>
+      <text x="48" y="73" text-anchor="middle" style="font-family:'Archivo',sans-serif;font-weight:900;font-stretch:62%;font-size:54px;letter-spacing:-1px;fill:#ffffff">V<tspan style="fill:oklch(0.9 0.19 120)">R</tspan></text>
+      <g transform="translate(74 22)">
+        <rect width="12" height="12" style="fill:#ffffff"></rect>
+        <rect width="6" height="6" style="fill:#14171f"></rect>
+        <rect x="6" y="6" width="6" height="6" style="fill:#14171f"></rect>
+      </g>
+      <rect x="27" y="78" width="54" height="5" rx="2.5" style="fill:oklch(0.56 0.2 258)"></rect>
+    </svg>
+  </sc-if>
+  <sc-if value="{{ esTrazado }}" hint-placeholder-val="{{ false }}">
+    <svg viewBox="0 0 108 108" width="100%" height="100%" style="position:absolute;inset:0;display:block">
+      <rect width="108" height="108" style="fill:oklch(0.9 0.19 120)"></rect>
+      <g transform="translate(18 33) scale(0.72)">
+        <path d="M10 45 L70 45 C84 45 90 38 86 30 L80 18 C77 12 70 10 64 14 L40 30 C34 34 28 30 30 24 L32 16 C33 10 26 8 20 12 L12 20 C6 26 6 40 10 45 Z" style="fill:none;stroke:#14171f;stroke-width:9;stroke-linejoin:round"></path>
+        <circle cx="31" cy="20" r="6.5" style="fill:oklch(0.9 0.19 120);stroke:#14171f;stroke-width:2.6;stroke-dasharray:3 2.4"></circle>
+        <circle cx="38" cy="31" r="8" style="fill:oklch(0.56 0.2 258);stroke:oklch(0.9 0.19 120);stroke-width:3"></circle>
+        <rect x="40" y="39.5" width="4" height="11" rx="1" style="fill:oklch(0.6 0.21 28)"></rect>
+      </g>
+    </svg>
+  </sc-if>
+  <sc-if value="{{ esCurva }}" hint-placeholder-val="{{ false }}">
+    <svg viewBox="0 0 108 108" width="100%" height="100%" style="position:absolute;inset:0;display:block">
+      <rect width="108" height="108" style="fill:oklch(0.56 0.2 258)"></rect>
+      <path d="M 26 120 C 26 70 46 46 120 40" style="fill:none;stroke:#ffffff;stroke-width:40"></path>
+      <path d="M 26 120 C 26 70 46 46 120 40" style="fill:none;stroke:oklch(0.6 0.21 28);stroke-width:40;stroke-dasharray:7 7"></path>
+      <path d="M 26 120 C 26 70 46 46 120 40" style="fill:none;stroke:#ffffff;stroke-width:31"></path>
+      <path d="M 26 120 C 26 70 46 46 120 40" style="fill:none;stroke:#14171f;stroke-width:26"></path>
+      <circle cx="40" cy="70" r="6.5" style="fill:oklch(0.9 0.19 120)"></circle>
+    </svg>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:200,&quot;height&quot;:200},&quot;variante&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;auto&quot;,&quot;monograma&quot;,&quot;trazado&quot;,&quot;curva&quot;],&quot;default&quot;:&quot;trazado&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;size&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:96,&quot;tsType&quot;:&quot;number&quot;},&quot;forma&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;circulo&quot;,&quot;squircle&quot;,&quot;redondeado&quot;,&quot;cuadrado&quot;],&quot;default&quot;:&quot;squircle&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const RADIOS = { circulo: '50%', squircle: '32%', redondeado: '22%', cuadrado: '0' };
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.variante ?? 'trazado', s = this.props.size ?? 96;
+    return {
+      px: s + 'px', radio: RADIOS[this.props.forma ?? 'squircle'],
+      autoAncho: Math.round(s * 26 / 108),
+      esNumero: v === 'numero', esEsquinas: v === 'esquinas', esItalica: v === 'italica', esCombo: v === 'combo', esAuto: v === 'auto', esMonograma: v === 'monograma', esTrazado: v === 'trazado', esCurva: v === 'curva'
+    };
+  }
+}
+</script>
+</body>
+</html>

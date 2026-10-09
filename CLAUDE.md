@@ -73,6 +73,7 @@ Packs CC0 de estilo plano/low-poly. Registrar la fuente y licencia de cada asset
 
 - **Sonidos en WAV mono** (`assets/sounds/`): sin FFmpeg ni las bibliotecas externas de react-native-audio-api (`app.json`), el decodificador solo lee WAV, MP3 y FLAC. OGG no sirve.
 - Los efectos se sintetizan con `node scripts/generate-sounds.mjs`; el motor se pasa a mono con `--engine <ruta>` (ver CREDITOS.md).
+- **Ícono de la app** en `assets/icono/`, tal cual lo entrega el handoff (`docs/design/.../icono/`). Si cambia, hay que regenerar `android/` (`npx expo prebuild --platform android`) y recompilar.
 
 ## Estructura de carpetas
 
@@ -89,6 +90,7 @@ src/
   components/ UI genérica (HUD, botones)
   hooks/      conectan core con Reanimated/React
   screens/    pantallas completas
+assets/icono/  ícono de la app (capas del ícono adaptativo de Android)
 assets/sounds/ sonidos WAV (ver CREDITOS.md)
 scripts/      herramientas de Node sin dependencias (generar sonidos)
 test/setup/   mocks y setup global de Jest (Skia, Reanimated, audio, almacenamiento)

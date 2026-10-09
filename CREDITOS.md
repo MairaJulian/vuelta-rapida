@@ -24,7 +24,14 @@ node scripts/generate-sounds.mjs --engine <ruta>/motorseamless11.wav
 - El motor se descarga del pack de Ziph (`all-in-one_0.zip`) y el script solo lo pasa de estéreo a mono, sin recortarlo, para no romper la costura del loop.
 - Todo queda en WAV mono de 16 bits a 44,1 kHz: el decodificador de la app (sin FFmpeg) no lee OGG.
 
-## Íconos (`src/components/Icon/`)
+## Ícono de la app (`assets/icono/`)
+
+| Qué es | Fuente | Autor | Licencia |
+|---|---|---|---|
+| Ícono "Dorsal · Itálica" (opción 3g): monoplaza blanco con el número 7 sobre azul, y "VR" de fondo | Handoff de diseño (`docs/design/.../IconoApp.dc.html` e `icono/`) | Vuelta Rápida | Obra propia |
+| Letras "VR" del fondo, dibujadas en la imagen | Fuente [Archivo](https://fonts.google.com/specimen/Archivo) 900 itálica | Omnibus-Type | SIL Open Font License 1.1 |
+
+## Íconos de la interfaz (`src/components/Icon/`)
 
 | Qué es | Fuente | Autor | Licencia |
 |---|---|---|---|

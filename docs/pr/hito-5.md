@@ -17,8 +17,9 @@ La pista pasa a ser una carrera completa, de la grilla a los resultados.
 - **Sonido:** motor con tono según la velocidad, pitidos del semáforo, piano, golpe contra el borde, vuelta y jingle de llegada.
 - **Vibración:** piano, borde, largada y llegada, con intensidad por momento. El freno también obedece el interruptor.
 - **Panel de desarrollo:** vueltas (1 a 5), volúmenes y tono del motor, e intensidad de vibración de cada momento.
+- **Ícono y nombre de la app:** el ícono "Dorsal · Itálica" del handoff reemplaza al de Expo, y el nombre bajo el ícono pasa de "vuelta-rapida" a "Vuelta Rápida".
 
-**Hay que recompilar el dev build** (`npm run android`): se agregó `react-native-audio-api`, que tiene código nativo.
+**Hay que recompilar el dev build** (`npm run android`): se agregó `react-native-audio-api`, que tiene código nativo, y cambiaron el ícono y el nombre, que son recursos nativos.
 
 ## Arquitectura: la carrera avisa por eventos
 
@@ -95,6 +96,21 @@ Plan con las decisiones de abajo, confirmadas antes de empezar. Sin archivos.
 - `CLAUDE.md`: estructura de carpetas (`audio/`, `haptics/`, `assets/sounds/`, `scripts/`), el bus de eventos, los sonidos en WAV y los mocks de Jest.
 - `eslint.config.js`: `core` no puede importar `@/audio` ni `@/haptics`.
 
+### Paso 7: ícono y nombre de la app
+Se sumó después del cierre, al probar en el celular.
+
+- **Ícono "Dorsal · Itálica"** (opción 3g del handoff): el monoplaza blanco con el número 7, girado sobre el azul del juego, con "VR" en Archivo itálica de fondo.
+  - **Ícono adaptativo de Android** en tres capas, para que cada celular le aplique su forma: fondo azul con "VR"; el auto con fondo transparente, dentro de la zona segura; y la silueta monocroma para los íconos temáticos de Android 13 o posterior.
+  - **Ícono genérico** de 1024 × 1024, para los celulares sin ícono adaptativo.
+- **`assets/icono/`:** los cuatro PNG, tal cual vienen del handoff. Expo genera las densidades de Android (`mipmap-*`) al regenerar `android/`.
+- **`app.json`:**
+  - `icon` y `android.adaptiveIcon` apuntan a los archivos nuevos. El fondo pasa de `#E6F4FE` (el de Expo) a `#2F6BDD`, el azul del juego.
+  - `name` pasa de "vuelta-rapida" a "Vuelta Rápida": es el nombre bajo el ícono. El `slug`, el paquete y el esquema del dev build no cambian, así que el récord y las preferencias se conservan.
+- **Borrados:** `assets/icon.png` y los tres `assets/android-icon-*.png` de Expo, que ya no usaba nadie.
+- **Handoff:** se suman `IconoApp.dc.html` y la carpeta `icono/` a `docs/design/`. Esa carpeta incluye la vista de control (`_preview.png`) y el ícono de 512 para la ficha de Google Play, que no van en la app.
+- **`CREDITOS.md`:** el ícono (obra propia, del handoff) y la fuente Archivo de las letras "VR" (SIL Open Font License).
+- **`CLAUDE.md`:** dónde vive el ícono y que, si cambia, hay que regenerar `android/`.
+
 ### Proceso (`CLAUDE.md`)
 - **Convención por componente en dos niveles:**
   - Los módulos de `core`, los hooks y los componentes principales (pantallas y componentes reutilizables) siguen con los seis archivos.
@@ -131,8 +147,14 @@ Tests destacados:
 
 ### En el celular
 
-Primero recompilar el dev build con el celular conectado: `npm run android`.
+Primero recompilar el dev build con el celular conectado. En Windows, desde PowerShell, `react-native-audio-api` necesita las herramientas de Git en el PATH:
 
+```powershell
+$env:Path = "C:\Program Files\Git\usr\bin;$env:Path"
+npm run android
+```
+
+0. **Ícono y nombre:** en la pantalla de inicio de Android, el ícono nuevo con la forma que use el launcher, y "Vuelta Rápida" debajo. Con los íconos temáticos de Android 13 o posterior, la silueta del auto en un solo color. Si sigue el ícono viejo, reiniciá el celular: algunos launchers lo guardan en caché.
 1. **Inicio:** al abrir, la pantalla de Inicio con "Correr" y el récord. "Correr" lleva a la pista.
 2. **Semáforo:** "Preparate…", cinco luces rojas de a una (una por segundo) con un pitido cada una, "Esperá…" y, después de una espera distinta cada vez, "¡Largada!" con un pitido más agudo y una vibración media. El auto no se mueve antes.
 3. **Motor:** grave en la grilla; sube de tono y de volumen al acelerar y baja al frenar.
@@ -185,9 +207,11 @@ Cambios respecto del plan, decididos durante el hito:
 - **El botón de pausa queda visible tras la llegada** (no hace nada): sacarlo correría la píldora "Mejor" durante el segundo y medio previo a los resultados.
 - **Mock de Reanimated:** ahora conserva cada valor compartido entre renders, como en la app. Antes creaba uno nuevo en cada render, y no se podía probar pausar y continuar en la pantalla.
 - **`DevSegmented`** salió de los estilos del panel, para no repetir el selector en las cuatro filas de vibración.
+- **Ícono sin pantalla de carga nueva:** el handoff no trae una. En Android 12 o posterior, el sistema ya muestra el ícono de la app al abrirla. Darle un color de fondo propio pediría `expo-splash-screen`, una dependencia nueva.
 
 ### Autorizaciones permanentes usadas
-- **Configuración nativa:** el plugin de `react-native-audio-api` en `app.json`. Hay que recompilar.
+- **Configuración nativa:** el plugin de `react-native-audio-api`, el ícono y el nombre en `app.json`, y la regeneración de `android/` con `npx expo prebuild --platform android`. Hay que recompilar.
+- **Borrado de archivos:** los cuatro íconos de Expo que se reemplazaron.
 - **Renombrado:** `hooks/useDrivingLoop` → `hooks/useRaceLoop`.
 - **Carpetas nuevas:** `src/audio/`, `src/haptics/`, `assets/sounds/` y `scripts/`.
 - **Módulos nuevos:**
