@@ -9,6 +9,8 @@ import { createCarState, DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
 import type { CarState } from '@/core/DrivingModel';
 import type { ControlMode } from '@/core/PlayerPreferences';
 import { DEFAULT_RACE_CONFIG } from '@/core/RaceFlow';
+import { DEFAULT_SCENERY_SPEC } from '@/core/Scenery';
+import { DEFAULT_SCENERY_DISPLAY } from '@/core/SceneryView';
 import { createTiltState, DEFAULT_TILT_CONFIG } from '@/core/TiltSteering';
 import type { TiltSteeringResult } from '@/core/TiltSteering';
 import type { TrackData } from '@/core/Track';
@@ -24,8 +26,11 @@ import {
   formatTiltReadings,
   HAPTIC_MOMENTS,
   RACE_SLIDERS,
+  SCENERY_SLIDERS,
+  SCENERY_SWITCHES,
   TILT_SLIDERS,
   TRACK_SLIDERS,
+  TREE_DENSITY_SLIDER,
 } from './DevPanel';
 import { READINGS_INTERVAL_MS } from './DevPanel.styles';
 
@@ -49,6 +54,7 @@ async function renderPanel({
   track = DEFAULT_CIRCUIT as TrackData,
   controlMode = 'buttons' as ControlMode,
   tiltConfig = DEFAULT_TILT_CONFIG,
+  treeDensity = 1,
 } = {}) {
   const car = shared<CarState>({ ...createCarState(0, 0, Math.PI / 2), vx: 10 });
   const props = {
@@ -58,6 +64,10 @@ async function renderPanel({
     onCameraConfigChange: jest.fn(),
     track,
     onTrackChange: jest.fn(),
+    sceneryDisplay: DEFAULT_SCENERY_DISPLAY,
+    onSceneryDisplayChange: jest.fn(),
+    treeDensity,
+    onTreeDensityChange: jest.fn(),
     controlMode,
     onControlModeChange: jest.fn(),
     tiltConfig,
@@ -274,6 +284,55 @@ describe('DevPanel', () => {
     expect(props.onRaceConfigChange).toHaveBeenLastCalledWith(DEFAULT_RACE_CONFIG);
     expect(props.onAudioMixChange).toHaveBeenLastCalledWith(DEFAULT_RACE_AUDIO_MIX);
     expect(props.onHapticsConfigChange).toHaveBeenLastCalledWith(DEFAULT_RACE_HAPTICS);
+    expect(props.onSceneryDisplayChange).toHaveBeenLastCalledWith(DEFAULT_SCENERY_DISPLAY);
+    // La densidad ya era la de por defecto: no se regenera la escenografía.
+    expect(props.onTreeDensityChange).not.toHaveBeenCalled();
+  });
+
+  it('Restablecer vuelve a la densidad de árboles por defecto si había cambiado', async () => {
+    const props = await renderPanel({ treeDensity: 1.7 });
+    await openPanel();
+    await fireEvent.press(screen.getByText('Restablecer'));
+    expect(props.onTreeDensityChange).toHaveBeenLastCalledWith(DEFAULT_SCENERY_SPEC.treeDensity);
+  });
+
+  it('los rangos de la escenografía contienen los valores por defecto', () => {
+    for (const spec of SCENERY_SLIDERS) {
+      expect(DEFAULT_SCENERY_DISPLAY[spec.key]).toBeGreaterThanOrEqual(spec.min);
+      expect(DEFAULT_SCENERY_DISPLAY[spec.key]).toBeLessThanOrEqual(spec.max);
+    }
+    expect(DEFAULT_SCENERY_SPEC.treeDensity).toBeGreaterThanOrEqual(TREE_DENSITY_SLIDER.min);
+    expect(DEFAULT_SCENERY_SPEC.treeDensity).toBeLessThanOrEqual(TREE_DENSITY_SLIDER.max);
+  });
+
+  it('la escenografía se ajusta en caliente: densidad, paralaje, franjas y partículas', async () => {
+    const props = await renderPanel();
+    await openPanel();
+    for (const [, label] of SCENERY_SWITCHES) {
+      expect(screen.getByText(label)).toBeTruthy();
+    }
+    await slide('treeDensity', 1);
+    expect(props.onTreeDensityChange).toHaveBeenLastCalledWith(2);
+    await slide('parallax', 0);
+    expect(props.onSceneryDisplayChange).toHaveBeenLastCalledWith({
+      ...DEFAULT_SCENERY_DISPLAY,
+      parallax: 0,
+    });
+    await slide('grassContrast', 1);
+    expect(props.onSceneryDisplayChange).toHaveBeenLastCalledWith({
+      ...DEFAULT_SCENERY_DISPLAY,
+      grassContrast: 1,
+    });
+    await fireEvent(screen.getByTestId('switch-particles'), 'valueChange', false);
+    expect(props.onSceneryDisplayChange).toHaveBeenLastCalledWith({
+      ...DEFAULT_SCENERY_DISPLAY,
+      particles: false,
+    });
+    await fireEvent(screen.getByTestId('switch-visible'), 'valueChange', false);
+    expect(props.onSceneryDisplayChange).toHaveBeenLastCalledWith({
+      ...DEFAULT_SCENERY_DISPLAY,
+      visible: false,
+    });
   });
 
   it('las vueltas van de 1 a 5, de a una, e incluyen las de la carrera por defecto', () => {

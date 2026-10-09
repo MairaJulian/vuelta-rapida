@@ -1,4 +1,5 @@
 import type { Radians } from '@/core/MathUtils';
+import type { Scenery } from '@/core/Scenery';
 
 /** Punto del plano, en metros. */
 export interface TrackPoint {
@@ -80,6 +81,11 @@ export interface Circuit extends TrackData {
   checkpoints: number[];
   /** Tramos con pianos (uno por curva), en el orden de la vuelta. Se pueden pisar. */
   kerbs: KerbSection[];
+  /**
+   * Lo que rodea a la pista: árboles, carteles, tribuna, barreras y detalles del
+   * asfalto (`core/Scenery`). Los circuitos del juego la traen; los de prueba, no.
+   */
+  scenery?: Scenery;
 }
 
 /**

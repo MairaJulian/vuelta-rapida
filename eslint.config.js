@@ -38,6 +38,24 @@ module.exports = defineConfig([
       ],
     },
   },
+  // En un worklet, un valor por defecto que es una variable (una constante del módulo)
+  // no viaja al hilo de UI: allá no existe y la app se cae. Jest no lo detecta. El valor
+  // por defecto va en el cuerpo: `const config = settings ?? DEFAULT_CONFIG`.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          // Funciones cuya primera sentencia es 'worklet' (no las que solo contienen uno).
+          selector:
+            ":function[body.body.0.directive='worklet'] > AssignmentPattern[right.type=/^(Identifier|MemberExpression)$/]",
+          message:
+            'Un worklet no puede usar una variable como valor por defecto de un parámetro: no llega al hilo de UI. Resolverlo en el cuerpo (`param ?? CONSTANTE`).',
+        },
+      ],
+    },
+  },
   // Último: desactiva las reglas de estilo que chocan con Prettier y reporta
   // las diferencias de formato como errores de ESLint.
   eslintPluginPrettierRecommended,

@@ -17,6 +17,8 @@ import {
 import type { CarState, DrivingConfig } from '@/core/DrivingModel';
 import type { ControlMode } from '@/core/PlayerPreferences';
 import { DEFAULT_RACE_CONFIG } from '@/core/RaceFlow';
+import { DEFAULT_SCENERY_SPEC } from '@/core/Scenery';
+import { DEFAULT_SCENERY_DISPLAY } from '@/core/SceneryView';
 import { DEFAULT_TILT_CONFIG, MAX_DEAD_ZONE, MIN_DEAD_ZONE } from '@/core/TiltSteering';
 import type { TiltSteeringResult } from '@/core/TiltSteering';
 import { DEFAULT_CIRCUIT } from '@/core/Circuits';
@@ -30,6 +32,8 @@ import type {
   DevReadings,
   NumericCameraKey,
   RaceSliderKey,
+  SceneryDisplaySliderKey,
+  SceneryDisplaySwitchKey,
   SliderSpec,
   TiltReadings,
   TiltSliderKey,
@@ -195,6 +199,37 @@ export const TRACK_SLIDERS: SliderSpec<TrackSliderKey>[] = [
   { key: 'width', label: 'Ancho de pista', min: 8, max: 20, step: 0.5, format: (v) => `${v} m` },
 ];
 
+const times = (value: number) => `×${value.toFixed(1)}`;
+
+/** Densidad de árboles: cambiarla vuelve a generar la escenografía, con la misma semilla. */
+export const TREE_DENSITY_SLIDER: SliderSpec<'treeDensity'> = {
+  key: 'treeDensity',
+  label: 'Densidad de árboles',
+  min: 0,
+  max: 2,
+  step: 0.1,
+  format: times,
+};
+
+/** Sliders de cómo se ve la escenografía. */
+export const SCENERY_SLIDERS: SliderSpec<SceneryDisplaySliderKey>[] = [
+  { key: 'parallax', label: 'Intensidad del paralaje', min: 0, max: 2, step: 0.1, format: times },
+  {
+    key: 'grassContrast',
+    label: 'Contraste de las franjas del pasto',
+    min: 0,
+    max: 1,
+    step: 0.05,
+    format: percent,
+  },
+];
+
+/** Interruptores de la escenografía. Apagarla sirve para comparar los fps con y sin. */
+export const SCENERY_SWITCHES: [SceneryDisplaySwitchKey, string][] = [
+  ['particles', 'Partículas de polvo y humo'],
+  ['visible', 'Dibujar la escenografía'],
+];
+
 /**
  * Sliders de la inclinación. La zona muerta se guarda en radianes y se muestra en
  * grados, en el mismo rango que puede elegir el jugador.
@@ -333,6 +368,10 @@ export function DevPanel({
   onCameraConfigChange,
   track,
   onTrackChange,
+  sceneryDisplay,
+  onSceneryDisplayChange,
+  treeDensity,
+  onTreeDensityChange,
   controlMode,
   onControlModeChange,
   tiltConfig,
@@ -382,6 +421,11 @@ export function DevPanel({
     onRaceConfigChange({ ...raceConfig, totalLaps: DEFAULT_RACE_CONFIG.totalLaps });
     onAudioMixChange(DEFAULT_RACE_AUDIO_MIX);
     onHapticsConfigChange(DEFAULT_RACE_HAPTICS);
+    onSceneryDisplayChange(DEFAULT_SCENERY_DISPLAY);
+    // Cambiar la densidad regenera la escenografía: solo si hace falta.
+    if (treeDensity !== DEFAULT_SCENERY_SPEC.treeDensity) {
+      onTreeDensityChange(DEFAULT_SCENERY_SPEC.treeDensity);
+    }
   };
 
   return (
@@ -552,6 +596,51 @@ export function DevPanel({
                 onChange={(value) => onTrackChange({ ...track, [spec.key]: value })}
               />
             ))}
+
+            <Text style={styles.sectionTitle}>Escenografía</Text>
+            {SCENERY_SWITCHES.map(([key, label]) => (
+              <View key={key} style={styles.switchRow}>
+                <Text style={styles.switchLabel}>{label}</Text>
+                <Switch
+                  testID={`switch-${key}`}
+                  value={sceneryDisplay[key]}
+                  onValueChange={(value) =>
+                    onSceneryDisplayChange({ ...sceneryDisplay, [key]: value })
+                  }
+                  accessibilityLabel={label}
+                  trackColor={{ true: COLORS.primary, false: COLORS.soft }}
+                  thumbColor={COLORS.card}
+                />
+              </View>
+            ))}
+            <DevSlider
+              testID={`slider-${TREE_DENSITY_SLIDER.key}`}
+              label={TREE_DENSITY_SLIDER.label}
+              value={treeDensity}
+              min={TREE_DENSITY_SLIDER.min}
+              max={TREE_DENSITY_SLIDER.max}
+              step={TREE_DENSITY_SLIDER.step}
+              formatValue={TREE_DENSITY_SLIDER.format}
+              onChange={onTreeDensityChange}
+            />
+            {SCENERY_SLIDERS.map((spec) => (
+              <DevSlider
+                key={spec.key}
+                testID={`slider-${spec.key}`}
+                label={spec.label}
+                value={sceneryDisplay[spec.key]}
+                min={spec.min}
+                max={spec.max}
+                step={spec.step}
+                formatValue={spec.format}
+                onChange={(value) =>
+                  onSceneryDisplayChange({ ...sceneryDisplay, [spec.key]: value })
+                }
+              />
+            ))}
+            <Text style={styles.note}>
+              La densidad vuelve a generar los árboles (misma semilla): tarda un momento.
+            </Text>
 
             <Text style={styles.sectionTitle}>Cámara</Text>
             <View style={styles.switchRow}>

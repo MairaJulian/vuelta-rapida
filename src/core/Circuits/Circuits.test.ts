@@ -1,4 +1,10 @@
-import { getCurveSections, getLapDirection, getNearestOnCenterline } from '@/core/Track';
+import { DEFAULT_SCENERY_SPEC, generateScenery } from '@/core/Scenery';
+import {
+  getCurveSections,
+  getLapDirection,
+  getNearestOnCenterline,
+  OVAL_CIRCUIT,
+} from '@/core/Track';
 import { validateCircuit } from '@/core/TrackValidation';
 
 import {
@@ -7,6 +13,7 @@ import {
   CIRCUIT_DEFINITIONS,
   DEFAULT_CIRCUIT,
   TRACK_SPACING,
+  withCircuitScenery,
 } from './Circuits';
 
 describe('CIRCUIT_DEFINITIONS', () => {
@@ -20,6 +27,30 @@ describe('CIRCUIT_DEFINITIONS', () => {
   it('los identificadores no se repiten', () => {
     const ids = CIRCUIT_DEFINITIONS.map((definition) => definition.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('cada circuito trae la semilla de su escenografía, con densidad normal', () => {
+    for (const definition of CIRCUIT_DEFINITIONS) {
+      expect(Number.isInteger(definition.scenery.seed)).toBe(true);
+      expect(definition.scenery.treeDensity).toBe(1);
+    }
+  });
+});
+
+describe('withCircuitScenery', () => {
+  it('DEFAULT_CIRCUIT no trae escenografía: se genera al abrir la carrera', () => {
+    expect(DEFAULT_CIRCUIT.scenery).toBeUndefined();
+  });
+
+  it('suma la escenografía con la semilla de la definición, sin tocar el trazado', () => {
+    const circuit = withCircuitScenery(DEFAULT_CIRCUIT);
+    expect(circuit.scenery).toEqual(generateScenery(DEFAULT_CIRCUIT, AUTODROMO_DEL_LAGO.scenery));
+    const { scenery: _scenery, ...geometry } = circuit;
+    expect(geometry).toEqual(DEFAULT_CIRCUIT);
+  });
+
+  it('un circuito sin definición usa la escenografía por defecto', () => {
+    expect(withCircuitScenery(OVAL_CIRCUIT).scenery?.spec).toEqual(DEFAULT_SCENERY_SPEC);
   });
 });
 

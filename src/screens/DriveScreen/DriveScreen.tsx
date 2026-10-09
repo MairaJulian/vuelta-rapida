@@ -10,7 +10,7 @@ import { PauseMenu } from '@/components/PauseMenu';
 import { RaceResults } from '@/components/RaceResults';
 import { StartLights } from '@/components/StartLights';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
-import { DEFAULT_CIRCUIT } from '@/core/Circuits';
+import { DEFAULT_CIRCUIT, withCircuitScenery } from '@/core/Circuits';
 import { DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
 import { createEventBus } from '@/core/EventBus';
 import { DEFAULT_FIXED_STEP_CONFIG } from '@/core/FixedStep';
@@ -20,15 +20,20 @@ import { withTiltPreferences } from '@/core/PlayerPreferences';
 import type { PlayerPreferences } from '@/core/PlayerPreferences';
 import { DEFAULT_RACE_CONFIG } from '@/core/RaceFlow';
 import type { RaceEvent } from '@/core/RaceFlow';
+import { withScenery } from '@/core/Scenery';
+import { DEFAULT_SCENERY_DISPLAY } from '@/core/SceneryView';
 import { calibrateTilt, DEFAULT_TILT_CONFIG, withTiltSteering } from '@/core/TiltSteering';
 import type { TiltConfig } from '@/core/TiltSteering';
 import type { Circuit } from '@/core/Track';
 import { useBestLapRecord } from '@/hooks/useBestLapRecord';
+import { useParticles } from '@/hooks/useParticles';
 import { usePlayerPreferences } from '@/hooks/usePlayerPreferences';
 import { useRaceAudio } from '@/hooks/useRaceAudio';
 import { useRaceHaptics } from '@/hooks/useRaceHaptics';
 import { useRaceLoop } from '@/hooks/useRaceLoop';
 import { useRaceStatus } from '@/hooks/useRaceStatus';
+import { useSceneryAtlas } from '@/hooks/useSceneryAtlas';
+import { useSceneryView } from '@/hooks/useSceneryView';
 import { useTiltOutput } from '@/hooks/useTiltSteering';
 import { ButtonControls } from '@/input/ButtonControls';
 import { useDrivingInput } from '@/input/InputControls';
@@ -62,6 +67,22 @@ export function DriveScreen(_props: DriveScreenProps) {
   const [cameraConfig, setCameraConfig] = useState(DEFAULT_CAMERA_CONFIG);
   // El circuito es fijo hasta que exista la selección de pista; el panel cambia el ancho.
   const [track, setTrack] = useState<Circuit>(DEFAULT_CIRCUIT);
+  // La escenografía se genera recién montada la pantalla, no al dibujarla: tarda unos
+  // cientos de milisegundos en el celular y así no demora el comienzo de la transición.
+  useEffect(() => {
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) {
+        setTrack((current) => (current.scenery ? current : withCircuitScenery(current)));
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+  // Cómo se ve la escenografía: ajuste de desarrollo, solo para la sesión.
+  const [sceneryDisplay, setSceneryDisplay] = useState(DEFAULT_SCENERY_DISPLAY);
+  const atlas = useSceneryAtlas();
   const { recordMs, saveLap } = useBestLapRecord({ circuitId: track.id, stepHz: STEP_HZ });
   const recordTicks = recordMs === null ? null : Math.round((recordMs * STEP_HZ) / 1000);
   // Las vueltas se cambian en el panel y valen desde la próxima carrera.
@@ -98,6 +119,19 @@ export function DriveScreen(_props: DriveScreenProps) {
     recordTicks,
     onEvents: bus.emitAll,
     onEngine,
+  });
+
+  const sceneryView = useSceneryView({
+    scenery: sceneryDisplay.visible ? track.scenery : undefined,
+    cameraView: loop.cameraView,
+    viewport,
+    parallax: sceneryDisplay.parallax,
+  });
+  const particles = useParticles({
+    race: loop.race,
+    car: loop.car,
+    input,
+    enabled: sceneryDisplay.particles,
   });
 
   useEffect(() => bus.on('newRecord', (event) => saveLap(event.lapTicks)), [bus, saveLap]);
@@ -165,12 +199,28 @@ export function DriveScreen(_props: DriveScreenProps) {
     updatePreferences({ tiltNeutralAngle: calibrated.neutralAngle });
   };
 
+  // Con otro ancho, la escenografía se vuelve a generar (misma semilla) para no pisar la pista.
+  const changeTrackWidth = (width: number) =>
+    setTrack((current) => {
+      const next = { ...current, width };
+      return current.scenery ? withScenery(next, current.scenery.spec) : next;
+    });
+
+  const changeTreeDensity = (treeDensity: number) =>
+    setTrack((current) =>
+      current.scenery ? withScenery(current, { ...current.scenery.spec, treeDensity }) : current,
+    );
+
   return (
     <View style={styles.container} testID="drive-screen">
       <DriveCanvas
         track={track}
         cameraTransform={loop.cameraTransform}
         carTransform={loop.carTransform}
+        sceneryView={sceneryView}
+        atlas={atlas}
+        particles={particles}
+        display={sceneryDisplay}
       />
       {controlMode === 'tilt' ? (
         <TiltControls
@@ -217,7 +267,11 @@ export function DriveScreen(_props: DriveScreenProps) {
           cameraConfig={cameraConfig}
           onCameraConfigChange={setCameraConfig}
           track={track}
-          onTrackChange={(next) => setTrack((current) => ({ ...current, width: next.width }))}
+          onTrackChange={(next) => changeTrackWidth(next.width)}
+          sceneryDisplay={sceneryDisplay}
+          onSceneryDisplayChange={setSceneryDisplay}
+          treeDensity={track.scenery?.spec.treeDensity ?? 1}
+          onTreeDensityChange={changeTreeDensity}
           controlMode={controlMode}
           onControlModeChange={(mode) => updatePreferences({ controlMode: mode })}
           tiltConfig={tiltConfig}

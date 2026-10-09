@@ -4,7 +4,7 @@ import { useDerivedValue, useFrameCallback, useSharedValue } from 'react-native-
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { createCameraState, getCameraView, stepCamera } from '@/core/Camera';
-import type { CameraState } from '@/core/Camera';
+import type { CameraState, CameraView } from '@/core/Camera';
 import { createCarState, getSpeed } from '@/core/DrivingModel';
 import type { CarState } from '@/core/DrivingModel';
 import { getRenderCar } from '@/core/DrivingSim';
@@ -127,14 +127,18 @@ export function useRaceLoop({
     fps.set(smoothFps(fps.get(), frameMs));
   });
 
-  const cameraTransform = useDerivedValue<Transforms3d>(() => {
-    const area = viewportValue.get();
-    const view = getCameraView(
+  const cameraView = useDerivedValue<CameraView>(() =>
+    getCameraView(
       car.get(),
       camera.get(),
       cameraConfigValue.get(),
       drivingConfigValue.get().maxSpeed,
-    );
+    ),
+  );
+
+  const cameraTransform = useDerivedValue<Transforms3d>(() => {
+    const area = viewportValue.get();
+    const view = cameraView.get();
     return [
       { translateX: area.width / 2 },
       { translateY: area.height / 2 },
@@ -188,6 +192,7 @@ export function useRaceLoop({
     race,
     car,
     fps,
+    cameraView,
     cameraTransform,
     carTransform,
     lapView,

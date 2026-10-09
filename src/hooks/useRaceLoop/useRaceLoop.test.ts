@@ -239,6 +239,19 @@ describe('useRaceLoop', () => {
     ]);
   });
 
+  it('expone la vista de la cámara: el punto del centro de la pantalla y el zoom', async () => {
+    const { result } = await renderLoop();
+    await startRace(result);
+    runFrames(20);
+    const car = result.current.car.value;
+    expect(result.current.cameraView.value).toEqual({
+      targetX: car.x,
+      targetZ: car.z,
+      scale: DEFAULT_CAMERA_CONFIG.pixelsPerMeter,
+      rotation: 0,
+    });
+  });
+
   it('la cámara se adelanta de a poco en la dirección del movimiento', async () => {
     const { result } = await renderLoop({
       cameraConfig: { ...DEFAULT_CAMERA_CONFIG, speedZoomOut: 0 },

@@ -57,12 +57,9 @@ describe('TrackLayer', () => {
     expect(stripes[1].props.path.endsWith('L -100 -50')).toBe(true);
   });
 
-  it('dibuja césped con franjas', async () => {
-    const { findAll, tree } = await renderTrack();
-    // Las franjas van en un Fill: cubren todo el lienzo y nunca se acaban.
-    const [fill] = findAll('Fill');
-    expect(fill.queryAll((node) => node.type === 'LinearGradient')).toHaveLength(1);
-    expect(tree).toContain(COLORS.grassStripe);
+  it('no pinta el pasto: eso lo hace GrassLayer', async () => {
+    const { findAll } = await renderTrack();
+    expect(findAll('Fill')).toEqual([]);
   });
 
   it('dibuja la meta a cuadros en el punto 0, girada según el trazado', async () => {
