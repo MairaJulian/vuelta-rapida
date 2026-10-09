@@ -33,9 +33,11 @@ Juego de carreras de monoplazas con vista cenital para Android. Dos fines:
 
 - La lógica del juego (modelo de manejo, reglas de carrera, vueltas, tiempos, fantasma) vive en **TypeScript puro**: sin importar nada de React, React Native ni Skia. Una regla `no-restricted-imports` en `eslint.config.js` lo hace cumplir en `src/core/`.
 - La simulación corre en el hilo de UI (worklets de Reanimated). Las funciones de `core` que se llaman desde el loop llevan la directiva `'worklet'`, que es un texto y no un import.
+- En un worklet, nunca usar una variable (una constante del módulo) como valor por defecto de un parámetro: el plugin no la lleva al hilo de UI y la app se cae ("Property 'X' doesn't exist"). Jest no lo detecta; una regla de ESLint (`no-restricted-syntax` en `eslint.config.js`) sí. El valor por defecto va en el cuerpo: `const config = settings ?? DEFAULT_CONFIG`.
 - El modelo de manejo trabaja en un plano (coordenadas x/z) para poder reutilizarse en 3D.
 - El renderizado solo lee el estado; nunca contiene lógica.
 - El estado de la carrera es serializable (posición, velocidad, ángulo por cuadro), pensado para el auto fantasma y un eventual online.
+- La escenografía es un dato del circuito (`Circuit.scenery`): la genera `core/Scenery` con la semilla de la definición. Se genera al abrir la carrera (`withCircuitScenery`), no al iniciar la app: tarda unos cientos de milisegundos en el celular.
 
 ## Controles
 
@@ -63,6 +65,10 @@ No usar "F1", "Formula 1", logos, equipos, pilotos ni decoraciones reales. Monop
 
 El piso es un celular Android de gama media. Objetivo: 60 fps.
 
+- Lo que se repite cientos de veces (árboles, sombras, neumáticos, partículas) se dibuja con `Atlas` de Skia, y solo lo de las celdas que ve la cámara (`useSceneryView`).
+- El paralaje es una transformación por capa de altura, no un cálculo por objeto.
+- Lo estático va en pocos trazos (todos los parches del asfalto en un `Path`). Evitar `Points` con miles de puntos redondos: en la GPU, Skia dibuja cada uno como un óvalo aparte.
+
 ## Diseño
 
 El handoff está en [docs/design](docs/design). Es la referencia visual para todas las pantallas.
@@ -73,6 +79,7 @@ Packs CC0 de estilo plano/low-poly. Registrar la fuente y licencia de cada asset
 
 - **Sonidos en WAV mono** (`assets/sounds/`): sin FFmpeg ni las bibliotecas externas de react-native-audio-api (`app.json`), el decodificador solo lee WAV, MP3 y FLAC. OGG no sirve.
 - Los efectos se sintetizan con `node scripts/generate-sounds.mjs`; el motor se pasa a mono con `--engine <ruta>` (ver CREDITOS.md).
+- **Escenografía dibujada en código** con la paleta del handoff, sin pack externo (ver CREDITOS.md). La textura de árboles y partículas se rasteriza una vez por sesión (`useSceneryAtlas`).
 - **Ícono de la app** en `assets/icono/`, tal cual lo entrega el handoff (`docs/design/.../icono/`). Si cambia, hay que regenerar `android/` (`npx expo prebuild --platform android`) y recompilar.
 
 ## Estructura de carpetas
@@ -103,7 +110,7 @@ Las carpetas se crean cuando hacen falta, no antes.
 ## Tests
 
 - `npm test` corre Jest (preset `jest-expo`, React Native Testing Library 14, que es asíncrona: usar `await render(...)` y `await renderHook(...)`).
-- Skia se sustituye por un mock propio (`test/setup/skia.ts`); Reanimated usa su mock oficial ampliado con `useFrameCallback`, `modify` y valores compartidos que duran toda la vida del componente (`test/setup/reanimated.ts`); react-native-audio-api usa su mock oficial (`test/setup/audio-api.ts`).
+- Skia se sustituye por un mock propio (`test/setup/skia.ts`; incluye `Atlas`, `Points`, los buffers, `drawAsImage` y `mixColors`); Reanimated usa su mock oficial ampliado con `useFrameCallback`, `modify` y valores compartidos que duran toda la vida del componente (`test/setup/reanimated.ts`); react-native-audio-api usa su mock oficial (`test/setup/audio-api.ts`).
 - `npm run typecheck` corre `tsc --noEmit`.
 - `npm run lint` corre `expo lint` (ESLint 9 con `eslint-config-expo` y `eslint-plugin-prettier`, config en `eslint.config.js`; ignora `docs/`, `android/`, `.expo/` y `dist/`). Las diferencias de formato cuentan como errores de lint. `npm run lint:fix` corrige lo automático.
 - `npm run format` aplica Prettier (`.prettierrc`); `npm run format:check` solo verifica.
