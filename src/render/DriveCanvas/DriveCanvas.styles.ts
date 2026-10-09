@@ -1,9 +1,7 @@
 import { StyleSheet } from 'react-native';
 
-export const COLORS = {
-  /** Césped liso fuera de la zona con franjas; mismo tono que TrackLayer. */
-  background: '#C8E8CD',
-} as const;
+/** Rumbo de las franjas del pasto en un circuito sin escenografía (el óvalo de prueba). */
+export const DEFAULT_STRIPE_ANGLE = Math.PI / 4;
 
 export const styles = StyleSheet.create({
   canvas: {

@@ -1,14 +1,11 @@
 import {
   DashPathEffect,
-  Fill,
   Group,
-  LinearGradient,
   matchFont,
   Path,
   Rect,
   RoundedRect,
   Text,
-  vec,
 } from '@shopify/react-native-skia';
 import { memo, useMemo } from 'react';
 
@@ -22,7 +19,6 @@ import {
   EDGE_RATIO,
   FINISH_SIGN,
   FINISH_SQUARE,
-  GRASS_STRIPE_PERIOD,
 } from './TrackLayer.styles';
 import type { TrackLayerProps } from './TrackLayer.types';
 
@@ -42,9 +38,9 @@ const signFont = () =>
 
 /**
  * Dibuja el circuito en coordenadas del mundo (metros) a partir de sus datos:
- * césped con franjas, pianos en las curvas, borde blanco, asfalto, línea de meta
- * a cuadros y el cartel "META". Es estático: la cámara lo mueve desde el grupo que
- * lo contiene.
+ * pianos en las curvas, borde blanco, asfalto, línea de meta a cuadros y el cartel
+ * "META". El pasto va aparte (`GrassLayer`). Es estático: la cámara lo mueve desde el
+ * grupo que lo contiene.
  */
 export const TrackLayer = memo(function TrackLayer({ track }: TrackLayerProps) {
   const centerline = useMemo(() => `${openPath(track.centerline)} Z`, [track.centerline]);
@@ -87,18 +83,6 @@ export const TrackLayer = memo(function TrackLayer({ track }: TrackLayerProps) {
 
   return (
     <Group>
-      {/* Fill pinta todo el lienzo; el gradiente sigue la transformación de la cámara,
-          así que las franjas quedan fijas en el mundo y no se acaban nunca. */}
-      <Fill>
-        <LinearGradient
-          start={vec(0, 0)}
-          end={vec(GRASS_STRIPE_PERIOD, GRASS_STRIPE_PERIOD)}
-          colors={[COLORS.grass, COLORS.grass, COLORS.grassStripe, COLORS.grassStripe]}
-          positions={[0, 0.5, 0.5, 1]}
-          mode="repeat"
-        />
-      </Fill>
-
       {curbs.map((curb) => (
         <Group key={curb.key}>
           <Path

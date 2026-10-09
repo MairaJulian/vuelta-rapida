@@ -31,6 +31,17 @@ node scripts/generate-sounds.mjs --engine <ruta>/motorseamless11.wav
 | Ícono "Dorsal · Itálica" (opción 3g): monoplaza blanco con el número 7 sobre azul, y "VR" de fondo | Handoff de diseño (`docs/design/.../IconoApp.dc.html` e `icono/`) | Vuelta Rápida | Obra propia |
 | Letras "VR" del fondo, dibujadas en la imagen | Fuente [Archivo](https://fonts.google.com/specimen/Archivo) 900 itálica | Omnibus-Type | SIL Open Font License 1.1 |
 
+## Escenografía (`src/render/SceneryAtlas/`, `SceneryBoard/`, `Grandstand/`, `SceneryLayer/`)
+
+| Qué es | Fuente | Autor | Licencia |
+|---|---|---|---|
+| Árboles, arbustos, sombras y partículas (la textura del atlas) | Dibujados en código con la paleta del handoff (`SceneryAtlas`) y rasterizados al abrir la carrera | Vuelta Rápida | CC0 |
+| Carteles de distancia, carteles publicitarios, tribuna y barreras de neumáticos | Dibujados en código como vectores, siguiendo la escena del handoff (`EscenaPista.dc.html`) | Vuelta Rápida | CC0 |
+| Marcas de los carteles: RAYO MATE, GOMAS ÑANDÚ, ALFAJORES COMETA, LUBRI TERO y RADIO VELOZ | Inventadas para el juego | Vuelta Rápida | CC0 |
+
+- No se usa ningún pack externo. Se evaluó el [Racing Pack](https://kenney.nl/assets/racing-pack) de Kenney (CC0, vista cenital), pero su sombreado y sus colores saturados no combinan con el estilo plano del handoff.
+- Los textos de los carteles usan la fuente del sistema (sans-serif, itálica negrita), como el cartel META.
+
 ## Íconos de la interfaz (`src/components/Icon/`)
 
 | Qué es | Fuente | Autor | Licencia |

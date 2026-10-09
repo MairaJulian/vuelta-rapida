@@ -26,6 +26,7 @@ Antes se llamaba `useDrivingLoop`: corría solo la simulación de manejo.
 | `race` | `SharedValue<RaceState>`: la carrera completa. |
 | `car` | `SharedValue<CarState>` interpolado, para dibujar y para las lecturas del panel. |
 | `fps` | fps suavizados. |
+| `cameraView` | `DerivedValue<CameraView>`: punto del mundo en el centro de la pantalla, zoom y giro. Lo usan el paralaje y la escenografía visible (`useSceneryView`). |
 | `cameraTransform` / `carTransform` | Transformaciones del mundo y del auto para Skia. |
 | `lapView` | `DerivedValue<RaceLapView>`: vuelta en curso, total de vueltas y tiempo de la vuelta. |
 | `startLights()` / `pause()` / `resume()` / `restart()` | Órdenes de la pantalla. |
