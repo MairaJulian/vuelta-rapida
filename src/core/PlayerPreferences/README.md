@@ -5,12 +5,13 @@ Preferencias del jugador que se guardan entre partidas: modo de control, calibra
 ## Tipos
 
 - `ControlMode`: `'tilt' | 'buttons'`.
-- `PlayerPreferences`: `{ controlMode, tiltNeutralAngle, tiltSensitivity, tiltDeadZone, bestLapsMs }`.
+- `PlayerPreferences`: `{ controlMode, tiltNeutralAngle, tiltSensitivity, tiltDeadZone, bestLapsMs, soundEnabled, vibrationEnabled }`.
   - `controlMode`: `null` hasta que el jugador elige.
   - `tiltNeutralAngle`: en radianes; `null` sin calibrar.
   - `tiltSensitivity`: de 1 a 10.
   - `tiltDeadZone`: en radianes, de 1° a 9°. Inicial, 5°.
   - `bestLapsMs`: mejor vuelta de cada circuito, en milisegundos, por `id` del circuito. Inicial, vacío.
+  - `soundEnabled` y `vibrationEnabled`: si suenan el motor y los efectos, y si vibra el celular (también con el freno). Inicial, los dos prendidos. Se cambian desde la pausa.
 - `StartStep`: `'choose-control' | 'calibrate' | 'drive'`.
 
 ## API

@@ -7,5 +7,5 @@ import type { StartStep } from '@/core/PlayerPreferences';
 export const START_HREFS = {
   'choose-control': '/control',
   calibrate: '/calibracion',
-  drive: '/pista',
+  drive: '/inicio',
 } as const satisfies Record<StartStep, string>;

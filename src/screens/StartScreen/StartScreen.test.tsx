@@ -35,10 +35,10 @@ describe('StartScreen', () => {
       expect(screen.getByText('redirect:/calibracion')).toBeTruthy();
     });
 
-    it('con todo elegido va directo a la pista', async () => {
+    it('con todo elegido va a Inicio', async () => {
       await act(() => updatePlayerPreferences({ controlMode: 'buttons' }));
       await render(<StartScreen tiltEnabled />);
-      expect(screen.getByText('redirect:/pista')).toBeTruthy();
+      expect(screen.getByText('redirect:/inicio')).toBeTruthy();
     });
   });
 
@@ -46,18 +46,18 @@ describe('StartScreen', () => {
     it('es lo que indica el interruptor por defecto', async () => {
       expect(FEATURE_FLAGS.tiltControl).toBe(false);
       await render(<StartScreen />);
-      expect(screen.getByText('redirect:/pista')).toBeTruthy();
+      expect(screen.getByText('redirect:/inicio')).toBeTruthy();
     });
 
-    it('la primera vez va directo a la pista, sin elegir control', async () => {
+    it('la primera vez va directo a Inicio, sin elegir control', async () => {
       await render(<StartScreen tiltEnabled={false} />);
-      expect(screen.getByText('redirect:/pista')).toBeTruthy();
+      expect(screen.getByText('redirect:/inicio')).toBeTruthy();
     });
 
     it('con inclinación guardada sin calibrar no va a la calibración', async () => {
       await act(() => updatePlayerPreferences({ controlMode: 'tilt' }));
       await render(<StartScreen tiltEnabled={false} />);
-      expect(screen.getByText('redirect:/pista')).toBeTruthy();
+      expect(screen.getByText('redirect:/inicio')).toBeTruthy();
     });
 
     it('con inclinación guardada la cambia a botones y conserva la calibración', async () => {
@@ -65,7 +65,7 @@ describe('StartScreen', () => {
         updatePlayerPreferences({ controlMode: 'tilt', tiltNeutralAngle: 0.1, tiltSensitivity: 7 }),
       );
       await render(<StartScreen tiltEnabled={false} />);
-      expect(screen.getByText('redirect:/pista')).toBeTruthy();
+      expect(screen.getByText('redirect:/inicio')).toBeTruthy();
       expect(readPlayerPreferences()).toMatchObject({
         controlMode: 'buttons',
         tiltNeutralAngle: 0.1,
@@ -77,7 +77,7 @@ describe('StartScreen', () => {
       await act(() => updatePlayerPreferences({ controlMode: 'buttons' }));
       const before = readPlayerPreferences();
       await render(<StartScreen tiltEnabled={false} />);
-      expect(screen.getByText('redirect:/pista')).toBeTruthy();
+      expect(screen.getByText('redirect:/inicio')).toBeTruthy();
       expect(readPlayerPreferences()).toBe(before);
     });
   });

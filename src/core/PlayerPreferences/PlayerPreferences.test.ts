@@ -22,6 +22,8 @@ const saved: PlayerPreferences = {
   tiltSensitivity: 7,
   tiltDeadZone: 3 * DEG,
   bestLapsMs: { 'autodromo-del-lago': 72480.5 },
+  soundEnabled: false,
+  vibrationEnabled: false,
 };
 
 describe('parsePlayerPreferences', () => {
@@ -47,6 +49,8 @@ describe('parsePlayerPreferences', () => {
         tiltSensitivity: 8,
         tiltDeadZone: 'grande',
         bestLapsMs: 'rapido',
+        soundEnabled: 'si',
+        vibrationEnabled: 0,
         extra: 1,
       }),
     );
@@ -56,7 +60,15 @@ describe('parsePlayerPreferences', () => {
       tiltSensitivity: 8,
       tiltDeadZone: DEFAULT_PLAYER_PREFERENCES.tiltDeadZone,
       bestLapsMs: {},
+      soundEnabled: true,
+      vibrationEnabled: true,
     });
+  });
+
+  it('las preferencias de antes del sonido y la vibración arrancan con los dos prendidos', () => {
+    const parsed = parsePlayerPreferences(JSON.stringify({ controlMode: 'buttons' }));
+    expect(parsed.soundEnabled).toBe(true);
+    expect(parsed.vibrationEnabled).toBe(true);
   });
 
   it('las preferencias de antes de la zona muerta ajustable arrancan con la inicial', () => {

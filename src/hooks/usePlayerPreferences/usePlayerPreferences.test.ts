@@ -45,6 +45,8 @@ describe('usePlayerPreferences', () => {
       tiltSensitivity: 6,
       tiltDeadZone: 0.05,
       bestLapsMs: {},
+      soundEnabled: true,
+      vibrationEnabled: true,
     });
   });
 

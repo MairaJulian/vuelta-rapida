@@ -6,7 +6,7 @@ Monoplaza visto desde arriba, dibujado con Skia. Reproduce la silueta del handof
 
 | Prop | Tipo | Descripción |
 |---|---|---|
-| `transform` | `SharedValue<Transforms3d>` | Posición y rumbo en el mundo; lo actualiza `useDrivingLoop` cada cuadro. |
+| `transform` | `SharedValue<Transforms3d> \| Transforms3d` | Posición y rumbo en el mundo; en la carrera lo actualiza `useRaceLoop` cada cuadro. En un menú (Inicio) puede ser una transformación fija. |
 | `bodyColor` | `string` (opcional) | Color de la carrocería. Por defecto, azul `#2F6BDD`. |
 
 ## Ejemplo

@@ -18,6 +18,10 @@ export interface PlayerPreferences {
   tiltDeadZone: Radians;
   /** Mejor vuelta de cada circuito, en milisegundos, por `id` del circuito. */
   bestLapsMs: Readonly<Record<string, number>>;
+  /** Si suenan el motor y los efectos. */
+  soundEnabled: boolean;
+  /** Si el celular vibra con los pianos, los bordes, la largada, la llegada y el freno. */
+  vibrationEnabled: boolean;
 }
 
 /** Primer paso al abrir el juego, según lo que ya está guardado. */
