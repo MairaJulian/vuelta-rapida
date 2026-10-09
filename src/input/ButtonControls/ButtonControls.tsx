@@ -28,7 +28,7 @@ export function buttonsToInput(pressed: PressedButtons): DrivingInput {
  * (por ejemplo, frenar y doblar). Los gestos corren en el hilo de UI y escriben
  * la entrada directamente, sin pasar por React.
  */
-export function ButtonControls({ input }: ButtonControlsProps) {
+export function ButtonControls({ input, brakeVibration = true }: ButtonControlsProps) {
   const insets = useSafeAreaInsets();
   const pressed = useSharedValue<PressedButtons>(RELEASED);
 
@@ -39,7 +39,7 @@ export function ButtonControls({ input }: ButtonControlsProps) {
       const next = { ...current, [button]: isDown };
       pressed.set(next);
       input.set(buttonsToInput(next));
-      if (button === 'brake' && isDown && !current.brake) {
+      if (brakeVibration && button === 'brake' && isDown && !current.brake) {
         scheduleOnRN(vibrateOnBrake);
       }
     };
@@ -57,7 +57,7 @@ export function ButtonControls({ input }: ButtonControlsProps) {
         setButton('brake', isDown);
       }),
     };
-  }, [input, pressed]);
+  }, [brakeVibration, input, pressed]);
 
   // Si el modo de control se desmonta con un botón apretado, el auto no debe quedar frenando.
   useEffect(() => () => input.set(NEUTRAL_INPUT), [input]);

@@ -9,6 +9,7 @@ Modo de control por inclinación: el celular es el volante. En pantalla quedan s
 | `input` | `SharedValue<DrivingInput>` | Entrada que escriben la inclinación (`steer`) y los frenos (`brake`). |
 | `config` | `TiltConfig` | Calibración, zona muerta, sensibilidad y filtro. |
 | `output` | `SharedValue<TiltSteeringResult>` (opcional) | Dónde publicar la lectura procesada, para que la pantalla (y el panel) la lean. |
+| `brakeVibration` | `boolean` (opcional) | Vibración corta al empezar a frenar; la pantalla pasa la preferencia del jugador. Por defecto, sí. |
 
 También exporta `brakesToInput(pressed)`: freno a fondo si hay cualquier freno apretado.
 

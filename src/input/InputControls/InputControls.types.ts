@@ -15,6 +15,8 @@ export type InputMode = ControlMode;
 export interface InputControlsProps {
   /** Entrada actual. Se escribe desde el hilo de UI y la lee el loop de la simulación. */
   input: SharedValue<DrivingInput>;
+  /** Vibración corta al empezar a frenar (preferencia del jugador). Por defecto, sí. */
+  brakeVibration?: boolean;
 }
 
 /** Componente que implementa un modo de entrada. */
