@@ -7,7 +7,7 @@ import type { AppStateStatus, HardwareBackPressEvent } from 'react-native';
 import { getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import { useAnimatedSensor, useFrameCallback } from 'react-native-reanimated';
 
-import { DEFAULT_CIRCUIT } from '@/core/Circuits';
+import { AUTODROMO_DEL_LAGO, DEFAULT_CIRCUIT } from '@/core/Circuits';
 import type { RaceResults } from '@/core/RaceFlow';
 import { MAX_DEAD_ZONE } from '@/core/TiltSteering';
 import {
@@ -15,7 +15,11 @@ import {
   reloadPlayerPreferences,
   updatePlayerPreferences,
 } from '@/hooks/usePlayerPreferences';
+import { DEFAULT_SCENERY_DISPLAY } from '@/core/SceneryView';
+import { getNearestOnCenterline } from '@/core/Track';
+import { useParticles } from '@/hooks/useParticles';
 import { useRaceStatus } from '@/hooks/useRaceStatus';
+import { useSceneryView } from '@/hooks/useSceneryView';
 import { COLORS as TRACK_COLORS } from '@/render/TrackLayer/TrackLayer.styles';
 
 import { DriveScreen } from './DriveScreen';
@@ -42,6 +46,30 @@ jest.mock('@/hooks/useRaceStatus', () => {
   return { ...actual, useRaceStatus: jest.fn(actual.useRaceStatus) };
 });
 const { useRaceStatus: realUseRaceStatus } = jest.requireActual('@/hooks/useRaceStatus');
+// La escenografía visible y las partículas se prueban en sus hooks. Aquí se reemplazan
+// para ver con qué se llaman, y para que el último `useFrameCallback` registrado siga
+// siendo el del loop de la carrera (`frame()`).
+const mockShared = <Value,>(value: Value) => ({ value, get: () => value });
+const mockSprites = () => ({ sprites: mockShared([]), transforms: mockShared([]) });
+const mockSceneryView = {
+  atlas: {
+    shadows: mockSprites(),
+    tyres: mockSprites(),
+    bushes: mockSprites(),
+    treesSmall: mockSprites(),
+    treesLarge: mockSprites(),
+  },
+  levels: {
+    bushes: mockShared([]),
+    signs: mockShared([]),
+    treesSmall: mockShared([]),
+    treesLarge: mockShared([]),
+  },
+};
+jest.mock('@/hooks/useSceneryView', () => ({ useSceneryView: jest.fn(() => mockSceneryView) }));
+jest.mock('@/hooks/useParticles', () => ({
+  useParticles: jest.fn(() => mockShared({ particles: [], random: 1, dustDebt: 0, smokeDebt: 0 })),
+}));
 jest.mock('expo-keep-awake', () => ({ useKeepAwake: jest.fn() }));
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(() => Promise.resolve()),
@@ -377,5 +405,68 @@ describe('DriveScreen', () => {
     );
     expect(asphalt.props.strokeWidth).toBe(8);
     expect(asphalt.props.path.match(/[ML] /g)).toHaveLength(DEFAULT_CIRCUIT.centerline.length);
+  });
+
+  describe('escenografía', () => {
+    const sceneryParams = () => jest.mocked(useSceneryView).mock.calls.at(-1)![0];
+    const particlesParams = () => jest.mocked(useParticles).mock.calls.at(-1)![0];
+
+    /** Lleva un slider del panel (de 200 dp) a una fracción de su recorrido. */
+    async function slide(key: string, ratio: number) {
+      await fireEvent(screen.getByTestId(`slider-${key}-track`), 'layout', {
+        nativeEvent: { layout: { x: 0, y: 0, width: 200, height: 48 } },
+      });
+      const handlers = getByGestureTestId(`slider-${key}-gesture`).handlers as {
+        onStart?: (event: { x: number }) => void;
+      };
+      await act(() => handlers.onStart?.({ x: ratio * 200 }));
+    }
+
+    it('al abrirse genera la escenografía del circuito, con la semilla de su definición', async () => {
+      await render(<DriveScreen />);
+      const { scenery, parallax, cameraView } = sceneryParams();
+      expect(scenery?.spec).toEqual(AUTODROMO_DEL_LAGO.scenery);
+      expect(scenery?.objects.length).toBeGreaterThan(100);
+      expect(parallax).toBe(DEFAULT_SCENERY_DISPLAY.parallax);
+      expect(cameraView).toBeDefined();
+      expect(particlesParams().enabled).toBe(true);
+      // Los carteles de la escenografía se dibujan, además del cartel META.
+      const texts = screen.container.queryAll((node) => node.type === 'SkiaText');
+      expect(texts.map((node) => node.props.text)).toEqual(expect.arrayContaining(['META', '300']));
+    });
+
+    it('la densidad del panel vuelve a generar los árboles con la misma semilla', async () => {
+      await render(<DriveScreen />);
+      await fireEvent.press(screen.getByLabelText('Abrir el panel de ajuste'));
+      await slide('treeDensity', 0);
+      const { scenery } = sceneryParams();
+      expect(scenery?.spec).toEqual({ ...AUTODROMO_DEL_LAGO.scenery, treeDensity: 0 });
+      expect(scenery?.objects.some((object) => object.kind === 'treeLarge')).toBe(false);
+    });
+
+    it('el panel apaga la escenografía y las partículas, y cambia el paralaje', async () => {
+      await render(<DriveScreen />);
+      await fireEvent.press(screen.getByLabelText('Abrir el panel de ajuste'));
+      await fireEvent(screen.getByTestId('switch-visible'), 'valueChange', false);
+      expect(sceneryParams().scenery).toBeUndefined();
+      await fireEvent(screen.getByTestId('switch-particles'), 'valueChange', false);
+      expect(particlesParams().enabled).toBe(false);
+      await slide('parallax', 1);
+      expect(sceneryParams().parallax).toBe(2);
+    });
+
+    it('con la pista más ancha, la escenografía se genera de nuevo y se aleja', async () => {
+      await render(<DriveScreen />);
+      await fireEvent.press(screen.getByLabelText('Abrir el panel de ajuste'));
+      await slide('width', 1);
+      const { scenery } = sceneryParams();
+      expect(scenery?.spec).toEqual(AUTODROMO_DEL_LAGO.scenery);
+      // 20 m de ancho: borde blanco a casi 11 m del centro, más la escapatoria.
+      for (const board of scenery!.objects.filter((object) => object.kind === 'distanceBoard')) {
+        expect(getNearestOnCenterline(DEFAULT_CIRCUIT, board.x, board.z).distance).toBeGreaterThan(
+          13,
+        );
+      }
+    });
   });
 });

@@ -1,6 +1,6 @@
 # DevPanel
 
-Panel desplegable **solo para desarrollo**. Permite ajustar en caliente el modo de control, la inclinación, las vueltas, el sonido, la vibración, el modelo de manejo, el ancho de la pista y la cámara. Muestra lecturas en vivo de velocidad, rumbo, deriva y fps y, con inclinación, del ángulo leído y la dirección resultante.
+Panel desplegable **solo para desarrollo**. Permite ajustar en caliente el modo de control, la inclinación, las vueltas, el sonido, la vibración, el modelo de manejo, el ancho de la pista, la escenografía y la cámara. Muestra lecturas en vivo de velocidad, rumbo, deriva y fps y, con inclinación, del ángulo leído y la dirección resultante.
 
 ## Props
 
@@ -9,6 +9,8 @@ Panel desplegable **solo para desarrollo**. Permite ajustar en caliente el modo 
 | `drivingConfig` / `onDrivingConfigChange` | `DrivingConfig` | Parámetros del manejo (controlados por la pantalla). |
 | `cameraConfig` / `onCameraConfigChange` | `CameraConfig` | Parámetros de la cámara, incluido `rotateWithCar`. |
 | `track` / `onTrackChange` | `TrackData` | Pista en uso. El panel solo cambia su ancho; el trazado queda igual. |
+| `sceneryDisplay` / `onSceneryDisplayChange` | `SceneryDisplayConfig` | Cómo se ve la escenografía: si se dibuja, partículas, paralaje y contraste de las franjas. |
+| `treeDensity` / `onTreeDensityChange` | `number` | Densidad de árboles y arbustos (×0 a ×2). La pantalla regenera la escenografía con la misma semilla. |
 | `controlMode` / `onControlModeChange` | `ControlMode` | Modo de control; se cambia en caliente. |
 | `tiltConfig` / `onTiltConfigChange` | `TiltConfig` | Inclinación efectiva. La pantalla decide qué se guarda como preferencia (la sensibilidad). |
 | `tiltOutput` | `SharedValue<TiltSteeringResult>` | Resultado de la inclinación, para las lecturas. |
@@ -22,7 +24,8 @@ Panel desplegable **solo para desarrollo**. Permite ajustar en caliente el modo 
 | `hapticsConfig` / `onHapticsConfigChange` | `RaceHapticsConfig` | Intensidad de vibración de cada momento. |
 
 También exporta:
-- `DRIVING_SLIDERS`, `TILT_SLIDERS`, `RACE_SLIDERS`, `AUDIO_SLIDERS`, `TRACK_SLIDERS` y `CAMERA_SLIDERS`: el rango de cada slider.
+- `DRIVING_SLIDERS`, `TILT_SLIDERS`, `RACE_SLIDERS`, `AUDIO_SLIDERS`, `TRACK_SLIDERS`, `SCENERY_SLIDERS`, `TREE_DENSITY_SLIDER` y `CAMERA_SLIDERS`: el rango de cada slider.
+- `SCENERY_SWITCHES`: los interruptores de la escenografía.
 - `HAPTIC_MOMENTS`: los momentos que vibran, con su nombre.
 - `FIXED_DRIVING_KEYS`: los parámetros sin slider.
 - `formatReadings` y `formatTiltReadings`.
@@ -40,7 +43,11 @@ const DevPanel = __DEV__ ? require('@/components/DevPanel').DevPanel : null;
     cameraConfig={cameraConfig}
     onCameraConfigChange={setCameraConfig}
     track={track}
-    onTrackChange={setTrack}
+    onTrackChange={(next) => changeTrackWidth(next.width)}
+    sceneryDisplay={sceneryDisplay}
+    onSceneryDisplayChange={setSceneryDisplay}
+    treeDensity={track.scenery?.spec.treeDensity ?? 1}
+    onTreeDensityChange={changeTreeDensity}
     controlMode={controlMode}
     onControlModeChange={(mode) => updatePreferences({ controlMode: mode })}
     tiltConfig={tiltConfig}
@@ -79,11 +86,15 @@ const DevPanel = __DEV__ ? require('@/components/DevPanel').DevPanel : null;
   - Los tiempos de giro y de vuelta al centro (con botones).
   - La pausa y la velocidad de la marcha atrás.
   - La pérdida contra el borde.
-- **Pista:** ancho, de 8 a 20 m. Con más de 20 m, las dos ramas de la horquilla del Autódromo del Lago (a 40 m de centro a centro) dejarían de estar separadas por pasto.
+- **Pista:** ancho, de 8 a 20 m. Con más de 20 m, las dos ramas de la horquilla del Autódromo del Lago (a 40 m de centro a centro) dejarían de estar separadas por pasto. Cambiarlo vuelve a generar la escenografía, para que nada pise la pista más ancha.
+- **Escenografía:**
+  - Interruptores "Partículas de polvo y humo" y "Dibujar la escenografía". Apagar la escenografía sirve para comparar los fps con y sin ella en el celular.
+  - Densidad de árboles (×0 a ×2): vuelve a generar la escenografía con la misma semilla, así que tarda un momento.
+  - Intensidad del paralaje (×0 a ×2) y contraste de las franjas del pasto (0 a 100 %).
 - **Cámara:**
   - Interruptor "Cámara gira con el auto" (`rotateWithCar`).
   - Zoom, alejar con la velocidad, y la intensidad, el tope y el suavizado de la anticipación.
-- **Restablecer:** vuelve los ajustes (también las vueltas, el sonido y la vibración) y el ancho de la pista a sus valores por defecto. **No** toca la calibración, que la elige el jugador.
+- **Restablecer:** vuelve los ajustes (también las vueltas, el sonido, la vibración y la escenografía) y el ancho de la pista a sus valores por defecto. **No** toca la calibración, que la elige el jugador. La densidad de árboles solo se restablece si cambió: regenerar la escenografía tarda.
 - **Reiniciar auto:** reinicia la carrera: el auto vuelve a la grilla y arranca el semáforo.
 
 ## Decisiones de diseño
@@ -93,7 +104,7 @@ const DevPanel = __DEV__ ? require('@/components/DevPanel').DevPanel : null;
 - **Recalibrar en el momento:** el botón del panel no abre la pantalla 03, para poder probar calibraciones sin salir de la pista. En el juego final, "Recalibrar" del menú de pausa abrirá la calibración completa (anotado en `CLAUDE.md`).
 - **Dos rampas a la vista:** "Tiempo de giro" y "Tiempo de vuelta al centro" (Manejo) se aplican con botones. "Rampa de dirección (inclinación)" las reemplaza en modo inclinación.
 - **Con botones, la sección Inclinación se oculta** (no se borra): sus ajustes no hacen nada en ese modo, y en la segunda prueba con usuarios se subió la rampa de inclinación creyendo que afectaba a los botones. Al elegir Inclinación en el selector, vuelve a aparecer. Las lecturas de inclinación ("Ángulo leído" y "Dirección") ya se ocultaban igual. "Restablecer" sigue llevando también los ajustes ocultos a sus valores por defecto.
-- **Vueltas, sonido y vibración solo en la sesión:** son ajustes para probar en el celular, no preferencias del jugador. Al salir de la pista vuelven a sus valores iniciales.
+- **Vueltas, sonido, vibración y escenografía solo en la sesión:** son ajustes para probar en el celular, no preferencias del jugador. Al salir de la pista vuelven a sus valores iniciales.
 - **Lecturas a 5 Hz y solo con el panel abierto:** re-renderizar React en cada cuadro competiría con el juego en el hilo de JS.
 - **No tapa los controles:** ocupa la parte superior izquierda y termina por encima de los controles, así se puede manejar mientras se ajusta.
 - **Scroll de gesture-handler:** convive con los gestos horizontales de los sliders.

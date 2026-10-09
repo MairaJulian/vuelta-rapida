@@ -6,7 +6,7 @@ Pantalla de carrera: el auto espera en la grilla con el semáforo, larga al apag
 
 Ninguna. El modo de control, la calibración, la sensibilidad, el récord y los interruptores de sonido y vibración salen de las preferencias del jugador (`usePlayerPreferences`). Sin modo elegido, usa botones.
 
-Corre en `DEFAULT_CIRCUIT` (`core/Circuits`), con `DEFAULT_RACE_CONFIG`, `DEFAULT_DRIVING_CONFIG`, `DEFAULT_CAMERA_CONFIG` y `DEFAULT_TILT_CONFIG`, y toma el tamaño de `useWindowDimensions`.
+Corre en `DEFAULT_CIRCUIT` (`core/Circuits`), con `DEFAULT_RACE_CONFIG`, `DEFAULT_DRIVING_CONFIG`, `DEFAULT_CAMERA_CONFIG`, `DEFAULT_TILT_CONFIG` y `DEFAULT_SCENERY_DISPLAY`, y toma el tamaño de `useWindowDimensions`. La escenografía del circuito se genera al montar la pantalla (`withCircuitScenery`).
 
 ## Ejemplo
 
@@ -30,7 +30,10 @@ export default DriveScreen;
 | `useRaceAudio` | Motor y efectos (`audio/RaceAudio`): sigue los eventos y la velocidad (`onEngine`), se congela en la pausa y obedece la preferencia de sonido. |
 | `useRaceHaptics` | Vibraciones de piano, borde, largada y llegada (`haptics/RaceHaptics`), con la preferencia de vibración. |
 | `useRaceStatus` | Sigue los eventos: estado de la carrera, vuelta al pausar y resultados 1,5 s después de la llegada. |
-| `DriveCanvas` | Dibuja pista y auto con Skia. |
+| `useSceneryAtlas` | Dibuja una vez la textura de árboles, sombras y partículas. |
+| `useSceneryView` | Elige los árboles que ve la cámara (por celdas) y da la transformación de cada capa con paralaje. |
+| `useParticles` | Mueve el polvo (al rozar el borde) y el humo (al derrapar o frenar fuerte) en el hilo de UI. |
+| `DriveCanvas` | Dibuja con Skia el pasto, la pista, la escenografía, las partículas y el auto. |
 | `LapHud` | Vuelta, tiempo de la vuelta, mejor vuelta y botón de pausa. |
 | `StartLights` | Semáforo de largada; sigue los eventos del bus. |
 | `PauseMenu` | Pausa: Continuar, Reiniciar, Salir al menú, y los interruptores de sonido y vibración. |
@@ -64,5 +67,7 @@ export default DriveScreen;
 - **Vueltas, mezcla de sonido e intensidades de vibración** son estado de la pantalla, solo para la sesión: arrancan en `DEFAULT_RACE_CONFIG`, `DEFAULT_RACE_AUDIO_MIX` y `DEFAULT_RACE_HAPTICS`, y las cambia el panel. Las vueltas valen desde el próximo reinicio.
 - La configuración del manejo y de la cámara, y el circuito, son estado de la pantalla: arrancan en los valores por defecto y el panel de desarrollo las modifica (del circuito, solo el ancho). `useRaceLoop` las aplica en caliente.
 - **Un solo circuito por ahora:** hasta que exista la selección de pista, siempre es `DEFAULT_CIRCUIT`. Su `id` es la clave del récord.
+- **Escenografía al montar, en una microtarea:** generarla tarda unos cientos de milisegundos en el celular. Se hace apenas montada la pantalla y no durante el primer render, así la transición arranca enseguida; los árboles aparecen durante el semáforo. Cambiar el ancho de la pista o la densidad en el panel la vuelve a generar con la misma semilla.
+- **Cómo se ve la escenografía** (si se dibuja, partículas, paralaje y contraste de las franjas) es estado de la pantalla, solo para la sesión, y lo cambia el panel.
 - El panel se carga con `require` detrás de `__DEV__`, para que Metro lo elimine del bundle de producción (ver el README de `DevPanel`).
 - `useKeepAwake` evita que el celular apague la pantalla mientras se maneja sin tocar (la aceleración es automática).

@@ -5,6 +5,7 @@ import type { CameraConfig } from '@/core/Camera';
 import type { CarState, DrivingConfig } from '@/core/DrivingModel';
 import type { ControlMode } from '@/core/PlayerPreferences';
 import type { RaceConfig } from '@/core/RaceFlow';
+import type { SceneryDisplayConfig } from '@/core/SceneryView';
 import type { RaceHapticsConfig } from '@/haptics/RaceHaptics';
 import type { TiltConfig, TiltSteeringResult } from '@/core/TiltSteering';
 import type { TrackData } from '@/core/Track';
@@ -17,6 +18,12 @@ export interface DevPanelProps {
   /** Pista en uso; el panel solo cambia su ancho. */
   track: TrackData;
   onTrackChange: (track: TrackData) => void;
+  /** Cómo se ve la escenografía: paralaje, franjas, partículas y si se dibuja (solo la sesión). */
+  sceneryDisplay: SceneryDisplayConfig;
+  onSceneryDisplayChange: (config: SceneryDisplayConfig) => void;
+  /** Densidad de árboles y arbustos; cambiarla vuelve a generar la escenografía (misma semilla). */
+  treeDensity: number;
+  onTreeDensityChange: (density: number) => void;
   /** Modo de control en uso; se cambia en caliente. */
   controlMode: ControlMode;
   onControlModeChange: (mode: ControlMode) => void;
@@ -78,6 +85,12 @@ export type NumericCameraKey = Exclude<keyof CameraConfig, 'rotateWithCar'>;
 
 /** Parámetros de la pista que se ajustan en el panel (el trazado no). */
 export type TrackSliderKey = 'width';
+
+/** Ajustes numéricos de la escenografía (los interruptores van aparte). */
+export type SceneryDisplaySliderKey = 'parallax' | 'grassContrast';
+
+/** Ajustes de la escenografía con interruptor. */
+export type SceneryDisplaySwitchKey = 'visible' | 'particles';
 
 /** Reglas de la carrera que se ajustan en el panel. */
 export type RaceSliderKey = 'totalLaps';
