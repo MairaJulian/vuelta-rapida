@@ -44,3 +44,4 @@ La píldora `DriverBadge` está documentada en `ProfileEditorScreen`.
 - **El auto es el mismo `CarShape` de la carrera**, a través de `CarPreview`.
 - **El número y el auto son decorativos:** el lector de pantalla los saltea. El logo se anuncia como título, y la píldora como "MALE, número 27. Cambiar piloto".
 - **Fuente del sistema** en 900 hasta que se incorpore Archivo.
+- **Número de dos cifras más chico** (290 dp en lugar de 360, en una sola línea): con la fuente del sistema, más ancha que la Archivo angosta del handoff, dos cifras a 360 no entraban en el panel. Se partían en dos líneas y la segunda quedaba afuera (con el 15 se veía solo el 1). Las cifras tienen todas el mismo ancho, así que cualquier número de dos cifras ocupa lo mismo.

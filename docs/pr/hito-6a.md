@@ -135,6 +135,10 @@ Plan confirmado antes de empezar. Sin archivos.
 - **Arreglo en el código:** `useRaceAudio` ya no se traga el error de carga. En desarrollo avisa con `console.warn`, así una conexión mala con Metro no vuelve a pasar por "no suena nada". En la app final los WAV vienen dentro del APK.
 - **Arreglo en el entorno:** levantar Metro por el cable (`adb reverse tcp:8081 tcp:8081` y `npx expo start --localhost`).
 - **La migración en el celular funcionó:** el récord de 58,5 s quedó en el primer perfil creado.
+- **Número de dos cifras en Inicio:**
+  - Con el 15 se veía solo el 1. A 360 dp y con la fuente del sistema (más ancha que la Archivo angosta del handoff), dos cifras no entran en el panel: el texto se partía en dos líneas y la segunda quedaba afuera.
+  - Ahora va en una sola línea, y con dos cifras a 290 dp. Verificado con una captura del celular.
+  - Las cifras tienen todas el mismo ancho, así que cualquier número de dos cifras entra igual. Los de una cifra no cambian.
 
 ## Decisiones (confirmadas en el plan)
 
@@ -172,7 +176,7 @@ Plan confirmado antes de empezar. Sin archivos.
 ### Tests y calidad
 
 ```bash
-npm test            # 890 tests en 75 suites
+npm test            # 891 tests en 75 suites
 npm run typecheck
 npm run lint
 ```

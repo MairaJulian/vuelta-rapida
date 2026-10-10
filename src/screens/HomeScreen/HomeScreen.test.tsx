@@ -94,6 +94,19 @@ describe('HomeScreen', () => {
     );
   });
 
+  it('el número gigante va en una línea y, con dos cifras, más chico para que entre', async () => {
+    await createActive({ name: 'Tomi', number: 7 });
+    await render(<HomeScreen />);
+    const number = () => screen.getByTestId('home-number', { includeHiddenElements: true });
+    expect(number()).toHaveProp('numberOfLines', 1);
+    expect(number()).toHaveTextContent('7');
+    expect(number()).toHaveStyle({ fontSize: 360 });
+
+    await createActive({ name: 'Luli', number: 15 });
+    expect(number()).toHaveTextContent('15');
+    expect(number()).toHaveStyle({ fontSize: 290 });
+  });
+
   it('el auto azul se dibuja blanco sobre el panel azul', async () => {
     await createActive({ name: 'Tomi', colorId: 'blue' });
     await render(<HomeScreen />);

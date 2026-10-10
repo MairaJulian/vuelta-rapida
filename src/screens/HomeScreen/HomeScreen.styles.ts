@@ -66,6 +66,15 @@ export const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: -20,
   },
+  // Con dos cifras, más chico: a 360 dp no entran en el panel con la fuente del sistema
+  // (el handoff usa Archivo angosta) y la segunda cifra se cortaba.
+  numberTwoDigits: {
+    right: 6,
+    top: -36,
+    fontSize: 290,
+    lineHeight: 330,
+    letterSpacing: -16,
+  },
   // La píldora mide 36 de alto; el área de toque llega a 48.
   driver: {
     position: 'absolute',

@@ -55,7 +55,11 @@ export function HomeScreen(_props: HomeScreenProps) {
           accessible={false}
           importantForAccessibility="no-hide-descendants"
         >
-          <Text style={styles.number} testID="home-number">
+          <Text
+            style={[styles.number, activeProfile.number >= 10 && styles.numberTwoDigits]}
+            numberOfLines={1}
+            testID="home-number"
+          >
             {activeProfile.number}
           </Text>
           <CarPreview
