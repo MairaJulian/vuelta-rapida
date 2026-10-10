@@ -8,6 +8,7 @@ import type {
   ProfileError,
   ProfileResult,
   ProfilesState,
+  RaceRecord,
 } from './Profiles.types';
 
 /** Largo máximo del nombre, en caracteres. */
@@ -29,7 +30,8 @@ const FALLBACK_NAME = 'Piloto';
 export const EMPTY_PROFILES_STATE: ProfilesState = Object.freeze({
   profiles: [],
   activeProfileId: null,
-  records: [],
+  lapRecords: [],
+  raceRecords: [],
   unassignedRecords: Object.freeze({}),
 });
 
@@ -176,9 +178,10 @@ export function createProfile(
     ok: true,
     profile,
     state: {
+      ...state,
       profiles: [...state.profiles, profile],
       activeProfileId: id,
-      records: [...state.records, ...inherited],
+      lapRecords: [...state.lapRecords, ...inherited],
       unassignedRecords: inherited.length > 0 ? {} : state.unassignedRecords,
     },
   };
@@ -214,7 +217,10 @@ export function updateProfile(
   };
 }
 
-/** Borra un perfil y sus récords. Si era el activo, no queda nadie jugando. */
+/**
+ * Borra un perfil y sus récords (de vuelta y de carrera): sale de todas las tablas del
+ * ranking. Si era el activo, no queda nadie jugando.
+ */
 export function deleteProfile(state: ProfilesState, id: string): ProfilesState {
   if (!getProfile(state, id)) {
     return state;
@@ -223,7 +229,8 @@ export function deleteProfile(state: ProfilesState, id: string): ProfilesState {
     ...state,
     profiles: state.profiles.filter((profile) => profile.id !== id),
     activeProfileId: state.activeProfileId === id ? null : state.activeProfileId,
-    records: state.records.filter((record) => record.profileId !== id),
+    lapRecords: state.lapRecords.filter((record) => record.profileId !== id),
+    raceRecords: state.raceRecords.filter((record) => record.profileId !== id),
   };
 }
 
@@ -244,10 +251,23 @@ export function getBestLap(
   if (profileId === null) {
     return state.unassignedRecords[circuitId] ?? null;
   }
-  const record = state.records.find(
+  const record = state.lapRecords.find(
     (item) => item.profileId === profileId && item.circuitId === circuitId,
   );
   return record?.lapMs ?? null;
+}
+
+/** Mejor carrera completa de un perfil en un circuito con esas vueltas, o `null`. */
+export function getBestRace(
+  state: ProfilesState,
+  profileId: string | null,
+  circuitId: string,
+  laps: number,
+): number | null {
+  const record = state.raceRecords.find(
+    (item) => item.profileId === profileId && item.circuitId === circuitId && item.laps === laps,
+  );
+  return record?.totalMs ?? null;
 }
 
 /**
@@ -273,12 +293,46 @@ export function withLapRecord(
   const record: LapRecord = { profileId: owner, circuitId, lapMs, setAt: now };
   return {
     ...state,
-    records: [
-      ...state.records.filter(
+    lapRecords: [
+      ...state.lapRecords.filter(
         (item) => !(item.profileId === owner && item.circuitId === circuitId),
       ),
       record,
     ],
+  };
+}
+
+const isLapCount = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isInteger(value) && value >= 1;
+
+/**
+ * Estado con una carrera completa nueva: si `totalMs` mejora la mejor carrera del
+ * perfil en el circuito con esas vueltas (o es la primera), la guarda; si no, `null`.
+ * Con el mismo tiempo no se reemplaza: en el ranking gana quien lo logró primero. Sin
+ * perfil (o con uno que no existe) no se guarda: no hay a quién ponerle el tiempo.
+ */
+export function withRaceRecord(
+  state: ProfilesState,
+  profileId: string | null,
+  circuitId: string,
+  laps: number,
+  totalMs: number,
+  now: number,
+): ProfilesState | null {
+  const owner = getProfile(state, profileId)?.id ?? null;
+  if (owner === null || !isLapCount(laps) || !isLapTime(totalMs)) {
+    return null;
+  }
+  const current = getBestRace(state, owner, circuitId, laps);
+  if (current !== null && current <= totalMs) {
+    return null;
+  }
+  const record: RaceRecord = { profileId: owner, circuitId, laps, totalMs, setAt: now };
+  const isSame = (item: RaceRecord) =>
+    item.profileId === owner && item.circuitId === circuitId && item.laps === laps;
+  return {
+    ...state,
+    raceRecords: [...state.raceRecords.filter((item) => !isSame(item)), record],
   };
 }
 
@@ -308,31 +362,64 @@ function parseProfile(value: unknown, takenIds: Set<string>): Profile | null {
   };
 }
 
-/** Récords guardados: de perfiles que existen, con tiempos válidos y uno por perfil y circuito. */
-function parseRecords(value: unknown, profileIds: Set<string>): LapRecord[] {
-  const best = new Map<string, LapRecord>();
+/**
+ * Récords guardados de un tipo: de perfiles que existen y con datos válidos (`read`
+ * devuelve `null` si no sirven). Queda uno por clave (`keyOf`), el más rápido.
+ */
+function parseBest<Entry extends { profileId: string; setAt: number }>(
+  value: unknown,
+  profileIds: Set<string>,
+  read: (item: Record<string, unknown>, profileId: string) => Entry | null,
+  keyOf: (entry: Entry) => string,
+  timeOf: (entry: Entry) => number,
+): Entry[] {
+  const best = new Map<string, Entry>();
   for (const item of Array.isArray(value) ? value : []) {
-    if (
-      isObject(item) &&
-      typeof item.profileId === 'string' &&
-      profileIds.has(item.profileId) &&
-      typeof item.circuitId === 'string' &&
-      isLapTime(item.lapMs)
-    ) {
-      const key = JSON.stringify([item.profileId, item.circuitId]);
-      const current = best.get(key);
-      if (!current || item.lapMs < current.lapMs) {
-        best.set(key, {
-          profileId: item.profileId,
-          circuitId: item.circuitId,
-          lapMs: item.lapMs,
-          setAt: finiteOr(item.setAt, 0),
-        });
+    if (isObject(item) && typeof item.profileId === 'string' && profileIds.has(item.profileId)) {
+      const entry = read(item, item.profileId);
+      const current = entry && best.get(keyOf(entry));
+      if (entry && (!current || timeOf(entry) < timeOf(current))) {
+        best.set(keyOf(entry), entry);
       }
     }
   }
   return [...best.values()];
 }
+
+const parseLapRecords = (value: unknown, profileIds: Set<string>) =>
+  parseBest<LapRecord>(
+    value,
+    profileIds,
+    (item, profileId) =>
+      typeof item.circuitId === 'string' && isLapTime(item.lapMs)
+        ? {
+            profileId,
+            circuitId: item.circuitId,
+            lapMs: item.lapMs,
+            setAt: finiteOr(item.setAt, 0),
+          }
+        : null,
+    (entry) => JSON.stringify([entry.profileId, entry.circuitId]),
+    (entry) => entry.lapMs,
+  );
+
+const parseRaceRecords = (value: unknown, profileIds: Set<string>) =>
+  parseBest<RaceRecord>(
+    value,
+    profileIds,
+    (item, profileId) =>
+      typeof item.circuitId === 'string' && isLapCount(item.laps) && isLapTime(item.totalMs)
+        ? {
+            profileId,
+            circuitId: item.circuitId,
+            laps: item.laps,
+            totalMs: item.totalMs,
+            setAt: finiteOr(item.setAt, 0),
+          }
+        : null,
+    (entry) => JSON.stringify([entry.profileId, entry.circuitId, entry.laps]),
+    (entry) => entry.totalMs,
+  );
 
 /**
  * Lee el documento de perfiles ya migrado (`core/SaveData`). Tolera texto vacío, JSON
@@ -347,7 +434,13 @@ export function parseProfilesState(raw: string | null): ProfilesState {
     data = null;
   }
   if (!isObject(data)) {
-    return { ...EMPTY_PROFILES_STATE, profiles: [], records: [], unassignedRecords: {} };
+    return {
+      ...EMPTY_PROFILES_STATE,
+      profiles: [],
+      lapRecords: [],
+      raceRecords: [],
+      unassignedRecords: {},
+    };
   }
   const ids = new Set<string>();
   const profiles: Profile[] = [];
@@ -370,7 +463,8 @@ export function parseProfilesState(raw: string | null): ProfilesState {
   return {
     profiles,
     activeProfileId: typeof active === 'string' && ids.has(active) ? active : null,
-    records: parseRecords(data.records, ids),
+    lapRecords: parseLapRecords(data.lapRecords, ids),
+    raceRecords: parseRaceRecords(data.raceRecords, ids),
     unassignedRecords,
   };
 }
@@ -386,10 +480,17 @@ export function serializeProfilesState(state: ProfilesState): string {
       createdAt,
     })),
     activeProfileId: state.activeProfileId,
-    records: state.records.map(({ profileId, circuitId, lapMs, setAt }) => ({
+    lapRecords: state.lapRecords.map(({ profileId, circuitId, lapMs, setAt }) => ({
       profileId,
       circuitId,
       lapMs,
+      setAt,
+    })),
+    raceRecords: state.raceRecords.map(({ profileId, circuitId, laps, totalMs, setAt }) => ({
+      profileId,
+      circuitId,
+      laps,
+      totalMs,
       setAt,
     })),
     unassignedRecords: state.unassignedRecords,

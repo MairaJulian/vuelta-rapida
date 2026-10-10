@@ -102,5 +102,27 @@ export const AUTODROMO_DEL_LAGO: CircuitDefinition = {
 /** Circuitos del juego, en el orden de la selección de pista. */
 export const CIRCUIT_DEFINITIONS: readonly CircuitDefinition[] = [AUTODROMO_DEL_LAGO];
 
-/** Circuito con el que arranca el juego mientras no hay selección de pista. */
+/** El primer circuito: el que se usa si no se eligió otro (o el elegido no existe). */
 export const DEFAULT_CIRCUIT: Circuit = buildCircuit(AUTODROMO_DEL_LAGO);
+
+/** Circuitos del juego ya armados, en el orden de la selección de pista. */
+export const CIRCUITS: readonly Circuit[] = Object.freeze(
+  CIRCUIT_DEFINITIONS.map((definition) =>
+    definition.id === DEFAULT_CIRCUIT.id ? DEFAULT_CIRCUIT : buildCircuit(definition),
+  ),
+);
+
+/** El circuito con ese id; si no existe (un enlace viejo), el primero. */
+export function getCircuit(id: string | null | undefined): Circuit {
+  return CIRCUITS.find((circuit) => circuit.id === id) ?? DEFAULT_CIRCUIT;
+}
+
+/**
+ * Datos de la tarjeta de la selección de pista, como en el handoff: largo en km con
+ * coma decimal ("3,1 km") y cantidad de curvas (una por cada tramo de pianos).
+ */
+export function getCircuitSummary(circuit: Circuit): string {
+  const km = (circuit.length / 1000).toFixed(1).replace('.', ',');
+  const curves = circuit.kerbs.length;
+  return `${km} km · ${curves} ${curves === 1 ? 'curva' : 'curvas'}`;
+}

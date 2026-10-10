@@ -9,7 +9,7 @@ import type {
 } from './SaveData.types';
 
 /** Versión actual de los datos guardados. Subirla exige sumar un paso a `SAVE_MIGRATIONS`. */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /** Versión de los datos guardados antes de que existiera el número de versión (hito 6a). */
 export const LEGACY_SAVE_VERSION = 1;
@@ -88,9 +88,31 @@ function moveRecordsToProfiles({ profiles, preferences }: SaveDocuments): SaveDo
   };
 }
 
+/**
+ * v2 → v3 (hito 6b, ranking): las mejores vueltas (`records`) pasan a llamarse
+ * `lapRecords`, y se suman las mejores carreras completas (`raceRecords`), que antes no
+ * se guardaban. Si el documento ya tiene `lapRecords`, una migración anterior se cortó
+ * después de escribirlo: se deja como está.
+ */
+function addRaceRecords({ profiles, preferences }: SaveDocuments): SaveDocuments {
+  if (profiles === null) {
+    return { profiles, preferences };
+  }
+  const { records, ...rest } = profiles;
+  return {
+    profiles: {
+      ...rest,
+      lapRecords: rest.lapRecords ?? (Array.isArray(records) ? records : []),
+      raceRecords: rest.raceRecords ?? [],
+    },
+    preferences,
+  };
+}
+
 /** Pasos de migración, uno por versión. */
 export const SAVE_MIGRATIONS: readonly SaveMigration[] = Object.freeze([
   { from: 1, to: 2, migrate: moveRecordsToProfiles },
+  { from: 2, to: 3, migrate: addRaceRecords },
 ]);
 
 /**

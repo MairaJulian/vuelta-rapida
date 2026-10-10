@@ -158,6 +158,15 @@ export function formatLapTime(ms: number): string {
 export const MINUS_SIGN = '−';
 
 /**
+ * Distancia en segundos con dos decimales, sin signo, para frases como "Te faltan 0.42 s".
+ * Redondea para arriba: si faltan 4 ms dice "0.01", nunca "0.00".
+ */
+export function formatGapSeconds(ms: number): string {
+  const hundredths = Number.isFinite(ms) ? Math.ceil(Math.max(ms, 0) / 10) : 0;
+  return `${Math.floor(hundredths / 100)}.${String(hundredths % 100).padStart(2, '0')}`;
+}
+
+/**
  * Diferencia de tiempo como en el handoff, siempre con signo: "−0.578" si es a
  * favor (negativa), "+0.236" si es en contra, "±0.000" si es igual. Desde un
  * minuto, con minutos: "+1:02.345".

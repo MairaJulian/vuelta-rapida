@@ -19,6 +19,7 @@ Vueltas y tiempos: cuándo empieza y termina cada vuelta, cuánto duró y cuál 
 | `getCurrentLapTicks(state)` | Pasos que lleva la vuelta en curso. |
 | `ticksToMs(ticks, stepHz)` | Pasos a milisegundos. |
 | `formatLapTime(ms)` | "m:ss.mmm", como en el handoff ("1:04.318"). |
+| `formatGapSeconds(ms)` | Distancia en segundos con dos decimales, sin signo, para frases: "0.42". Redondea para arriba, así nunca dice "0.00" si hay diferencia. |
 | `formatLapDelta(ms)` | Diferencia con signo, como en el handoff: "−0.578" (con el menos tipográfico, U+2212), "+0.236", "±0.000". Desde un minuto, "+1:02.345". |
 | `MAX_PROGRESS_STEP` | Avance máximo creíble en un paso: 10 m. |
 

@@ -69,11 +69,12 @@ describe('SAVE_MIGRATIONS', () => {
   });
 });
 
-describe('migrateSave: de la versión actual (1, sin perfiles) a la 2', () => {
+describe('migrateSave: de la versión 1 (sin perfiles) a la 2', () => {
+  const toV2 = (raw: RawSave) => migrateSave(raw, SAVE_MIGRATIONS, 2);
   const legacy: RawSave = { preferences: LEGACY_PREFERENCES, profiles: null };
 
   it('pasa los récords a los perfiles, sin dueño, y los saca de las preferencias', () => {
-    const result = migrateSave(legacy);
+    const result = toV2(legacy);
     expect(result.fromVersion).toBe(1);
     expect(read(result.documents.profiles)).toEqual({
       version: 2,
@@ -95,7 +96,7 @@ describe('migrateSave: de la versión actual (1, sin perfiles) a la 2', () => {
 
   it('conserva todas las preferencias, también las que esta versión no conoce', () => {
     const raw = JSON.stringify({ controlMode: 'tilt', futuro: { a: 1 }, bestLapsMs: {} });
-    const result = migrateSave({ preferences: raw, profiles: null });
+    const result = toV2({ preferences: raw, profiles: null });
     expect(read(result.documents.preferences)).toEqual({
       version: 2,
       controlMode: 'tilt',
@@ -104,7 +105,7 @@ describe('migrateSave: de la versión actual (1, sin perfiles) a la 2', () => {
   });
 
   it('escribe primero los perfiles y después las preferencias', () => {
-    const { writes, documents } = migrateSave(legacy);
+    const { writes, documents } = toV2(legacy);
     expect(writes).toEqual([
       { document: 'profiles', json: documents.profiles },
       { document: 'preferences', json: documents.preferences },
@@ -113,18 +114,18 @@ describe('migrateSave: de la versión actual (1, sin perfiles) a la 2', () => {
 
   it('descarta los tiempos inválidos', () => {
     const raw = JSON.stringify({ bestLapsMs: { [LAGO]: 70000, cero: 0, roto: -1, texto: '1:10' } });
-    const { documents } = migrateSave({ preferences: raw, profiles: null });
+    const { documents } = toV2({ preferences: raw, profiles: null });
     expect(read(documents.profiles).unassignedRecords).toEqual({ [LAGO]: 70000 });
   });
 
   it('sin récords crea igual el documento de perfiles, vacío', () => {
     const raw = JSON.stringify({ controlMode: 'buttons' });
-    const { documents } = migrateSave({ preferences: raw, profiles: null });
+    const { documents } = toV2({ preferences: raw, profiles: null });
     expect(read(documents.profiles).unassignedRecords).toEqual({});
   });
 
   it('si se cortó después de escribir los perfiles, solo limpia las preferencias', () => {
-    const first = migrateSave(legacy);
+    const first = toV2(legacy);
     // Los perfiles quedaron escritos (y hasta se creó un perfil); las preferencias, no.
     const profiles = JSON.stringify({
       ...read(first.documents.profiles),
@@ -132,25 +133,87 @@ describe('migrateSave: de la versión actual (1, sin perfiles) a la 2', () => {
       records: [{ profileId: 'p1', circuitId: LAGO, lapMs: 72480.5, setAt: 1 }],
       unassignedRecords: {},
     });
-    const second = migrateSave({ preferences: LEGACY_PREFERENCES, profiles });
+    const second = toV2({ preferences: LEGACY_PREFERENCES, profiles });
     expect(second.writes.map((write) => write.document)).toEqual(['preferences']);
     expect(second.documents.profiles).toBe(profiles);
     expect(read(second.documents.preferences)).not.toHaveProperty('bestLapsMs');
   });
 
   it('migrar dos veces da lo mismo: la segunda no escribe nada', () => {
-    const { documents } = migrateSave(legacy);
-    const again = migrateSave(documents);
+    const { documents } = toV2(legacy);
+    const again = toV2(documents);
     expect(again.fromVersion).toBe(2);
     expect(again.writes).toEqual([]);
     expect(again.documents).toEqual(documents);
   });
 
   it('con las preferencias rotas, no toca nada', () => {
-    const result = migrateSave({ preferences: '{roto', profiles: null });
+    const result = toV2({ preferences: '{roto', profiles: null });
     expect(result.fromVersion).toBeNull();
     expect(result.writes).toEqual([]);
     expect(result.documents.preferences).toBe('{roto');
+  });
+});
+
+describe('migrateSave: de la versión 2 (perfiles) a la 3 (ranking)', () => {
+  /** Perfiles como los guarda el hito 6a. */
+  const V2_PROFILES = JSON.stringify({
+    version: 2,
+    profiles: [{ id: 'p1', name: 'Male', colorId: 'pink', number: 27, createdAt: 1 }],
+    activeProfileId: 'p1',
+    records: [{ profileId: 'p1', circuitId: LAGO, lapMs: 58533.3, setAt: 1 }],
+    unassignedRecords: {},
+  });
+  const V2_PREFERENCES = JSON.stringify({ version: 2, controlMode: null, soundEnabled: true });
+
+  it('las mejores vueltas pasan a lapRecords y las carreras arrancan vacías', () => {
+    const result = migrateSave({ profiles: V2_PROFILES, preferences: V2_PREFERENCES });
+    expect(result.fromVersion).toBe(2);
+    expect(read(result.documents.profiles)).toEqual({
+      version: 3,
+      profiles: [{ id: 'p1', name: 'Male', colorId: 'pink', number: 27, createdAt: 1 }],
+      activeProfileId: 'p1',
+      lapRecords: [{ profileId: 'p1', circuitId: LAGO, lapMs: 58533.3, setAt: 1 }],
+      raceRecords: [],
+      unassignedRecords: {},
+    });
+  });
+
+  it('las preferencias solo cambian el número de versión', () => {
+    const result = migrateSave({ profiles: V2_PROFILES, preferences: V2_PREFERENCES });
+    expect(read(result.documents.preferences)).toEqual({
+      version: 3,
+      controlMode: null,
+      soundEnabled: true,
+    });
+    expect(result.writes.map((write) => write.document)).toEqual(['profiles', 'preferences']);
+  });
+
+  it('si los perfiles ya tienen lapRecords (se cortó a mitad), no los pisa', () => {
+    const half = JSON.stringify({
+      ...read(V2_PROFILES),
+      version: 3,
+      records: undefined,
+      lapRecords: [{ profileId: 'p1', circuitId: LAGO, lapMs: 50000, setAt: 2 }],
+      raceRecords: [{ profileId: 'p1', circuitId: LAGO, laps: 3, totalMs: 180000, setAt: 2 }],
+    });
+    const result = migrateSave({ profiles: half, preferences: V2_PREFERENCES });
+    expect(result.writes.map((write) => write.document)).toEqual(['preferences']);
+    expect(result.documents.profiles).toBe(half);
+  });
+
+  it('sin récords (perfiles recién migrados de la 1) quedan las dos listas vacías', () => {
+    const fromV1 = migrateSave({ preferences: LEGACY_PREFERENCES, profiles: null });
+    expect(fromV1.fromVersion).toBe(1);
+    const profiles = read(fromV1.documents.profiles);
+    expect(profiles).toMatchObject({ version: 3, lapRecords: [], raceRecords: [] });
+    expect(profiles).not.toHaveProperty('records');
+    expect(profiles.unassignedRecords).toEqual({ [LAGO]: 72480.5, puerto: 81000 });
+  });
+
+  it('migrar dos veces da lo mismo', () => {
+    const { documents } = migrateSave({ profiles: V2_PROFILES, preferences: V2_PREFERENCES });
+    expect(migrateSave(documents).writes).toEqual([]);
   });
 });
 
@@ -172,29 +235,31 @@ describe('migrateSave: otros casos', () => {
   });
 
   it('aplica los pasos en orden hasta la versión pedida', () => {
+    const next = SAVE_VERSION + 1;
     const steps: SaveMigration[] = [
       ...SAVE_MIGRATIONS,
       {
-        from: 2,
-        to: 3,
+        from: SAVE_VERSION,
+        to: next,
         migrate: ({ profiles, preferences }) => ({
-          profiles: profiles && { ...profiles, ranking: [] },
+          profiles: profiles && { ...profiles, futuro: [] },
           preferences,
         }),
       },
     ];
-    const result = migrateSave({ preferences: LEGACY_PREFERENCES, profiles: null }, steps, 3);
+    const result = migrateSave({ preferences: LEGACY_PREFERENCES, profiles: null }, steps, next);
     expect(result.fromVersion).toBe(1);
     const profiles = read(result.documents.profiles);
-    expect(profiles.version).toBe(3);
-    expect(profiles.ranking).toEqual([]);
+    expect(profiles.version).toBe(next);
+    expect(profiles.futuro).toEqual([]);
+    expect(profiles.lapRecords).toEqual([]);
     expect(profiles.unassignedRecords[LAGO]).toBe(72480.5);
-    expect(read(result.documents.preferences).version).toBe(3);
+    expect(read(result.documents.preferences).version).toBe(next);
   });
 
   it('si falta un paso, no toca nada', () => {
     const raw: RawSave = { preferences: LEGACY_PREFERENCES, profiles: null };
-    expect(migrateSave(raw, SAVE_MIGRATIONS, 3)).toEqual({
+    expect(migrateSave(raw, SAVE_MIGRATIONS, SAVE_VERSION + 1)).toEqual({
       fromVersion: 1,
       documents: raw,
       writes: [],
@@ -202,7 +267,7 @@ describe('migrateSave: otros casos', () => {
   });
 
   it('no escribe un documento que no cambió', () => {
-    const preferences = JSON.stringify({ version: 2, controlMode: 'buttons' });
+    const preferences = JSON.stringify({ version: SAVE_VERSION, controlMode: 'buttons' });
     const profiles = JSON.stringify({ controlMode: 'x' }); // sin versión: arrastra todo a la 1
     const result = migrateSave({ preferences, profiles });
     expect(result.writes.map((write) => write.document)).toEqual(['profiles']);

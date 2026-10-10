@@ -12,6 +12,7 @@ import {
   getNearestOnCenterline,
   getProgressDelta,
   getStartPose,
+  getTrackOutline,
   getTrackProgress,
   KERB_TAPER,
   OVAL_CIRCUIT,
@@ -131,6 +132,39 @@ describe('getProgressDelta', () => {
     expect(getProgressDelta(15, 10, 700)).toBe(-5);
     expect(getProgressDelta(698, 3, 700)).toBe(5);
     expect(getProgressDelta(3, 698, 700)).toBe(-5);
+  });
+});
+
+describe('getTrackOutline', () => {
+  const coords = (path: string) =>
+    [...path.matchAll(/[ML] (-?[\d.]+) (-?[\d.]+)/g)].map((match) => ({
+      x: Number(match[1]),
+      y: Number(match[2]),
+    }));
+
+  it('ajusta el trazado al lienzo, con margen y sin deformarlo', () => {
+    const square: TrackPoint[] = [
+      { x: 0, z: 0 },
+      { x: 100, z: 0 },
+      { x: 100, z: 100 },
+      { x: 0, z: 100 },
+    ];
+    const { path, start } = getTrackOutline(square, 100, 60, 5);
+    expect(path).toBe('M 25 5 L 75 5 L 75 55 L 25 55 Z');
+    expect(start).toEqual({ x: 25, y: 5 });
+  });
+
+  it('un circuito queda dentro del lienzo y cerrado, con pocos puntos', () => {
+    const { path } = getTrackOutline(OVAL_TRACK.centerline, 100, 60, 4);
+    const points = coords(path);
+    expect(path.endsWith('Z')).toBe(true);
+    expect(points.length).toBeLessThanOrEqual(161);
+    points.forEach(({ x, y }) => {
+      expect(x).toBeGreaterThanOrEqual(4 - 0.05);
+      expect(x).toBeLessThanOrEqual(96 + 0.05);
+      expect(y).toBeGreaterThanOrEqual(4 - 0.05);
+      expect(y).toBeLessThanOrEqual(56 + 0.05);
+    });
   });
 });
 

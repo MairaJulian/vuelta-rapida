@@ -19,7 +19,10 @@ Los circuitos del juego como datos: puntos de control por donde pasa la pista, s
 | `withCircuitScenery(circuit)` | El circuito con su escenografía, generada con la `scenery` de su definición (buscada por `id`; sin definición, la de por defecto). |
 | `AUTODROMO_DEL_LAGO` | El primer circuito (ver abajo). |
 | `CIRCUIT_DEFINITIONS` | Todos los circuitos, en el orden de la selección de pista. |
-| `DEFAULT_CIRCUIT` | El circuito con el que arranca el juego, ya armado. |
+| `DEFAULT_CIRCUIT` | El primer circuito, ya armado: el que se usa si no se eligió otro. |
+| `CIRCUITS` | Todos los circuitos ya armados, en el orden de la selección de pista. |
+| `getCircuit(id)` | El circuito con ese id (el de la ruta `/pista?circuito=…`); si no existe, el primero. |
+| `getCircuitSummary(circuit)` | "3,1 km · 7 curvas", para la tarjeta de la selección de pista. |
 | `TRACK_SPACING` | Distancia entre puntos del trazado: 2 m. |
 
 ## Ejemplo

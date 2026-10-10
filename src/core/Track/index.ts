@@ -17,6 +17,7 @@ export {
   getProgressAt,
   getProgressDelta,
   getStartPose,
+  getTrackOutline,
   getTrackProgress,
   KERB_TAPER,
   KERB_WIDTH_RATIO,
@@ -34,5 +35,6 @@ export type {
   OvalSpec,
   Pose,
   TrackData,
+  TrackOutline,
   TrackPoint,
 } from './Track.types';
