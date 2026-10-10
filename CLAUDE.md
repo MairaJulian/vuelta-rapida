@@ -39,6 +39,23 @@ Juego de carreras de monoplazas con vista cenital para Android. Dos fines:
 - El estado de la carrera es serializable (posición, velocidad, ángulo por cuadro), pensado para el auto fantasma y un eventual online.
 - La escenografía es un dato del circuito (`Circuit.scenery`): la genera `core/Scenery` con la semilla de la definición. Se genera al abrir la carrera (`withCircuitScenery`), no al iniciar la app: tarda unos cientos de milisegundos en el celular.
 
+## Perfiles y datos guardados
+
+El celular lo comparten varios chicos: al abrir el juego se elige quién juega (`/jugadores`), y cada perfil tiene su nombre, su auto (color y número) y sus récords.
+
+- **Dos documentos** en `expo-sqlite/kv-store`, cada uno con su campo `version`:
+  - `player-profiles`: perfiles, perfil activo y récords (`core/Profiles`).
+  - `player-preferences`: lo del celular, compartido por todos los perfiles: control, calibración, sonido y vibración (`core/PlayerPreferences`).
+- **Versionado y migraciones** en `core/SaveData` (puro). Para cambiar el formato de lo guardado:
+  1. Subir `SAVE_VERSION`.
+  2. Sumar un paso `{ from, to, migrate }` a `SAVE_MIGRATIONS`, con un test que parta de datos reales de la versión anterior.
+  - Nunca cambiar el formato sin migración.
+  - v1 = hasta el hito 5b (sin versión, con los récords en las preferencias). v2 = perfiles.
+- **`src/storage/SaveStore`** es el único que toca el disco: migra antes del primer acceso y escribe en el orden de `SAVE_DOCUMENTS`. Los hooks (`usePlayerPreferences`, `useProfiles`) guardan a través de él. `core` no lo importa (regla de ESLint).
+- **Récords por perfil y circuito,** unidos por `profileId` (no por nombre), con la fecha para desempatar. Están pensados para el ranking por pista del hito 6b.
+- **El color del auto se guarda como id de la paleta** (`core/CarPalette`), nunca como hex.
+- **Un solo asset del auto** (`CarShape`): la "pintura" toma el color del perfil y el número va en el disco.
+
 ## Controles
 
 Capa de entrada abstraída con dos implementaciones intercambiables. Aceleración automática en ambos.
@@ -97,13 +114,14 @@ src/
   components/ UI genérica (HUD, botones)
   hooks/      conectan core con Reanimated/React
   screens/    pantallas completas
+  storage/    acceso al disco (expo-sqlite/kv-store) y migración de los datos guardados
 assets/icono/  ícono de la app (capas del ícono adaptativo de Android)
 assets/sounds/ sonidos WAV (ver CREDITOS.md)
 scripts/      herramientas de Node sin dependencias (generar sonidos)
 test/setup/   mocks y setup global de Jest (Skia, Reanimated, audio, almacenamiento)
 ```
 
-- La carrera avisa lo que pasa por un bus de eventos (`core/EventBus`): el semáforo, la pausa, los resultados, el sonido y la vibración lo escuchan. `core` no importa `audio/` ni `haptics/` (regla de ESLint).
+- La carrera avisa lo que pasa por un bus de eventos (`core/EventBus`): el semáforo, la pausa, los resultados, el sonido y la vibración lo escuchan. `core` no importa `audio/`, `haptics/` ni `storage/` (regla de ESLint).
 
 Las carpetas se crean cuando hacen falta, no antes.
 
@@ -111,6 +129,7 @@ Las carpetas se crean cuando hacen falta, no antes.
 
 - `npm test` corre Jest (preset `jest-expo`, React Native Testing Library 14, que es asíncrona: usar `await render(...)` y `await renderHook(...)`).
 - Skia se sustituye por un mock propio (`test/setup/skia.ts`; incluye `Atlas`, `Points`, los buffers, `drawAsImage` y `mixColors`); Reanimated usa su mock oficial ampliado con `useFrameCallback`, `modify` y valores compartidos que duran toda la vida del componente (`test/setup/reanimated.ts`); react-native-audio-api usa su mock oficial (`test/setup/audio-api.ts`).
+- El almacenamiento es un mapa en memoria (`test/setup/kv-store.ts`). Los tests que guardan datos lo vacían (`__reset()`) y llaman a `reloadPlayerPreferences()` y `reloadProfiles()`: olvidan la copia en memoria y vuelven a migrar.
 - `npm run typecheck` corre `tsc --noEmit`.
 - `npm run lint` corre `expo lint` (ESLint 9 con `eslint-config-expo` y `eslint-plugin-prettier`, config en `eslint.config.js`; ignora `docs/`, `android/`, `.expo/` y `dist/`). Las diferencias de formato cuentan como errores de lint. `npm run lint:fix` corrige lo automático.
 - `npm run format` aplica Prettier (`.prettierrc`); `npm run format:check` solo verifica.
