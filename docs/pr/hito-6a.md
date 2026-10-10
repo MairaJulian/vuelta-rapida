@@ -126,6 +126,16 @@ Plan confirmado antes de empezar. Sin archivos.
 - **`CREDITOS.md`:** el monoplaza (silueta del handoff, recoloreada) y el número.
 - Esta descripción.
 
+### Ajuste tras la primera prueba en el celular
+- **Síntomas:** en la carrera no sonaba nada. Además, la app tardaba en abrir: a veces quedaba en 99 % y otras en una pantalla en blanco.
+- **Lo que mostró el celular:**
+  - El JS se cargaba por Wi-Fi (`Loading from 192.168.1.38:8081`), no por el cable.
+  - En el dev build, react-native-audio-api también descarga cada WAV desde Metro. El audio arranca recién cuando termina de decodificarlos, y en el log el stream se abrió al entrar a la carrera pero recién arrancó 90 s después.
+  - Las preferencias guardadas tienen el sonido prendido y el volumen multimedia no estaba en cero.
+- **Arreglo en el código:** `useRaceAudio` ya no se traga el error de carga. En desarrollo avisa con `console.warn`, así una conexión mala con Metro no vuelve a pasar por "no suena nada". En la app final los WAV vienen dentro del APK.
+- **Arreglo en el entorno:** levantar Metro por el cable (`adb reverse tcp:8081 tcp:8081` y `npx expo start --localhost`).
+- **La migración en el celular funcionó:** el récord de 58,5 s quedó en el primer perfil creado.
+
 ## Decisiones (confirmadas en el plan)
 
 1. **Carpeta `src/storage/SaveStore`** para el disco y la migración.
@@ -162,7 +172,7 @@ Plan confirmado antes de empezar. Sin archivos.
 ### Tests y calidad
 
 ```bash
-npm test            # 889 tests en 75 suites
+npm test            # 890 tests en 75 suites
 npm run typecheck
 npm run lint
 ```

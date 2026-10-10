@@ -55,6 +55,17 @@ describe('useRaceAudio', () => {
     expect(createAudio).toHaveBeenCalledTimes(1);
   });
 
+  it('si los sonidos no cargan, el juego sigue y en desarrollo lo avisa', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const audio = fakeAudio();
+    const error = new Error('Network request failed');
+    audio.load.mockReturnValueOnce(Promise.reject(error));
+    await renderAudio({ createAudio: () => audio });
+    await act(async () => undefined);
+    expect(warn).toHaveBeenCalledWith('No se pudieron cargar los sonidos de la carrera:', error);
+    warn.mockRestore();
+  });
+
   it('sin sonido silencia todo, y lo vuelve a prender en caliente', async () => {
     const { audio, rerender } = await renderAudio({ enabled: false });
     expect(audio.setMuted).toHaveBeenLastCalledWith(true);
