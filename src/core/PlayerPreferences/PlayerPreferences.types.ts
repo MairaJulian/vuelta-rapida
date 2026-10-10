@@ -3,7 +3,11 @@ import type { Radians } from '@/core/MathUtils';
 /** Modos de control que puede elegir el jugador. */
 export type ControlMode = 'tilt' | 'buttons';
 
-/** Preferencias que se guardan entre partidas. Serializable. */
+/**
+ * Preferencias que se guardan entre partidas. Son del celular, no de cada jugador: las
+ * comparten todos los perfiles. Los récords están en los perfiles (`core/Profiles`).
+ * Serializable.
+ */
 export interface PlayerPreferences {
   /** Modo de control elegido; `null` hasta que el jugador elige. */
   controlMode: ControlMode | null;
@@ -16,8 +20,6 @@ export interface PlayerPreferences {
    * Independiente de la sensibilidad.
    */
   tiltDeadZone: Radians;
-  /** Mejor vuelta de cada circuito, en milisegundos, por `id` del circuito. */
-  bestLapsMs: Readonly<Record<string, number>>;
   /** Si suenan el motor y los efectos. */
   soundEnabled: boolean;
   /** Si el celular vibra con los pianos, los bordes, la largada, la llegada y el freno. */

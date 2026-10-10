@@ -1,5 +1,6 @@
 import { clamp } from '@/core/MathUtils';
 import type { Radians } from '@/core/MathUtils';
+import { serializeSaveDocument } from '@/core/SaveData';
 import { DEFAULT_TILT_CONFIG, MAX_DEAD_ZONE, MIN_DEAD_ZONE } from '@/core/TiltSteering';
 import type { TiltConfig } from '@/core/TiltSteering';
 
@@ -8,15 +9,14 @@ import type { ControlMode, PlayerPreferences, StartStep } from './PlayerPreferen
 export const CONTROL_MODES: readonly ControlMode[] = ['tilt', 'buttons'];
 
 /**
- * Sin elegir ni calibrar, con la sensibilidad del medio, la zona muerta inicial (5°),
- * sin récords y con sonido y vibración.
+ * Sin elegir ni calibrar, con la sensibilidad del medio, la zona muerta inicial (5°) y
+ * con sonido y vibración.
  */
 export const DEFAULT_PLAYER_PREFERENCES: PlayerPreferences = Object.freeze({
   controlMode: null,
   tiltNeutralAngle: null,
   tiltSensitivity: 5,
   tiltDeadZone: DEFAULT_TILT_CONFIG.deadZone,
-  bestLapsMs: Object.freeze({}),
   soundEnabled: true,
   vibrationEnabled: true,
 });
@@ -49,25 +49,10 @@ function isControlMode(value: unknown): value is ControlMode {
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
-const isLapTime = (value: unknown): value is number => isFiniteNumber(value) && value > 0;
-
-/** Récords guardados: solo los tiempos positivos y finitos; el resto se descarta. */
-function parseBestLaps(value: unknown): Record<string, number> {
-  const records: Record<string, number> = {};
-  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-    for (const [circuitId, ms] of Object.entries(value)) {
-      if (isLapTime(ms)) {
-        records[circuitId] = ms;
-      }
-    }
-  }
-  return records;
-}
-
 /**
- * Lee las preferencias guardadas. Tolera texto vacío, JSON roto y campos de más o
- * con valores inválidos: cada campo que no sirve vuelve a su valor por defecto,
- * así una versión vieja o un dato corrupto nunca dejan el juego sin arrancar.
+ * Lee las preferencias guardadas (ya migradas, ver `core/SaveData`). Tolera texto
+ * vacío, JSON roto y campos de más o con valores inválidos: cada campo que no sirve
+ * vuelve a su valor por defecto, así un dato corrupto nunca deja el juego sin arrancar.
  */
 export function parsePlayerPreferences(raw: string | null): PlayerPreferences {
   let data: unknown = null;
@@ -77,7 +62,7 @@ export function parsePlayerPreferences(raw: string | null): PlayerPreferences {
     data = null;
   }
   if (typeof data !== 'object' || data === null) {
-    return { ...DEFAULT_PLAYER_PREFERENCES, bestLapsMs: {} };
+    return { ...DEFAULT_PLAYER_PREFERENCES };
   }
   const fields = data as Record<string, unknown>;
   return {
@@ -89,7 +74,6 @@ export function parsePlayerPreferences(raw: string | null): PlayerPreferences {
     tiltDeadZone: isFiniteNumber(fields.tiltDeadZone)
       ? clamp(fields.tiltDeadZone, MIN_DEAD_ZONE, MAX_DEAD_ZONE)
       : DEFAULT_PLAYER_PREFERENCES.tiltDeadZone,
-    bestLapsMs: parseBestLaps(fields.bestLapsMs),
     soundEnabled:
       typeof fields.soundEnabled === 'boolean'
         ? fields.soundEnabled
@@ -101,33 +85,19 @@ export function parsePlayerPreferences(raw: string | null): PlayerPreferences {
   };
 }
 
-/** Texto para guardar. Solo los campos conocidos, en un orden fijo. */
+/**
+ * Texto para guardar: el número de versión de los datos guardados (`core/SaveData`) y
+ * solo los campos conocidos, en un orden fijo.
+ */
 export function serializePlayerPreferences(preferences: PlayerPreferences): string {
-  return JSON.stringify({
+  return serializeSaveDocument({
     controlMode: preferences.controlMode,
     tiltNeutralAngle: preferences.tiltNeutralAngle,
     tiltSensitivity: preferences.tiltSensitivity,
     tiltDeadZone: preferences.tiltDeadZone,
-    bestLapsMs: preferences.bestLapsMs,
     soundEnabled: preferences.soundEnabled,
     vibrationEnabled: preferences.vibrationEnabled,
   });
-}
-
-/**
- * Récords con una vuelta nueva: si `ms` mejora el récord del circuito (o es el
- * primero), devuelve los récords actualizados; si no, `null` (no hay nada que guardar).
- */
-export function withBestLap(
-  bestLapsMs: Readonly<Record<string, number>>,
-  circuitId: string,
-  ms: number,
-): Record<string, number> | null {
-  const current = bestLapsMs[circuitId];
-  if (!isLapTime(ms) || (current !== undefined && current <= ms)) {
-    return null;
-  }
-  return { ...bestLapsMs, [circuitId]: ms };
 }
 
 /**

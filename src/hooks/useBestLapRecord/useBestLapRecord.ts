@@ -1,38 +1,37 @@
 import { useCallback } from 'react';
 
 import { ticksToMs } from '@/core/LapTimer';
-import { withBestLap } from '@/core/PlayerPreferences';
-import {
-  readPlayerPreferences,
-  updatePlayerPreferences,
-  usePlayerPreferences,
-} from '@/hooks/usePlayerPreferences';
+import { getBestLap, withLapRecord } from '@/core/Profiles';
+import { updateProfiles, useProfiles } from '@/hooks/useProfiles';
 
 import type { UseBestLapRecordParams, UseBestLapRecordResult } from './useBestLapRecord.types';
 
 /**
- * Récord de un circuito: lo lee de las preferencias y guarda una vuelta nueva si
- * es más rápida. Corre en el hilo de JS; el loop le avisa con `scheduleOnRN` cuando
- * mejora la mejor vuelta de la sesión.
+ * Récord de un circuito del perfil activo: lo lee de los perfiles y guarda una vuelta
+ * nueva si es más rápida. Corre en el hilo de JS; el loop le avisa con `scheduleOnRN`
+ * cuando mejora la mejor vuelta de la sesión. Sin perfil activo, el récord queda sin
+ * dueño y pasa al primer perfil que se cree.
  */
 export function useBestLapRecord({
   circuitId,
   stepHz,
 }: UseBestLapRecordParams): UseBestLapRecordResult {
-  const { preferences } = usePlayerPreferences();
-  const recordMs = preferences.bestLapsMs[circuitId] ?? null;
+  const { state } = useProfiles();
+  const recordMs = getBestLap(state, state.activeProfileId, circuitId);
 
   const saveLap = useCallback(
     (lapTicks: number) => {
-      // Lee las preferencias del momento, no las del último render.
-      const records = withBestLap(
-        readPlayerPreferences().bestLapsMs,
-        circuitId,
-        ticksToMs(lapTicks, stepHz),
+      // Compara con los récords del momento, no con los del último render.
+      updateProfiles(
+        (current) =>
+          withLapRecord(
+            current,
+            current.activeProfileId,
+            circuitId,
+            ticksToMs(lapTicks, stepHz),
+            Date.now(),
+          ) ?? current,
       );
-      if (records) {
-        updatePlayerPreferences({ bestLapsMs: records });
-      }
     },
     [circuitId, stepHz],
   );

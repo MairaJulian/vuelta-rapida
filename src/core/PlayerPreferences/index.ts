@@ -8,7 +8,6 @@ export {
   isControlModeAvailable,
   parsePlayerPreferences,
   serializePlayerPreferences,
-  withBestLap,
   withTiltPreferences,
 } from './PlayerPreferences';
 export type { ControlMode, PlayerPreferences, StartStep } from './PlayerPreferences.types';
