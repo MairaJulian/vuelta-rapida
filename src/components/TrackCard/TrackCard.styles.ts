@@ -60,9 +60,31 @@ export const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
   },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   summary: {
     color: COLORS.muted,
     fontSize: 12,
+  },
+  // Dificultad: tres puntos (llenos en azul, vacíos en soft) y su nombre.
+  difficulty: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  difficultyDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  difficultyText: {
+    marginLeft: 3,
+    color: COLORS.ink,
+    fontSize: 12,
+    fontWeight: '700',
   },
   chip: {
     flexDirection: 'row',

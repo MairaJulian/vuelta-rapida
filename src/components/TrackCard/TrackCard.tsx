@@ -3,17 +3,25 @@ import { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { getCarColor } from '@/core/CarPalette';
-import { getCircuitSummary } from '@/core/Circuits';
+import { getCircuitDifficulty, getCircuitSummary } from '@/core/Circuits';
+import type { CircuitDifficulty } from '@/core/Circuits';
 import { formatLapTime } from '@/core/LapTimer';
 import { getTrackOutline } from '@/core/Track';
 
 import { COLORS, ILLUSTRATION_WIDTH, LAYOUT, styles } from './TrackCard.styles';
 import type { TrackCardProps } from './TrackCard.types';
 
+/** Texto y cantidad de puntos llenos (de 3) de cada dificultad. */
+const DIFFICULTY_LEVELS: Record<CircuitDifficulty, { label: string; dots: number }> = {
+  facil: { label: 'Fácil', dots: 1 },
+  media: { label: 'Media', dots: 2 },
+  dificil: { label: 'Difícil', dots: 3 },
+};
+
 /**
  * Tarjeta de una pista en la selección (pantalla 05 del handoff): el trazado con la
- * marca de la meta, el nombre, el largo y las curvas, y el récord de la pista con el
- * nombre y el color de quien lo tiene.
+ * marca de la meta, el nombre, el largo y las curvas, la dificultad (tres puntos y su
+ * nombre) y el récord de la pista con el nombre y el color de quien lo tiene.
  */
 export function TrackCard({ circuit, selected, record, onPress }: TrackCardProps) {
   const { illustration, finishMark } = LAYOUT;
@@ -27,6 +35,7 @@ export function TrackCard({ circuit, selected, record, onPress }: TrackCardProps
       ),
     [circuit.centerline, illustration.height, illustration.padding],
   );
+  const difficulty = DIFFICULTY_LEVELS[getCircuitDifficulty(circuit)];
   const holder = record ? record.profile.name.toUpperCase() : null;
   const recordText = record ? `Récord ${formatLapTime(record.timeMs)}` : 'Sin récord todavía';
 
@@ -36,7 +45,7 @@ export function TrackCard({ circuit, selected, record, onPress }: TrackCardProps
       onPress={onPress}
       accessibilityRole="radio"
       accessibilityState={{ checked: selected }}
-      accessibilityLabel={`${circuit.name}. ${recordText}${holder ? `, de ${holder}` : ''}`}
+      accessibilityLabel={`${circuit.name}. Dificultad ${difficulty.label.toLowerCase()}. ${recordText}${holder ? `, de ${holder}` : ''}`}
       style={({ pressed }) => [
         styles.card,
         {
@@ -74,7 +83,26 @@ export function TrackCard({ circuit, selected, record, onPress }: TrackCardProps
         <Text style={styles.name} numberOfLines={1} adjustsFontSizeToFit>
           {circuit.name}
         </Text>
-        <Text style={styles.summary}>{getCircuitSummary(circuit)}</Text>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summary}>{getCircuitSummary(circuit)}</Text>
+          <View
+            style={styles.difficulty}
+            testID={`track-difficulty-${circuit.id}`}
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+          >
+            {[1, 2, 3].map((level) => (
+              <View
+                key={level}
+                style={[
+                  styles.difficultyDot,
+                  { backgroundColor: level <= difficulty.dots ? COLORS.blue : COLORS.soft },
+                ]}
+              />
+            ))}
+            <Text style={styles.difficultyText}>{difficulty.label}</Text>
+          </View>
+        </View>
         <View
           style={[styles.chip, { backgroundColor: record ? COLORS.lime : COLORS.soft }]}
           testID={`track-record-${circuit.id}`}
