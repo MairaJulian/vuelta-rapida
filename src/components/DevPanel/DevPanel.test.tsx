@@ -367,7 +367,32 @@ describe('DevPanel', () => {
       ...DEFAULT_RACE_AUDIO_MIX,
       engineVolume: 0,
     });
-    expect(screen.getByText('Tono del motor a fondo')).toBeTruthy();
+    expect(screen.getByText('Tono del motor en el corte')).toBeTruthy();
+  });
+
+  it('el ritmo de los cambios se elige entre 2,5; 3 y 3,5 s, con 3,5 s por defecto', async () => {
+    const props = await renderPanel();
+    await openPanel();
+    expect(screen.getByRole('radio', { name: '3,5 s' })).toHaveProp('accessibilityState', {
+      checked: true,
+    });
+    await fireEvent.press(screen.getByRole('radio', { name: '3 s' }));
+    expect(props.onAudioMixChange).toHaveBeenLastCalledWith({
+      ...DEFAULT_RACE_AUDIO_MIX,
+      gearPace: 'medium',
+    });
+    expect(screen.getByRole('radio', { name: '2,5 s' })).toBeTruthy();
+  });
+
+  it('el interruptor de los cambios de marcha los apaga y los prende en caliente', async () => {
+    const props = await renderPanel();
+    await openPanel();
+    expect(screen.getByTestId('switch-gearShifts')).toHaveProp('value', true);
+    await fireEvent(screen.getByTestId('switch-gearShifts'), 'valueChange', false);
+    expect(props.onAudioMixChange).toHaveBeenLastCalledWith({
+      ...DEFAULT_RACE_AUDIO_MIX,
+      gearShifts: false,
+    });
   });
 
   it('cada momento de la vibración elige entre las cinco intensidades', async () => {

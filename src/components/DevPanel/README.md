@@ -79,7 +79,11 @@ const DevPanel = __DEV__ ? require('@/components/DevPanel').DevPanel : null;
   - Botón "Recalibrar": toma la posición del momento.
   - Botón "Calibración completa": abre la pantalla 03.
 - **Carrera:** vueltas, de 1 a 5. Valen desde la próxima carrera (Reiniciar auto, o Reiniciar en la pausa).
-- **Sonido:** volumen del motor y de los efectos (0 a 100 %), y tono del motor detenido (×0,25 a ×2) y a fondo (×0,5 a ×4), como velocidad de reproducción del loop.
+- **Sonido:**
+  - Interruptor "Cambios de marcha", para comparar el motor con y sin marchas.
+  - "A sexta en": ritmo de los cambios, 2,5, 3 o 3,5 s (por defecto) acelerando desde 0.
+  - Volumen del motor y de los efectos (0 a 100 %).
+  - Tono del motor detenido (×0,25 a ×2) y en el corte (×0,5 a ×4), como velocidad de reproducción del loop. Sin cambios de marcha, el corte es la velocidad máxima.
 - **Vibración:** para piano, borde, largada y llegada, una de cinco intensidades: Apagada, Leve, Media, Fuerte o Doble.
 - **Manejo:** un slider por cada parámetro de `DrivingConfig`, salvo los de `FIXED_DRIVING_KEYS` (`wheelbase` y `collisionRadius`, que salen de las medidas del auto). Incluye:
   - La curva de giro según la velocidad: ángulo máximo en grados, giro a velocidad máxima y exponente de la curva.

@@ -1,5 +1,7 @@
 import type { AudioContext } from 'react-native-audio-api';
 
+import type { GearboxConfig, GearboxPace } from '@/audio/EngineGears';
+
 /** Efectos de la carrera. El motor va aparte: suena en loop. */
 export type RaceSound = 'light' | 'go' | 'kerb' | 'border' | 'lap' | 'finish';
 
@@ -20,13 +22,28 @@ export interface RaceAudioMix {
   effectsVolume: number;
   /** Tono del motor con el auto detenido: velocidad de reproducción del loop (1 = original). */
   enginePitchMin: number;
-  /** Tono del motor a la velocidad máxima. */
+  /**
+   * Tono del motor en el corte (con cambios de marcha) o a la velocidad máxima (sin
+   * cambios).
+   */
   enginePitchMax: number;
+  /**
+   * Si el motor hace los cambios de marcha: el tono sube en cada marcha y cae al pasar a
+   * la siguiente. Sin cambios, el tono sigue a la velocidad, de detenido a máxima.
+   */
+  gearShifts: boolean;
+  /** Ritmo de los cambios: cuándo llega a sexta acelerando desde 0 (`audio/EngineGears`). */
+  gearPace: GearboxPace;
 }
+
+/** Ajustes numéricos de la mezcla: los que se mueven con un slider en el panel. */
+export type RaceAudioMixLevel = Exclude<keyof RaceAudioMix, 'gearShifts' | 'gearPace'>;
 
 export interface RaceAudioOptions {
   sources: RaceSoundSources;
   mix: RaceAudioMix;
+  /** Marchas del motor. Por defecto, las del ritmo de la mezcla (`gearPace`). */
+  gearbox?: GearboxConfig;
   /** Crea el contexto de audio. Por defecto, uno nuevo; los tests pasan el suyo. */
   createContext?: () => AudioContext;
 }
@@ -38,7 +55,10 @@ export interface RaceAudioOptions {
 export interface RaceAudio {
   /** Decodifica los sonidos y arranca el motor en ralentí. */
   load(): Promise<void>;
-  /** Velocidad del auto, de 0 (detenido) a 1 (máxima): tono y volumen del motor. */
+  /**
+   * Velocidad del auto, de 0 (detenido) a 1 (máxima): volumen del motor y, con los
+   * cambios de marcha, la marcha y las revoluciones que dan el tono.
+   */
   setEngineSpeed(ratio: number): void;
   /** Suena un efecto. */
   play(cue: RaceSoundCue): void;
