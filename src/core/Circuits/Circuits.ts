@@ -3,7 +3,8 @@ import { DEFAULT_SCENERY_SPEC, withScenery } from '@/core/Scenery';
 import { createCircuit } from '@/core/Track';
 import type { Circuit } from '@/core/Track';
 
-import type { CircuitDefinition } from './Circuits.types';
+import { GRAN_MESETA, LAS_SIERRAS, PUERTO_VIEJO } from './Circuits.definitions';
+import type { CircuitDefinition, CircuitDifficulty } from './Circuits.types';
 
 /** Distancia entre puntos del trazado, en metros. */
 export const TRACK_SPACING = 2;
@@ -54,6 +55,7 @@ export function withCircuitScenery(circuit: Circuit): Circuit {
 export const AUTODROMO_DEL_LAGO: CircuitDefinition = {
   id: 'autodromo-del-lago',
   name: 'Autódromo del Lago',
+  difficulty: 'facil',
   width: 14,
   checkpointFractions: [1 / 3, 2 / 3],
   scenery: { seed: 7, treeDensity: 1 },
@@ -99,8 +101,17 @@ export const AUTODROMO_DEL_LAGO: CircuitDefinition = {
   ],
 };
 
-/** Circuitos del juego, en el orden de la selección de pista. */
-export const CIRCUIT_DEFINITIONS: readonly CircuitDefinition[] = [AUTODROMO_DEL_LAGO];
+/**
+ * Circuitos del juego, en el orden de la selección de pista: de la más fácil a la más
+ * difícil. Para sumar uno, agregarlo acá: lo recoge la selección, la carrera y el
+ * ranking, y el test de `Circuits.test.ts` lo valida solo.
+ */
+export const CIRCUIT_DEFINITIONS: readonly CircuitDefinition[] = [
+  AUTODROMO_DEL_LAGO,
+  GRAN_MESETA,
+  LAS_SIERRAS,
+  PUERTO_VIEJO,
+];
 
 /** El primer circuito: el que se usa si no se eligió otro (o el elegido no existe). */
 export const DEFAULT_CIRCUIT: Circuit = buildCircuit(AUTODROMO_DEL_LAGO);
@@ -115,6 +126,11 @@ export const CIRCUITS: readonly Circuit[] = Object.freeze(
 /** El circuito con ese id; si no existe (un enlace viejo), el primero. */
 export function getCircuit(id: string | null | undefined): Circuit {
   return CIRCUITS.find((circuit) => circuit.id === id) ?? DEFAULT_CIRCUIT;
+}
+
+/** Dificultad del circuito (se busca por `id`; un circuito sin definición cuenta como media). */
+export function getCircuitDifficulty(circuit: Circuit): CircuitDifficulty {
+  return CIRCUIT_DEFINITIONS.find((item) => item.id === circuit.id)?.difficulty ?? 'media';
 }
 
 /**

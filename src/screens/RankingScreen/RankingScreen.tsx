@@ -11,6 +11,7 @@ import { DEFAULT_RACE_CONFIG } from '@/core/RaceFlow';
 import { getRaceLapCounts, getRanking, getTableLabel, LAP_TABLE, raceTable } from '@/core/Ranking';
 import type { RankingTable } from '@/core/Ranking';
 import { useProfiles } from '@/hooks/useProfiles';
+import { readSelectedTrack } from '@/hooks/useSelectedTrack';
 
 import { PADDING, styles } from './RankingScreen.styles';
 import type { RankingScreenProps, TableOption } from './RankingScreen.types';
@@ -45,7 +46,10 @@ export function RankingScreen(_props: RankingScreenProps) {
   const insets = useSafeAreaInsets();
   const { circuito } = useLocalSearchParams<{ circuito?: string }>();
   const { state, activeProfile } = useProfiles();
-  const [circuitId, setCircuitId] = useState(() => getCircuit(circuito).id);
+  // Abre en la pista del enlace; sin enlace, en la última que se eligió o se corrió.
+  const [circuitId, setCircuitId] = useState(() =>
+    circuito ? getCircuit(circuito).id : readSelectedTrack(),
+  );
   const [option, setOption] = useState<TableOption>('lap');
 
   const circuit = getCircuit(circuitId);

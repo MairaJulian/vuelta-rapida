@@ -3,6 +3,7 @@ import {
   getCurveSections,
   getLapDirection,
   getNearestOnCenterline,
+  getStartPose,
   OVAL_CIRCUIT,
 } from '@/core/Track';
 import { validateCircuit } from '@/core/TrackValidation';
@@ -41,10 +42,26 @@ describe('CIRCUITS y getCircuit', () => {
 });
 
 describe('CIRCUIT_DEFINITIONS', () => {
+  // Un solo test para todas las pistas registradas: una pista nueva en
+  // `CIRCUIT_DEFINITIONS` se valida sola, sin escribir nada más.
   it.each(CIRCUIT_DEFINITIONS.map((definition) => [definition.name, definition] as const))(
-    '%s es válido: cerrado, sin cruces, con tramos separados y curvas posibles',
+    '%s es válida: cerrada, sin cruces, con tramos separados, pianos y escenografía',
     (_name, definition) => {
-      expect(validateCircuit(buildCircuit(definition))).toEqual([]);
+      const circuit = buildCircuit(definition);
+      expect(validateCircuit(circuit)).toEqual([]);
+      expect(circuit.kerbs.length).toBeGreaterThan(0);
+      // Largan en recta: el auto sale mirando hacia la meta, sobre el asfalto.
+      const start = getStartPose(circuit);
+      expect(getNearestOnCenterline(circuit, start.x, start.z).distance).toBeLessThan(0.5);
+      // La escenografía se genera con la semilla de la pista, sin tocar el trazado.
+      const withScenery = withCircuitScenery(circuit);
+      const objects = withScenery.scenery?.objects ?? [];
+      expect(objects.length).toBeGreaterThan(0);
+      for (const object of objects) {
+        const { distance } = getNearestOnCenterline(circuit, object.x, object.z);
+        expect(distance).toBeGreaterThan(circuit.width / 2);
+      }
+      expect(withScenery.centerline).toBe(circuit.centerline);
     },
   );
 

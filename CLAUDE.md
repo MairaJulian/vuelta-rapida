@@ -58,6 +58,15 @@ El celular lo comparten varios chicos: al abrir el juego se elige quién juega (
 - **El color del auto se guarda como id de la paleta** (`core/CarPalette`), nunca como hex.
 - **Un solo asset del auto** (`CarShape`): la "pintura" toma el color del perfil y el número va en el disco.
 
+## Pistas
+
+- Cuatro circuitos como datos (`CIRCUIT_DEFINITIONS` en `core/Circuits`), de la más fácil a la más difícil: Autódromo del Lago (rápida, fácil), Gran Meseta (rápida, media), Las Sierras (técnica, difícil) y Puerto Viejo (urbana y angosta, difícil). Cada definición lleva su `difficulty`.
+- **Para sumar una pista:** agregar su definición a `CIRCUIT_DEFINITIONS`. Los pianos, los puntos de control, la escenografía, la selección, la carrera y el ranking la recogen solos, y el test parametrizado de `Circuits.test.ts` la valida (cerrada, sin cruces, curvas posibles, largada sobre el asfalto, escenografía fuera de la pista). No hace falta tocar esos sistemas.
+- Los trazados se diseñaron con esquinas redondeadas (vértice y radio) y se guardan como los puntos que resultan. El ancho de pista cambia el radio mínimo que acepta la validación.
+- **La pista elegida** vive en memoria (`useSelectedTrack`): la fija la selección de pista y la carrera, y el ranking abre en ella. No se guarda: no es un dato del jugador.
+- Los récords ya son por `circuitId`, así que las pistas nuevas no necesitan migración de datos guardados.
+- Inicio y la lista de jugadores siguen mostrando el récord del primer circuito (`DEFAULT_CIRCUIT`).
+
 ## Controles
 
 Capa de entrada abstraída con dos implementaciones intercambiables. Aceleración automática en ambos.
@@ -129,6 +138,7 @@ Las carpetas se crean cuando hacen falta, no antes.
 
 ## Tests
 
+- **Qué se testea (regla desde el hito 7):** tests solo para lógica de `core` con riesgo real: simulación, vueltas, ranking, migraciones de datos guardados y validación de pistas. No se escriben tests para pantallas, componentes de interfaz ni render. Los tests existentes se mantienen (y se actualizan si el código que cubren cambia), pero no se agregan más de ese tipo.
 - `npm test` corre Jest (preset `jest-expo`, React Native Testing Library 14, que es asíncrona: usar `await render(...)` y `await renderHook(...)`).
 - Skia se sustituye por un mock propio (`test/setup/skia.ts`; incluye `Atlas`, `Points`, los buffers, `drawAsImage` y `mixColors`); Reanimated usa su mock oficial ampliado con `useFrameCallback`, `modify` y valores compartidos que duran toda la vida del componente (`test/setup/reanimated.ts`); react-native-audio-api usa su mock oficial (`test/setup/audio-api.ts`).
 - El almacenamiento es un mapa en memoria (`test/setup/kv-store.ts`). Los tests que guardan datos lo vacían (`__reset()`) y llaman a `reloadPlayerPreferences()` y `reloadProfiles()`: olvidan la copia en memoria y vuelven a migrar.
@@ -152,7 +162,7 @@ Cada componente, pantalla, hook o módulo vive en su propia carpeta. Hay dos niv
 
 **Componentes chicos de interfaz:** solo `NombreComponente.tsx`, `NombreComponente.styles.ts`, `NombreComponente.types.ts` e `index.ts`.
 
-- Llevan test únicamente si tienen lógica.
+- No llevan test nuevo (ver Tests: la interfaz no se testea).
 - No llevan README propio: se documentan en el README de la pantalla o del módulo que los usa.
 
 Reglas:
@@ -160,7 +170,7 @@ Reglas:
 - **Excepción:** las rutas de `src/app/` no siguen esta convención, porque no contienen lógica (solo reexportan o renderizan una pantalla de `screens/`). Si una ruta necesita lógica, esa lógica va a una pantalla, hook o módulo que sí cumpla la convención.
 - Los hooks y los módulos sin interfaz (`core`, `input`, etc.) siguen la convención completa, sin archivo de estilos.
 - En componentes de Skia, el archivo de estilos contiene las constantes visuales (colores, tamaños, grosores).
-- Nunca crear un módulo de `core`, un hook ni un componente principal sin sus tests y su README.
+- Nunca crear un módulo de `core`, un hook ni un componente principal sin su README. Los tests siguen la regla de la sección Tests: solo lógica de `core` con riesgo real.
 - Los componentes creados antes de esta regla (hito 5) quedan como están: no se adaptan a la convención nueva.
 
 ## Flujo de git
@@ -173,20 +183,17 @@ Reglas:
   - Decisiones de arquitectura (estructura de capas, módulos nuevos que cambian cómo se conectan las partes, cambios a la regla de `core` puro, etc.).
   - Dependencias nuevas.
 
-  Para el resto, avanza y explica las decisiones en la descripción del PR. Al terminar entrega:
+  Para el resto, avanza **sin pedir confirmaciones** y documenta las decisiones en comentarios de código o en este archivo. Al terminar entrega:
   - Un bloque de commit por paso, para PowerShell, con rutas explícitas. Si un archivo cambió en más de un paso, va en el commit del último paso que lo tocó, y se aclara.
-  - El comando de push y la descripción del PR (ver abajo).
+  - El comando de push de la rama.
 - Al cerrar cada hito, **antes del push**: correr `npm run lint`, `npm test` y `npm run typecheck`, y que los tres terminen **sin errores**. Si alguno falla, se corrige antes de dar el comando de push.
-- Claude **no hace push ni abre el PR**. Hace lo siguiente:
-  1. Escribe el título y la descripción del PR en `docs/pr/hito-N.md` (resumen de lo hecho y cómo probarlo).
-  2. Me da el comando exacto de push, por ejemplo `git push -u origin hito-N-descripcion`.
-  3. Yo hago el push, creo el PR desde la web de GitHub (cuenta `MairaJulian`) usando ese archivo, y lo reviso.
+- Claude **no hace push ni abre el PR**, y **no genera archivos de descripción de PR** (no existe `docs/pr/`). Al terminar solo da el comando exacto de push, por ejemplo `git push -u origin hito-N-descripcion`. Yo hago el push, creo el PR desde la web de GitHub (cuenta `MairaJulian`) y lo reviso.
 - GitHub CLI (`gh`) no se usa en este proyecto.
 - Nunca fusionar el PR: lo fusiono yo.
 
 ## Autorizaciones permanentes
 
-Claude puede hacer lo siguiente sin pedirme permiso. Cada uso se informa al cerrar el trabajo y en la descripción del PR: qué cambió y por qué.
+Claude puede hacer lo siguiente sin pedirme permiso. Cada uso se informa al cerrar el trabajo: qué cambió y por qué.
 
 - **Cambiar la configuración nativa** (`app.json`, plugins, prebuild). Avisa que hay que recompilar el dev build (`npm run android`, con el celular conectado; lo hago yo).
 - **Borrar o renombrar archivos o módulos.** Se sigue respetando lo que pedí conservar explícitamente, por ejemplo el código, las pantallas y los tests de la inclinación.

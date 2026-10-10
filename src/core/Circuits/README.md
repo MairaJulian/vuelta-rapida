@@ -4,26 +4,28 @@ Los circuitos del juego como datos: puntos de control por donde pasa la pista, s
 
 ## Tipos
 
-- `CircuitDefinition`: `{ id, name, controlPoints, width, checkpointFractions, scenery }`.
+- `CircuitDefinition`: `{ id, name, difficulty, controlPoints, width, checkpointFractions, scenery }`.
   - `id`: identificador estable, es la clave del récord guardado. No cambiarlo.
   - `name`: nombre inventado (nada de circuitos, marcas ni nombres reales).
+  - `difficulty`: `'facil' | 'media' | 'dificil'` (`CircuitDifficulty`); la muestra la selección de pista.
   - `controlPoints`: en metros y en el sentido de la carrera; el primero es la meta.
   - `checkpointFractions`: puntos de control intermedios como fracción de la vuelta.
   - `scenery`: semilla y densidad de árboles de la escenografía (`ScenerySpec`, de `core/Scenery`).
 
 ## API
 
-| Exporta | Qué hace |
-|---|---|
-| `buildCircuit(definition)` | Suaviza los puntos (Catmull-Rom centrípeta cerrada), remuestrea cada `TRACK_SPACING` metros y arma el `Circuit`, sin escenografía. |
-| `withCircuitScenery(circuit)` | El circuito con su escenografía, generada con la `scenery` de su definición (buscada por `id`; sin definición, la de por defecto). |
-| `AUTODROMO_DEL_LAGO` | El primer circuito (ver abajo). |
-| `CIRCUIT_DEFINITIONS` | Todos los circuitos, en el orden de la selección de pista. |
-| `DEFAULT_CIRCUIT` | El primer circuito, ya armado: el que se usa si no se eligió otro. |
-| `CIRCUITS` | Todos los circuitos ya armados, en el orden de la selección de pista. |
-| `getCircuit(id)` | El circuito con ese id (el de la ruta `/pista?circuito=…`); si no existe, el primero. |
-| `getCircuitSummary(circuit)` | "3,1 km · 7 curvas", para la tarjeta de la selección de pista. |
-| `TRACK_SPACING` | Distancia entre puntos del trazado: 2 m. |
+| Exporta                                                            | Qué hace                                                                                                                           |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `buildCircuit(definition)`                                         | Suaviza los puntos (Catmull-Rom centrípeta cerrada), remuestrea cada `TRACK_SPACING` metros y arma el `Circuit`, sin escenografía. |
+| `withCircuitScenery(circuit)`                                      | El circuito con su escenografía, generada con la `scenery` de su definición (buscada por `id`; sin definición, la de por defecto). |
+| `AUTODROMO_DEL_LAGO`, `GRAN_MESETA`, `LAS_SIERRAS`, `PUERTO_VIEJO` | Las definiciones (ver abajo). Las tres últimas viven en `Circuits.definitions.ts`.                                                 |
+| `CIRCUIT_DEFINITIONS`                                              | Todos los circuitos, en el orden de la selección de pista.                                                                         |
+| `DEFAULT_CIRCUIT`                                                  | El primer circuito, ya armado: el que se usa si no se eligió otro.                                                                 |
+| `CIRCUITS`                                                         | Todos los circuitos ya armados, en el orden de la selección de pista.                                                              |
+| `getCircuit(id)`                                                   | El circuito con ese id (el de la ruta `/pista?circuito=…`); si no existe, el primero.                                              |
+| `getCircuitDifficulty(circuit)`                                    | La dificultad de la definición con ese `id` (sin definición, `'media'`).                                                           |
+| `getCircuitSummary(circuit)`                                       | "3,1 km · 7 curvas", para la tarjeta de la selección de pista.                                                                     |
+| `TRACK_SPACING`                                                    | Distancia entre puntos del trazado: 2 m.                                                                                           |
 
 ## Ejemplo
 
@@ -34,7 +36,11 @@ const circuit = buildCircuit({
   width: 14,
   checkpointFractions: [1 / 3, 2 / 3],
   scenery: { seed: 3, treeDensity: 1 },
-  controlPoints: [{ x: 0, z: 0 }, { x: 200, z: 0 }, { x: 260, z: 80 } /* ... */],
+  controlPoints: [
+    { x: 0, z: 0 },
+    { x: 200, z: 0 },
+    { x: 260, z: 80 } /* ... */,
+  ],
 });
 
 // En la pantalla de carrera, con árboles, carteles y tribuna:
@@ -55,6 +61,20 @@ Es el circuito del handoff (pantallas 05, 07 y 08) y su minimapa. Datos: unos 2,
   6. Curva larga que desemboca en la recta principal.
 - **Vuelta ideal estimada en alrededor de 1:09** con el modelo de manejo actual. El récord del handoff es 1:12,480.
 - **Puntos de control intermedios** en los tercios de la vuelta.
+
+## Las pistas
+
+| Pista              | Estilo                                                                    | Largo  | Ancho | Dificultad |
+| ------------------ | ------------------------------------------------------------------------- | ------ | ----- | ---------- |
+| Autódromo del Lago | Rápida (ver arriba)                                                       | 2,4 km | 14 m  | Fácil      |
+| Gran Meseta        | Rápida: rectas largas, barridos amplios y una horquilla de frenada fuerte | 2,8 km | 14 m  | Media      |
+| Las Sierras        | Técnica: once curvas cerradas y cambios de dirección                      | 1,9 km | 11 m  | Difícil    |
+| Puerto Viejo       | Urbana: trece curvas encadenadas, la más angosta                          | 1,4 km | 9 m   | Difícil    |
+
+- **Orden de la selección:** de la más fácil a la más difícil, el de `CIRCUIT_DEFINITIONS`.
+- **Nombres del handoff:** Las Sierras y Puerto Viejo salen de las fichas de la pantalla 05 (con su carácter técnico y callejero). Puerto Viejo usa además la silueta en escalera del handoff.
+- **Cómo se diseñaron:** con esquinas redondeadas (vértice y radio), guardadas como los puntos que resultan. No hay herramienta en el repositorio: el test de `Circuits.test.ts` es la red de seguridad al cambiar un trazado.
+- **Sumar una pista:** agregar su definición a `CIRCUIT_DEFINITIONS`. El test parametrizado la valida sola (cerrada, sin cruces, tramos separados, curvas posibles, pianos, largada sobre el asfalto y escenografía fuera de la pista). Una pista más angosta usa curvas más cerradas: `validateCircuit` calcula el radio mínimo según su ancho.
 
 ## Decisiones de diseño
 

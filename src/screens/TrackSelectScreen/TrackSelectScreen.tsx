@@ -1,5 +1,4 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,20 +9,21 @@ import { CIRCUITS } from '@/core/Circuits';
 import { DEFAULT_RACE_CONFIG } from '@/core/RaceFlow';
 import { getTrackRecord, LAP_TABLE } from '@/core/Ranking';
 import { useProfiles } from '@/hooks/useProfiles';
+import { useSelectedTrack } from '@/hooks/useSelectedTrack';
 
 import { PADDING, styles } from './TrackSelectScreen.styles';
 import type { TrackSelectScreenProps } from './TrackSelectScreen.types';
 
 /**
  * Selección de pista (pantalla 05 del handoff): una tarjeta por circuito con su
- * trazado, su largo, sus curvas y el récord de la pista con el nombre y el color de
- * quien lo tiene. "Largar" abre la carrera en la pista elegida.
+ * trazado, su largo, sus curvas, su dificultad y el récord de la pista con el nombre y
+ * el color de quien lo tiene. La elegida se comparte con la carrera y el ranking. "Largar" abre la carrera en la pista elegida.
  */
 export function TrackSelectScreen(_props: TrackSelectScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { state } = useProfiles();
-  const [selectedId, setSelectedId] = useState(CIRCUITS[0].id);
+  const { circuitId: selectedId, select } = useSelectedTrack();
   const laps = DEFAULT_RACE_CONFIG.totalLaps;
 
   const start = () => router.push({ pathname: '/pista', params: { circuito: selectedId } });
@@ -63,7 +63,7 @@ export function TrackSelectScreen(_props: TrackSelectScreenProps) {
             circuit={circuit}
             selected={circuit.id === selectedId}
             record={getTrackRecord(state, circuit.id, LAP_TABLE)}
-            onPress={() => setSelectedId(circuit.id)}
+            onPress={() => select(circuit.id)}
           />
         ))}
       </ScrollView>

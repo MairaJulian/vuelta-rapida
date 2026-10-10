@@ -37,6 +37,7 @@ import { useRaceRanking } from '@/hooks/useRaceRanking';
 import { useRaceStatus } from '@/hooks/useRaceStatus';
 import { useSceneryAtlas } from '@/hooks/useSceneryAtlas';
 import { useSceneryView } from '@/hooks/useSceneryView';
+import { selectTrack } from '@/hooks/useSelectedTrack';
 import { useTiltOutput } from '@/hooks/useTiltSteering';
 import { ButtonControls } from '@/input/ButtonControls';
 import { useDrivingInput } from '@/input/InputControls';
@@ -76,6 +77,8 @@ export function DriveScreen(_props: DriveScreenProps) {
   // La pista elegida (`/pista?circuito=…`); sin parámetro, la primera. El panel cambia el ancho.
   const { circuito } = useLocalSearchParams<{ circuito?: string }>();
   const [track, setTrack] = useState<Circuit>(() => getCircuit(circuito));
+  // La pista que se corre queda como la elegida: el ranking abre en ella.
+  useEffect(() => selectTrack(track.id), [track.id]);
   // La escenografía se genera recién montada la pantalla, no al dibujarla: tarda unos
   // cientos de milisegundos en el celular y así no demora el comienzo de la transición.
   useEffect(() => {

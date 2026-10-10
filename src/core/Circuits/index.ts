@@ -5,8 +5,10 @@ export {
   CIRCUITS,
   DEFAULT_CIRCUIT,
   getCircuit,
+  getCircuitDifficulty,
   getCircuitSummary,
   TRACK_SPACING,
   withCircuitScenery,
 } from './Circuits';
-export type { CircuitDefinition } from './Circuits.types';
+export { GRAN_MESETA, LAS_SIERRAS, PUERTO_VIEJO } from './Circuits.definitions';
+export type { CircuitDefinition, CircuitDifficulty } from './Circuits.types';
