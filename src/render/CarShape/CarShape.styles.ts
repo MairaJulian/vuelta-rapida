@@ -44,3 +44,14 @@ export const SHAPES = {
   haloWidth: 1.6,
   numberDisc: { cx: 20, cy: 61, r: 6.2 },
 } as const;
+
+/**
+ * Número sobre el disco: itálica negrita de 8,5 unidades del viewBox, en el color de las
+ * gomas, con la base en y = 64,2 (Monoplaza.dc.html). Si no entra en `maxWidth`, se achica.
+ */
+export const NUMBER_TEXT = {
+  fontFamily: 'sans-serif',
+  fontSize: 8.5,
+  baseline: 64.2,
+  maxWidth: 10.4,
+} as const;

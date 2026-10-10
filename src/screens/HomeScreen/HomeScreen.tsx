@@ -1,38 +1,42 @@
-import { Canvas, Group } from '@shopify/react-native-skia';
-import { useRouter } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Redirect, useRouter } from 'expo-router';
+import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { DriverBadge } from '@/components/DriverBadge';
+import { IconButton } from '@/components/IconButton';
 import { MenuButton } from '@/components/MenuButton';
+import { getCarColor } from '@/core/CarPalette';
 import { DEFAULT_CIRCUIT } from '@/core/Circuits';
 import { DEFAULT_RACE_CONFIG } from '@/core/RaceFlow';
 import { formatLapTime } from '@/core/LapTimer';
-import { usePlayerPreferences } from '@/hooks/usePlayerPreferences';
-import { CarShape } from '@/render/CarShape';
-import { CAR_WIDTH_METERS } from '@/render/CarShape/CarShape.styles';
+import { getBestLap } from '@/core/Profiles';
+import { useProfiles } from '@/hooks/useProfiles';
+import { CarPreview } from '@/render/CarPreview';
 
-import { CAR_NUMBER, COLORS, LAYOUT, styles } from './HomeScreen.styles';
+import { COLORS, LAYOUT, styles } from './HomeScreen.styles';
 import type { HomeScreenProps } from './HomeScreen.types';
 
-/** El auto en el panel: centrado, de 100 dp de ancho y girado −20°. */
-const CAR_TRANSFORM = [
-  { translateX: LAYOUT.carCanvas.width / 2 },
-  { translateY: LAYOUT.carCanvas.height / 2 },
-  { rotate: LAYOUT.carRotation },
-  { scale: LAYOUT.carWidth / CAR_WIDTH_METERS },
-];
-
 /**
- * Inicio (pantalla 01 del handoff), en versión mínima: el logo, el botón Correr y
- * el récord del circuito, con el panel azul del auto a la derecha. Garage y
- * Ajustes llegan con sus pantallas.
+ * Inicio (pantalla 01 del handoff) del jugador activo: el logo, el botón Correr, el
+ * Garage y su récord, con el panel azul de su auto y su número a la derecha. La
+ * píldora del piloto, abajo en el panel, vuelve a "¿Quién juega?".
  */
 export function HomeScreen(_props: HomeScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { preferences } = usePlayerPreferences();
-  const recordMs = preferences.bestLapsMs[DEFAULT_CIRCUIT.id] ?? null;
+  const { state, activeProfile } = useProfiles();
   const laps = DEFAULT_RACE_CONFIG.totalLaps;
+
+  // Sin jugador elegido (se borró o se llegó directo): primero, quién juega.
+  if (!activeProfile) {
+    return <Redirect href="/jugadores" />;
+  }
+
+  const recordMs = getBestLap(state, activeProfile.id, DEFAULT_CIRCUIT.id);
+  const name = activeProfile.name.toUpperCase();
+  // Sobre el panel azul, el auto azul se muestra blanco (handoff).
+  const carColor =
+    activeProfile.colorId === 'blue' ? COLORS.carOnBlue : getCarColor(activeProfile.colorId).hex;
 
   return (
     <View style={styles.screen} testID="home-screen">
@@ -45,15 +49,42 @@ export function HomeScreen(_props: HomeScreenProps) {
             bottom: LAYOUT.panelInset + insets.bottom,
           },
         ]}
-        accessible={false}
-        importantForAccessibility="no-hide-descendants"
       >
-        <Text style={styles.number}>{CAR_NUMBER}</Text>
-        <Canvas style={styles.carCanvas} testID="home-car">
-          <Group transform={CAR_TRANSFORM}>
-            <CarShape transform={[]} bodyColor={COLORS.car} />
-          </Group>
-        </Canvas>
+        <View
+          style={styles.panelArt}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
+        >
+          <Text style={styles.number} testID="home-number">
+            {activeProfile.number}
+          </Text>
+          <CarPreview
+            testID="home-car"
+            bodyColor={carColor}
+            number={activeProfile.number}
+            carWidth={LAYOUT.carWidth}
+            rotation={LAYOUT.carRotation}
+            width={LAYOUT.carCanvas.width}
+            height={LAYOUT.carCanvas.height}
+          />
+        </View>
+        <Pressable
+          style={styles.driver}
+          onPress={() => router.dismissTo('/jugadores')}
+          accessibilityRole="button"
+          accessibilityLabel={`${name}, número ${activeProfile.number}. Cambiar piloto`}
+          testID="home-driver"
+        >
+          {({ pressed }) => (
+            <DriverBadge
+              name={name}
+              number={activeProfile.number}
+              colorId={activeProfile.colorId}
+              style={[styles.driverBadge, pressed && styles.driverBadgePressed]}
+              trailing={<Text style={styles.change}>Cambiar</Text>}
+            />
+          )}
+        </Pressable>
       </View>
 
       <View
@@ -75,13 +106,21 @@ export function HomeScreen(_props: HomeScreenProps) {
           {'\n'}
           <Text style={{ color: COLORS.blue }}>RÁPIDA</Text>
         </Text>
-        <MenuButton
-          label="Correr"
-          variant="run"
-          circleIcon="play"
-          onPress={() => router.push('/pista')}
-          style={styles.run}
-        />
+        <View style={styles.actions}>
+          <MenuButton
+            label="Correr"
+            variant="run"
+            circleIcon="play"
+            onPress={() => router.push('/pista')}
+          />
+          <IconButton
+            icon="wrench"
+            label="Garage: editar tu monoplaza"
+            size={56}
+            onPress={() => router.push({ pathname: '/piloto', params: { id: activeProfile.id } })}
+            testID="home-garage"
+          />
+        </View>
       </View>
 
       <View
