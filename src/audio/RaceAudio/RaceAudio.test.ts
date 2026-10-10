@@ -1,5 +1,7 @@
 import { AudioContext } from 'react-native-audio-api';
 
+import { DEFAULT_GEARBOX, GEARBOXES } from '@/audio/EngineGears';
+import type { GearboxConfig, GearboxPace } from '@/audio/EngineGears';
 import type { RaceEvent } from '@/core/RaceFlow';
 
 import {
@@ -7,20 +9,30 @@ import {
   createRaceAudio,
   DEFAULT_RACE_AUDIO_MIX,
   ENGINE_IDLE_GAIN,
+  ENGINE_SMOOTHING,
   getEngineGain,
   getEnginePitch,
   getSoundCue,
   KERB_FULL_SPEED,
   RACE_SOUND_SOURCES,
+  SHIFT_CUT_GAIN,
+  SHIFT_CUT_SECONDS,
+  SHIFT_SMOOTHING,
 } from './RaceAudio';
 import type { RaceAudioMix, RaceSoundSources } from './RaceAudio.types';
 
+/** Sin cambios de marcha: el tono sigue a la velocidad, como antes de las marchas. */
 const MIX: RaceAudioMix = {
   engineVolume: 0.5,
   effectsVolume: 0.8,
   enginePitchMin: 1,
   enginePitchMax: 3,
+  gearShifts: false,
+  gearPace: 'medium',
 };
+
+/** Dos marchas: la primera llega al corte a 0,4 y la segunda a 1. */
+const GEARBOX: GearboxConfig = { gearTopSpeeds: [0.4, 1], downshiftRpm: 0.5 };
 
 const SOURCES: RaceSoundSources = {
   engine: 'engine.wav',
@@ -33,12 +45,12 @@ const SOURCES: RaceSoundSources = {
 };
 
 /** Sonido sobre un contexto del mock, con espías en lo que crea. */
-function setup(mix = MIX) {
+function setup(mix = MIX, gearbox = GEARBOX) {
   const context = new AudioContext();
   const decode = jest.spyOn(context, 'decodeAudioData');
   const sources = jest.spyOn(context, 'createBufferSource');
   const gains = jest.spyOn(context, 'createGain');
-  const audio = createRaceAudio({ sources: SOURCES, mix, createContext: () => context });
+  const audio = createRaceAudio({ sources: SOURCES, mix, gearbox, createContext: () => context });
   const created = () => sources.mock.results.map((result) => result.value);
   const createdGains = () => gains.mock.results.map((result) => result.value);
   // Las tres primeras ganancias: general, motor y efectos.
@@ -127,11 +139,17 @@ describe('createRaceAudio', () => {
     );
   });
 
-  it('la mezcla por defecto deja el motor por debajo de los efectos', () => {
+  it('la mezcla por defecto deja el motor por debajo de los efectos, con cambios', () => {
     expect(DEFAULT_RACE_AUDIO_MIX.engineVolume).toBeLessThan(DEFAULT_RACE_AUDIO_MIX.effectsVolume);
     expect(DEFAULT_RACE_AUDIO_MIX.enginePitchMin).toBeLessThan(
       DEFAULT_RACE_AUDIO_MIX.enginePitchMax,
     );
+    expect(DEFAULT_RACE_AUDIO_MIX.gearShifts).toBe(true);
+  });
+
+  it('a velocidad máxima el motor suena más grave que antes de los cambios (2,4)', () => {
+    const top = DEFAULT_GEARBOX.gearTopSpeeds.at(-1)!;
+    expect(getEnginePitch(1 / top, DEFAULT_RACE_AUDIO_MIX)).toBeCloseTo(1.99, 2);
   });
 
   it('al cargar decodifica todo y arranca el motor en loop, en ralentí', async () => {
@@ -145,12 +163,120 @@ describe('createRaceAudio', () => {
     expect(engine.playbackRate.value).toBe(1);
   });
 
-  it('la velocidad sube el tono y el volumen del motor', async () => {
+  it('sin cambios de marcha, la velocidad sube el tono y el volumen del motor', async () => {
     const { audio, created, engineGain } = setup();
     await audio.load();
     audio.setEngineSpeed(1);
     expect(created()[0].playbackRate.value).toBe(3);
     expect(engineGain.gain.value).toBeCloseTo(0.5);
+  });
+
+  describe('con cambios de marcha', () => {
+    const GEARS = { ...MIX, gearShifts: true };
+
+    it('el tono sube dentro de cada marcha y cae al pasar a la siguiente', async () => {
+      const { audio, created } = setup(GEARS);
+      await audio.load();
+      const pitch = () => created()[0].playbackRate.value;
+      audio.setEngineSpeed(0.2); // primera, a media vuelta
+      expect(pitch()).toBeCloseTo(2);
+      audio.setEngineSpeed(0.39); // primera, casi en el corte
+      expect(pitch()).toBeCloseTo(1 + 2 * (0.39 / 0.4));
+      audio.setEngineSpeed(0.4); // segunda: las revoluciones caen a 0,4
+      expect(pitch()).toBeCloseTo(1.8);
+    });
+
+    it('al subir, el tono cambia casi de golpe y el volumen hace un corte breve', async () => {
+      const { audio, created, engineGain } = setup(GEARS);
+      await audio.load();
+      audio.setEngineSpeed(0.3);
+      const rate = jest.spyOn(created()[0].playbackRate, 'setTargetAtTime');
+      const gain = jest.spyOn(engineGain.gain, 'setTargetAtTime');
+      audio.setEngineSpeed(0.45);
+      const full = getEngineGain(0.45, GEARS);
+      expect(rate).toHaveBeenLastCalledWith(expect.any(Number), 0, SHIFT_SMOOTHING);
+      expect(gain.mock.calls).toEqual([
+        [full * SHIFT_CUT_GAIN, 0, SHIFT_SMOOTHING],
+        [full, SHIFT_CUT_SECONDS, expect.any(Number)],
+      ]);
+    });
+
+    it('durante el corte, el volumen espera a que termine', async () => {
+      const { audio, engineGain } = setup(GEARS);
+      await audio.load();
+      audio.setEngineSpeed(0.45); // sube a segunda
+      const gain = jest.spyOn(engineGain.gain, 'setTargetAtTime');
+      audio.setEngineSpeed(0.5);
+      expect(gain).toHaveBeenLastCalledWith(
+        expect.any(Number),
+        SHIFT_CUT_SECONDS,
+        expect.any(Number),
+      );
+    });
+
+    it('sin cambiar de marcha, el motor sigue suave y sin cortes', async () => {
+      const { audio, created, engineGain } = setup(GEARS);
+      await audio.load();
+      audio.setEngineSpeed(0.1);
+      const rate = jest.spyOn(created()[0].playbackRate, 'setTargetAtTime');
+      const gain = jest.spyOn(engineGain.gain, 'setTargetAtTime');
+      audio.setEngineSpeed(0.2);
+      expect(rate).toHaveBeenLastCalledWith(2, 0, ENGINE_SMOOTHING);
+      expect(gain).toHaveBeenCalledTimes(1);
+    });
+
+    it('al bajar de marcha, el tono sube rápido y no hay corte', async () => {
+      const { audio, created, engineGain } = setup(GEARS);
+      await audio.load();
+      audio.setEngineSpeed(0.9); // segunda
+      const rate = jest.spyOn(created()[0].playbackRate, 'setTargetAtTime');
+      const cancel = jest.spyOn(engineGain.gain, 'cancelScheduledValues');
+      audio.setEngineSpeed(0.15); // primera, a 0,375 de revoluciones
+      expect(rate).toHaveBeenLastCalledWith(1 + 2 * (0.15 / 0.4), 0, SHIFT_SMOOTHING);
+      expect(cancel).not.toHaveBeenCalled();
+    });
+
+    it('apagarlos en caliente vuelve al tono por velocidad', async () => {
+      const { audio, created } = setup(GEARS);
+      await audio.load();
+      audio.setEngineSpeed(0.45);
+      audio.setMix({ ...GEARS, gearShifts: false });
+      expect(created()[0].playbackRate.value).toBeCloseTo(1 + 2 * 0.45);
+    });
+
+    /** Sonido sin caja propia: usa la del ritmo de la mezcla. */
+    async function withPace(pace: GearboxPace) {
+      const context = new AudioContext();
+      const sources = jest.spyOn(context, 'createBufferSource');
+      const audio = createRaceAudio({
+        sources: SOURCES,
+        mix: { ...GEARS, gearPace: pace },
+        createContext: () => context,
+      });
+      await audio.load();
+      return { audio, pitch: () => sources.mock.results[0].value.playbackRate.value };
+    }
+
+    it('sin caja propia, usa las seis marchas del ritmo de la mezcla', async () => {
+      const { audio, pitch } = await withPace('medium');
+      audio.setEngineSpeed(1);
+      const top = GEARBOXES.medium.gearTopSpeeds.at(-1)!;
+      expect(pitch()).toBeCloseTo(1 + 2 / top);
+    });
+
+    it('el ritmo cambia los puntos de cambio, también en caliente', async () => {
+      const speed = 0.24; // pasado el corte de primera de quick (0,2) y de medium (0,226)
+      const quick = await withPace('quick');
+      quick.audio.setEngineSpeed(speed);
+      expect(quick.pitch()).toBeCloseTo(1 + 2 * (speed / GEARBOXES.quick.gearTopSpeeds[1]));
+
+      const slow = await withPace('slow');
+      slow.audio.setEngineSpeed(speed); // en slow sigue en primera (corte a 0,258)
+      expect(slow.pitch()).toBeCloseTo(1 + 2 * (speed / GEARBOXES.slow.gearTopSpeeds[0]));
+
+      slow.audio.setMix({ ...GEARS, gearPace: 'quick' });
+      expect(slow.pitch()).toBeCloseTo(quick.pitch());
+    });
   });
 
   it('cada efecto suena con su propio volumen', async () => {

@@ -3,8 +3,10 @@ import { Pressable, Switch, Text, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { GEARBOX_PACES } from '@/audio/EngineGears';
+import type { GearboxPace } from '@/audio/EngineGears';
 import { DEFAULT_RACE_AUDIO_MIX } from '@/audio/RaceAudio';
-import type { RaceAudioMix } from '@/audio/RaceAudio';
+import type { RaceAudioMixLevel } from '@/audio/RaceAudio';
 import { DevSegmented } from '@/components/DevSegmented';
 import { DevSlider } from '@/components/DevSlider';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
@@ -277,7 +279,7 @@ export const RACE_SLIDERS: SliderSpec<RaceSliderKey>[] = [
 const pitch = (value: number) => `×${value.toFixed(2)}`;
 
 /** Sliders del sonido: volúmenes de 0 a 100 % y tono del motor como velocidad del loop. */
-export const AUDIO_SLIDERS: SliderSpec<keyof RaceAudioMix>[] = [
+export const AUDIO_SLIDERS: SliderSpec<RaceAudioMixLevel>[] = [
   { key: 'engineVolume', label: 'Volumen del motor', min: 0, max: 1, step: 0.05, format: percent },
   {
     key: 'effectsVolume',
@@ -297,7 +299,7 @@ export const AUDIO_SLIDERS: SliderSpec<keyof RaceAudioMix>[] = [
   },
   {
     key: 'enginePitchMax',
-    label: 'Tono del motor a fondo',
+    label: 'Tono del motor en el corte',
     min: 0.5,
     max: 4,
     step: 0.05,
@@ -314,6 +316,17 @@ export const HAPTIC_MOMENTS: [HapticMoment, string][] = [
 ];
 
 const HAPTIC_OPTIONS = HAPTIC_LEVELS.map(({ level, label }) => ({ value: level, label }));
+
+/** Ritmos de los cambios de marcha: cuándo llega a sexta acelerando desde 0. */
+const GEAR_PACE_LABELS: Record<GearboxPace, string> = {
+  quick: '2,5 s',
+  medium: '3 s',
+  slow: '3,5 s',
+};
+export const GEAR_PACE_OPTIONS = GEARBOX_PACES.map((pace) => ({
+  value: pace,
+  label: GEAR_PACE_LABELS[pace],
+}));
 
 const CONTROL_MODE_OPTIONS: { value: ControlMode; label: string }[] = [
   { value: 'tilt', label: 'Inclinación' },
@@ -538,6 +551,27 @@ export function DevPanel({
             <Text style={styles.note}>Las vueltas valen desde la próxima carrera.</Text>
 
             <Text style={styles.sectionTitle}>Sonido</Text>
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Cambios de marcha</Text>
+              <Switch
+                testID="switch-gearShifts"
+                value={audioMix.gearShifts}
+                onValueChange={(value) => onAudioMixChange({ ...audioMix, gearShifts: value })}
+                accessibilityLabel="Cambios de marcha"
+                trackColor={{ true: COLORS.primary, false: COLORS.soft }}
+                thumbColor={COLORS.card}
+              />
+            </View>
+            <View style={styles.optionRow}>
+              <Text style={styles.switchLabel}>A sexta en</Text>
+              <DevSegmented
+                label="Ritmo de los cambios: a sexta en"
+                testID="gear-pace"
+                options={GEAR_PACE_OPTIONS}
+                value={audioMix.gearPace}
+                onChange={(gearPace) => onAudioMixChange({ ...audioMix, gearPace })}
+              />
+            </View>
             {AUDIO_SLIDERS.map((spec) => (
               <DevSlider
                 key={spec.key}
