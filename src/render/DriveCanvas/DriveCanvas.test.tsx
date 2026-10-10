@@ -82,6 +82,19 @@ describe('DriveCanvas', () => {
     expect(camera.queryAll((node) => node.type === 'RoundedRect').length).toBeGreaterThan(0);
   });
 
+  it('dibuja el auto con el color y el número que recibe', async () => {
+    const { findAll } = await renderCanvas({ carColor: '#F164AF', carNumber: 27 });
+    const pink = findAll('Path').filter((node) => node.props.color === '#F164AF');
+    expect(pink).toHaveLength(2); // carrocería y trompa
+    expect(findAll('SkiaText').map((node) => node.props.text)).toContain('27');
+  });
+
+  it('sin color ni número, el auto azul con el disco vacío', async () => {
+    const { findAll } = await renderCanvas();
+    expect(findAll('Path').filter((node) => node.props.color === '#2F6BDD')).toHaveLength(2);
+    expect(findAll('SkiaText').map((node) => node.props.text)).not.toContain('27');
+  });
+
   it('sin escenografía: pasto con el rumbo por defecto, pista y auto', async () => {
     const { findAll, layers } = await renderCanvas();
     expect(findAll('GrassLayer')[0].props).toEqual({

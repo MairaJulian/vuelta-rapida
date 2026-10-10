@@ -22,4 +22,8 @@ export interface DriveCanvasProps {
   particles?: SharedValue<ParticleState>;
   /** Qué se muestra y con qué intensidad (panel de desarrollo). */
   display?: SceneryDisplayConfig;
+  /** Color de la carrocería del auto (el del perfil activo). Por defecto, el azul. */
+  carColor?: string;
+  /** Número del auto (el del perfil activo); sin número, el disco queda vacío. */
+  carNumber?: number | null;
 }

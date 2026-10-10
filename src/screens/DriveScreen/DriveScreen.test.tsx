@@ -8,6 +8,7 @@ import { getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import { useAnimatedSensor, useFrameCallback } from 'react-native-reanimated';
 
 import { AUTODROMO_DEL_LAGO, DEFAULT_CIRCUIT } from '@/core/Circuits';
+import { getBestLap, withLapRecord } from '@/core/Profiles';
 import type { RaceResults } from '@/core/RaceFlow';
 import { MAX_DEAD_ZONE } from '@/core/TiltSteering';
 import {
@@ -15,6 +16,12 @@ import {
   reloadPlayerPreferences,
   updatePlayerPreferences,
 } from '@/hooks/usePlayerPreferences';
+import {
+  createPlayerProfile,
+  readProfiles,
+  reloadProfiles,
+  updateProfiles,
+} from '@/hooks/useProfiles';
 import { DEFAULT_SCENERY_DISPLAY } from '@/core/SceneryView';
 import { getNearestOnCenterline } from '@/core/Track';
 import { useParticles } from '@/hooks/useParticles';
@@ -119,10 +126,19 @@ const RESULTS: RaceResults = {
   previousRecordTicks: null,
 };
 
+/** Crea a MALE (rosa, 27), que queda activo, y devuelve su id. Va antes de montar la pantalla. */
+function createActiveProfile(): string {
+  const result = createPlayerProfile({ name: 'Male', colorId: 'pink', number: 27 });
+  return result.ok ? result.profile.id : '';
+}
+
 describe('DriveScreen', () => {
   beforeEach(async () => {
     storage.__reset();
-    await act(() => reloadPlayerPreferences());
+    await act(() => {
+      reloadPlayerPreferences();
+      reloadProfiles();
+    });
     jest.mocked(useRaceStatus).mockImplementation(realUseRaceStatus);
     mockRouter.dismissTo.mockClear();
     jest.spyOn(BackHandler, 'addEventListener').mockImplementation(() => ({ remove: jest.fn() }));
@@ -233,12 +249,56 @@ describe('DriveScreen', () => {
     expect(useFrameCallback).toHaveBeenCalled();
   });
 
-  it('muestra el HUD de vueltas con el récord guardado del circuito', async () => {
-    await act(() => updatePlayerPreferences({ bestLapsMs: { 'autodromo-del-lago': 72480 } }));
+  it('muestra el HUD de vueltas con el récord del jugador activo en el circuito', async () => {
+    const id = createActiveProfile();
+    await act(() =>
+      updateProfiles((state) => withLapRecord(state, id, 'autodromo-del-lago', 72480, 1)!),
+    );
     await render(<DriveScreen />);
     expect(screen.getByTestId('lap-hud-lap')).toHaveTextContent('1/3');
     expect(screen.getByTestId('lap-hud-time')).toHaveTextContent('0:00.000');
     expect(screen.getByTestId('lap-hud-best')).toHaveTextContent('1:12.480');
+  });
+
+  describe('auto del jugador', () => {
+    const carTexts = () =>
+      screen.container
+        .queryAll((node) => node.type === 'SkiaText')
+        .map((node) => node.props.text as string);
+    const painted = (color: string) =>
+      screen.container.queryAll((node) => node.type === 'Path' && node.props.color === color);
+
+    it('se dibuja con el color y el número del perfil activo', async () => {
+      createActiveProfile();
+      await render(<DriveScreen />);
+      expect(painted('#F164AF')).toHaveLength(2); // carrocería y trompa
+      expect(carTexts()).toContain('27');
+    });
+
+    it('sin perfil activo, el auto azul sin número', async () => {
+      await render(<DriveScreen />);
+      expect(painted('#2F6BDD')).toHaveLength(2);
+      expect(carTexts()).not.toContain('27');
+    });
+
+    it('los resultados muestran el nombre y el número del piloto', async () => {
+      createActiveProfile();
+      jest
+        .mocked(useRaceStatus)
+        .mockReturnValue({ phase: 'finished', pausedLap: null, results: RESULTS });
+      await render(<DriveScreen />);
+      expect(screen.getByTestId('results-driver')).toHaveTextContent('MALE · #27');
+    });
+
+    it('la vuelta récord se guarda en el perfil activo', async () => {
+      const id = createActiveProfile();
+      await render(<DriveScreen />);
+      const { bus } = jest.mocked(useRaceStatus).mock.calls.at(-1)![0];
+      await act(() =>
+        bus.emit({ type: 'newRecord', tick: 4320, lapTicks: 4320, previousTicks: null }),
+      );
+      expect(getBestLap(readProfiles(), id, 'autodromo-del-lago')).toBe(72000);
+    });
   });
 
   describe('carrera', () => {

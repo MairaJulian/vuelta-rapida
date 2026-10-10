@@ -77,7 +77,14 @@ function Checker() {
  * si hubo récord nuevo); a la derecha, cada vuelta con su tiempo, y "Otra vez" y
  * "Salir".
  */
-export function RaceResults({ results, stepHz, circuitName, onRetry, onExit }: RaceResultsProps) {
+export function RaceResults({
+  results,
+  stepHz,
+  circuitName,
+  driver = null,
+  onRetry,
+  onExit,
+}: RaceResultsProps) {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const texts = getRaceResultsTexts(results, stepHz, circuitName);
@@ -145,7 +152,9 @@ export function RaceResults({ results, stepHz, circuitName, onRetry, onExit }: R
           },
         ]}
       >
-        <Text style={styles.columnHeader}>Tus vueltas</Text>
+        <Text style={styles.columnHeader} testID="results-driver" numberOfLines={1}>
+          {driver ? `${driver.name.toUpperCase()} · #${driver.number}` : 'Tus vueltas'}
+        </Text>
         <ScrollView style={styles.laps} contentContainerStyle={styles.lapsContent}>
           {texts.laps.map((lap) => (
             <View

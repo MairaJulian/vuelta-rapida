@@ -24,6 +24,8 @@ export function DriveCanvas({
   atlas = null,
   particles,
   display = DEFAULT_SCENERY_DISPLAY,
+  carColor,
+  carNumber = null,
 }: DriveCanvasProps) {
   const { scenery } = track;
   const shown = display.visible && scenery && sceneryView ? { scenery, view: sceneryView } : null;
@@ -44,7 +46,7 @@ export function DriveCanvas({
         {display.particles && particles ? (
           <ParticleLayer particles={particles} image={atlas} />
         ) : null}
-        <CarShape transform={carTransform} />
+        <CarShape transform={carTransform} bodyColor={carColor} number={carNumber} />
         {shown ? (
           <SceneryLayer scenery={shown.scenery} atlas={atlas} view={shown.view} level="raised" />
         ) : null}
