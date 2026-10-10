@@ -1,5 +1,6 @@
 import type { CarState } from '@/core/DrivingModel';
 import type { DrivingSimState } from '@/core/DrivingSim';
+import type { CelebrationKind } from '@/core/Ranking';
 import type { RandomState } from '@/core/SeededRandom';
 
 /**
@@ -50,6 +51,10 @@ export interface RaceSetup {
 /**
  * Lo que pasa en la carrera. `tick` es el paso de la carrera en que pasó (cuenta
  * todos los pasos menos los de la pausa). Serializable.
+ *
+ * `celebration` es la excepción: no sale de la simulación sino de la pantalla, cuando
+ * aparecen los resultados y el ranking dice que hubo algo que festejar (hito 6b). Por
+ * eso no tiene `tick`. El sonido y la vibración lo escuchan como a los demás.
  */
 export type RaceEvent =
   | { type: 'phase'; tick: number; from: RacePhase; to: RacePhase }
@@ -59,7 +64,8 @@ export type RaceEvent =
   | { type: 'borderHit'; tick: number; impactSpeed: number }
   | { type: 'kerbEnter'; tick: number; speed: number }
   | { type: 'newRecord'; tick: number; lapTicks: number; previousTicks: number | null }
-  | ({ type: 'finish'; tick: number } & RaceResults);
+  | ({ type: 'finish'; tick: number } & RaceResults)
+  | { type: 'celebration'; kind: CelebrationKind };
 
 /** Tipos de evento de la carrera. */
 export type RaceEventType = RaceEvent['type'];

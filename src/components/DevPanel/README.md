@@ -84,7 +84,7 @@ const DevPanel = __DEV__ ? require('@/components/DevPanel').DevPanel : null;
   - "A sexta en": ritmo de los cambios, 2,5, 3 o 3,5 s (por defecto) acelerando desde 0.
   - Volumen del motor y de los efectos (0 a 100 %).
   - Tono del motor detenido (×0,25 a ×2) y en el corte (×0,5 a ×4), como velocidad de reproducción del loop. Sin cambios de marcha, el corte es la velocidad máxima.
-- **Vibración:** para piano, borde, largada y llegada, una de cinco intensidades: Apagada, Leve, Media, Fuerte o Doble.
+- **Vibración:** para piano, borde, largada, llegada y las tres celebraciones del ranking (récord de la pista, superar a otro y récord personal), una de cinco intensidades: Apagada, Leve, Media, Fuerte o Doble.
 - **Manejo:** un slider por cada parámetro de `DrivingConfig`, salvo los de `FIXED_DRIVING_KEYS` (`wheelbase` y `collisionRadius`, que salen de las medidas del auto). Incluye:
   - La curva de giro según la velocidad: ángulo máximo en grados, giro a velocidad máxima y exponente de la curva.
   - Los tiempos de giro y de vuelta al centro (con botones).

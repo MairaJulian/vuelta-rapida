@@ -11,12 +11,19 @@ import type {
   RaceHapticsOptions,
 } from './RaceHaptics.types';
 
-/** Intensidades iniciales: el piano apenas, el borde fuerte, la largada media y la llegada doble. */
+/**
+ * Intensidades iniciales: el piano apenas, el borde fuerte, la largada media y la llegada
+ * doble. Las celebraciones del ranking, de la más grande a la más chica: el récord de la
+ * pista doble, superar a otro jugador media y el mejor tiempo personal leve.
+ */
 export const DEFAULT_RACE_HAPTICS: RaceHapticsConfig = Object.freeze({
   kerb: 'light',
   border: 'heavy',
   start: 'medium',
   finish: 'double',
+  trackRecord: 'double',
+  overtake: 'medium',
+  personalBest: 'light',
 });
 
 /** Intensidades en orden, con su nombre para el panel. */
@@ -52,7 +59,7 @@ const MOMENTS: Partial<Record<RaceEvent['type'], HapticMoment>> = {
 
 /** Con qué intensidad vibra un evento de la carrera; `null` si no vibra. */
 export function getHapticLevel(event: RaceEvent, config: RaceHapticsConfig): HapticLevel | null {
-  const moment = MOMENTS[event.type];
+  const moment = event.type === 'celebration' ? event.kind : MOMENTS[event.type];
   const level = moment ? config[moment] : 'off';
   return level === 'off' ? null : level;
 }

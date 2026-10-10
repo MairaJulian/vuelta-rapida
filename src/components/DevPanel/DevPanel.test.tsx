@@ -403,6 +403,9 @@ describe('DevPanel', () => {
       'Borde',
       'Largada',
       'Llegada',
+      'Récord de la pista',
+      'Superar a otro',
+      'Récord personal',
     ]);
     const border = within(screen.getByTestId('haptics-border'));
     expect(border.getAllByRole('radio')).toHaveLength(5);

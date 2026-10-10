@@ -3,7 +3,16 @@ import type { AudioContext } from 'react-native-audio-api';
 import type { GearboxConfig, GearboxPace } from '@/audio/EngineGears';
 
 /** Efectos de la carrera. El motor va aparte: suena en loop. */
-export type RaceSound = 'light' | 'go' | 'kerb' | 'border' | 'lap' | 'finish';
+export type RaceSound =
+  | 'light'
+  | 'go'
+  | 'kerb'
+  | 'border'
+  | 'lap'
+  | 'finish'
+  | 'personalBest'
+  | 'overtake'
+  | 'trackRecord';
 
 /** Archivos de sonido: lo que devuelve `require` de cada WAV (o una URL en los tests). */
 export type RaceSoundSources = Record<RaceSound | 'engine', number | string>;

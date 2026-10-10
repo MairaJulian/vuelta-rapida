@@ -42,6 +42,9 @@ const SOURCES: RaceSoundSources = {
   border: 'border.wav',
   lap: 'lap.wav',
   finish: 'finish.wav',
+  personalBest: 'personal-best.wav',
+  overtake: 'overtake.wav',
+  trackRecord: 'track-record.wav',
 };
 
 /** Sonido sobre un contexto del mock, con espías en lo que crea. */
@@ -107,6 +110,21 @@ describe('getSoundCue', () => {
     expect(getSoundCue(finish)).toEqual({ sound: 'finish', volume: 1 });
   });
 
+  it('cada celebración del ranking tiene su sonido', () => {
+    expect(getSoundCue({ type: 'celebration', kind: 'trackRecord' })).toEqual({
+      sound: 'trackRecord',
+      volume: 1,
+    });
+    expect(getSoundCue({ type: 'celebration', kind: 'overtake' })).toEqual({
+      sound: 'overtake',
+      volume: 1,
+    });
+    expect(getSoundCue({ type: 'celebration', kind: 'personalBest' })).toEqual({
+      sound: 'personalBest',
+      volume: 1,
+    });
+  });
+
   it('el borde suena más fuerte cuanto más fuerte el golpe', () => {
     const soft = getSoundCue({ type: 'borderHit', tick: 0, impactSpeed: 1 })!;
     const hard = getSoundCue({ type: 'borderHit', tick: 0, impactSpeed: BORDER_FULL_IMPACT })!;
@@ -133,9 +151,20 @@ describe('getSoundCue', () => {
 });
 
 describe('createRaceAudio', () => {
-  it('trae los siete sonidos empaquetados', () => {
+  it('trae los diez sonidos empaquetados', () => {
     expect(Object.keys(RACE_SOUND_SOURCES).sort()).toEqual(
-      ['border', 'engine', 'finish', 'go', 'kerb', 'lap', 'light'].sort(),
+      [
+        'border',
+        'engine',
+        'finish',
+        'go',
+        'kerb',
+        'lap',
+        'light',
+        'overtake',
+        'personalBest',
+        'trackRecord',
+      ].sort(),
     );
   });
 
