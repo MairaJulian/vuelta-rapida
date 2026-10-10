@@ -17,13 +17,14 @@ Cada documento lleva su número de versión en el campo `version`.
 |---|---|---|
 | 1 | hasta 5b | Sin número de versión. Los récords están en las preferencias (`bestLapsMs`). |
 | 2 | 6a | Perfiles. Los récords pasan al documento `profiles`, sin dueño (`unassignedRecords`), hasta que se crea el primer perfil. |
+| 3 | 6b | Ranking. `records` pasa a llamarse `lapRecords` y se suma `raceRecords` (mejores carreras completas, vacío al migrar: antes no se guardaban). Las preferencias solo cambian el número. |
 
 ## API
 
 | Exporta | Qué hace |
 |---|---|
 | `migrateSave(raw, migrations?, targetVersion?)` | Lleva los documentos a la versión actual. Devuelve `{ fromVersion, documents, writes }`. |
-| `SAVE_VERSION` | Versión actual (2). |
+| `SAVE_VERSION` | Versión actual (3). |
 | `SAVE_MIGRATIONS` | Un paso `{ from, to, migrate }` por versión. |
 | `SAVE_DOCUMENTS` | Los documentos, en el orden en que se escriben: `profiles` y después `preferences`. |
 | `serializeSaveDocument(fields, version?)` | Texto de un documento con la versión primero. Lo usan los serializadores de cada módulo. |

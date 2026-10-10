@@ -31,12 +31,30 @@ export interface LapRecord {
   setAt: number;
 }
 
+/**
+ * Mejor carrera completa de un perfil en un circuito con una cantidad de vueltas. Hay
+ * uno por perfil, circuito y cantidad de vueltas.
+ */
+export interface RaceRecord {
+  profileId: string;
+  circuitId: string;
+  /** Vueltas de la carrera: cada cantidad es una tabla aparte. */
+  laps: number;
+  /** Tiempo total, en milisegundos. */
+  totalMs: number;
+  /** Cuándo se marcó, en milisegundos desde 1970: desempata el ranking. */
+  setAt: number;
+}
+
 /** Perfiles, perfil activo y récords: el documento `profiles` de los datos guardados. */
 export interface ProfilesState {
   profiles: Profile[];
   /** Quién está jugando; `null` antes de elegir o si se borró. */
   activeProfileId: string | null;
-  records: LapRecord[];
+  /** Mejores vueltas: la tabla "Mejor vuelta" del ranking. */
+  lapRecords: LapRecord[];
+  /** Mejores carreras completas: las tablas "Carrera" del ranking, por cantidad de vueltas. */
+  raceRecords: RaceRecord[];
   /**
    * Récords sin dueño por `id` de circuito: los de antes de los perfiles (y los que se
    * marquen sin perfil activo). Pasan al primer perfil que se cree.

@@ -50,9 +50,11 @@ El celular lo comparten varios chicos: al abrir el juego se elige quién juega (
   1. Subir `SAVE_VERSION`.
   2. Sumar un paso `{ from, to, migrate }` a `SAVE_MIGRATIONS`, con un test que parta de datos reales de la versión anterior.
   - Nunca cambiar el formato sin migración.
-  - v1 = hasta el hito 5b (sin versión, con los récords en las preferencias). v2 = perfiles.
+  - v1 = hasta el hito 5b (sin versión, con los récords en las preferencias). v2 = perfiles. v3 = ranking (`lapRecords` y `raceRecords`).
 - **`src/storage/SaveStore`** es el único que toca el disco: migra antes del primer acceso y escribe en el orden de `SAVE_DOCUMENTS`. Los hooks (`usePlayerPreferences`, `useProfiles`) guardan a través de él. `core` no lo importa (regla de ESLint).
-- **Récords por perfil y circuito,** unidos por `profileId` (no por nombre), con la fecha para desempatar. Están pensados para el ranking por pista del hito 6b.
+- **Récords por perfil y tabla,** unidos por `profileId` (no por nombre), con la fecha para desempatar: la mejor vuelta por pista (`lapRecords`) y la mejor carrera por pista y cantidad de vueltas (`raceRecords`).
+- **El ranking no se guarda:** `core/Ranking` lo calcula con esos récords (orden, diferencias y celebraciones). Editar o borrar un perfil se refleja solo.
+- **Flujo de una carrera con ranking:** Inicio → `/pistas` (selección) → `/pista?circuito=…`. `useRaceRanking` toma la foto de los récords al largar, guarda el total al llegar y compara; la pantalla emite el evento `celebration` cuando aparecen los resultados (es el único evento del bus que no sale de la simulación).
 - **El color del auto se guarda como id de la paleta** (`core/CarPalette`), nunca como hex.
 - **Un solo asset del auto** (`CarShape`): la "pintura" toma el color del perfil y el número va en el disco.
 

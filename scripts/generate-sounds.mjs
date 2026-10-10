@@ -173,6 +173,71 @@ function finishJingle() {
   return lowPass(out, 6000);
 }
 
+/** Récord personal: campanita corta (si6 y fa#7, triangulares), brillante y sin ruido. */
+function personalBest() {
+  const out = silence(0.7);
+  mix(out, note(triangle, 1975.5, 0.3, 0.1));
+  mix(out, note(triangle, 2959.96, 0.5, 0.2), 0.09);
+  return out;
+}
+
+/** Superar a otro jugador: arpegio de 8 bits que sube (sol, si, re, sol), cuadrado. */
+function overtake() {
+  const out = silence(0.9);
+  const step = 0.08;
+  [392, 493.88, 587.33, 783.99].forEach((frequency, i) => {
+    mix(
+      out,
+      note((p) => 0.5 * square(p, 0.25), frequency, step * 2.2, 0.07),
+      i * step,
+    );
+  });
+  mix(
+    out,
+    note((p) => 0.3 * square(p, 0.5), 1174.66, 0.5, 0.2),
+    step * 4,
+  );
+  return lowPass(out, 6000);
+}
+
+/**
+ * Récord de la pista: fanfarria de una frase de ocho notas (do-mi-sol-do agudo y su
+ * vuelta) con bajo, y un acorde largo final. Más larga y llena que la llegada, a propósito.
+ */
+function trackRecord() {
+  const out = silence(2.4);
+  const step = 0.12;
+  const phrase = [523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5, 1318.5, 1568];
+  phrase.forEach((frequency, i) => {
+    mix(
+      out,
+      note((p) => 0.5 * square(p, 0.25), frequency, step * 1.8, 0.09),
+      i * step,
+    );
+  });
+  const chordAt = phrase.length * step + 0.05;
+  for (const frequency of [1046.5, 1318.5, 1568, 2093]) {
+    mix(
+      out,
+      note((p) => 0.28 * square(p, 0.5), frequency, 1.3, 0.5),
+      chordAt,
+    );
+  }
+  [130.81, 130.81, 196, 196, 261.63, 261.63, 196, 261.63].forEach((frequency, i) => {
+    mix(
+      out,
+      note((p) => 0.8 * triangle(p), frequency, step * 1.6, 0.15),
+      i * step,
+    );
+  });
+  mix(
+    out,
+    note((p) => 0.8 * triangle(p), 130.81, 1.3, 0.55),
+    chordAt,
+  );
+  return lowPass(out, 6500);
+}
+
 /** Lee un WAV PCM de 16 bits y lo devuelve en mono. */
 function readMonoWav(path) {
   const buffer = readFileSync(path);
@@ -244,6 +309,9 @@ writeWav('kerb.wav', finish(kerb(), 0.7));
 writeWav('border.wav', finish(border(), 0.9));
 writeWav('lap.wav', finish(lap(), 0.7));
 writeWav('finish.wav', finish(finishJingle(), 0.75));
+writeWav('personal-best.wav', finish(personalBest(), 0.7));
+writeWav('overtake.wav', finish(overtake(), 0.75));
+writeWav('track-record.wav', finish(trackRecord(), 0.8));
 
 const engineIndex = process.argv.indexOf('--engine');
 if (engineIndex !== -1) {

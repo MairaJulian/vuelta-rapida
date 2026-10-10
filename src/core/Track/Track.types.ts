@@ -110,6 +110,14 @@ export interface CircuitSpec {
 }
 
 /** Ubicación del cartel "META": al costado de la pista, del lado de afuera del circuito. */
+/** Silueta del trazado para dibujarla chica (tarjetas, minimapa), en un lienzo dado. */
+export interface TrackOutline {
+  /** Trazado cerrado como path SVG ("M x y L … Z"), en las coordenadas del lienzo. */
+  path: string;
+  /** Dónde queda la meta en el lienzo. */
+  start: { x: number; y: number };
+}
+
 export interface FinishSign {
   /** Centro del cartel. */
   x: number;

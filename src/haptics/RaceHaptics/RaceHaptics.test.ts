@@ -36,6 +36,20 @@ describe('getHapticLevel', () => {
     expect(level(FINISH)).toBe('double');
   });
 
+  it('las celebraciones del ranking vibran de más a menos: récord de pista, superar, personal', () => {
+    const level = (kind: 'trackRecord' | 'overtake' | 'personalBest') =>
+      getHapticLevel({ type: 'celebration', kind }, DEFAULT_RACE_HAPTICS);
+    expect(level('trackRecord')).toBe('double');
+    expect(level('overtake')).toBe('medium');
+    expect(level('personalBest')).toBe('light');
+  });
+
+  it('cada celebración se apaga por separado', () => {
+    const config: RaceHapticsConfig = { ...DEFAULT_RACE_HAPTICS, overtake: 'off' };
+    expect(getHapticLevel({ type: 'celebration', kind: 'overtake' }, config)).toBeNull();
+    expect(getHapticLevel({ type: 'celebration', kind: 'personalBest' }, config)).toBe('light');
+  });
+
   it('las luces, las vueltas y los cambios de estado no vibran', () => {
     const level = (event: RaceEvent) => getHapticLevel(event, DEFAULT_RACE_HAPTICS);
     expect(level({ type: 'lightOn', tick: 0, light: 1 })).toBeNull();

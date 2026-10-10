@@ -33,6 +33,7 @@ Los circuitos del juego se definen con puntos de control en `core/Circuits`; aqu
 | `NEAREST_SEARCH_WINDOW` | Segmentos a cada lado que revisa la búsqueda local (25). |
 | `getFinishLine(track)` | Meta en el punto 0, perpendicular al primer tramo. 1,8 m de grosor, como la bandera del handoff. |
 | `getFinishSign(track, length, depth, gap)` | Dónde va el cartel "META": afuera del circuito, justo después de la línea, con el texto derecho. |
+| `getTrackOutline(centerline, width, height, padding)` | Silueta del trazado ajustada a un lienzo, centrada y sin deformar, como path SVG con unos 160 puntos como mucho, y dónde queda la meta. Para las tarjetas de la selección de pista. |
 | `getLapDirection(track)` | 1 si la vuelta es en sentido horario (vista desde arriba), −1 si es antihorario. |
 | `getStartPose(track)` | Largada: 15 m antes de la meta medidos sobre el trazado, mirando hacia ella. |
 | `getCurveSections(track, maxRadius?)` | Tramos curvos (radio menor que `CURVE_MAX_RADIUS`, 150 m), de punta a punta, para dibujar los pianos. Une los que están separados por poco y descarta los muy cortos. |

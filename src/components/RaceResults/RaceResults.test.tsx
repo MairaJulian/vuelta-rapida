@@ -1,8 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
+import type { Profile } from '@/core/Profiles';
 import type { RaceResults as RaceResultsData } from '@/core/RaceFlow';
+import { LAP_TABLE, raceTable } from '@/core/Ranking';
+import type { RaceRanking, RankingOutcome, RankingRow } from '@/core/Ranking';
 
-import { getRaceResultsTexts, RaceResults } from './RaceResults';
+import { getRaceResultsTexts, getRankingTexts, RaceResults } from './RaceResults';
 import { COLORS } from './RaceResults.styles';
 
 const MINUS = '−';
@@ -137,5 +140,156 @@ describe('RaceResults', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Salir' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
     expect(onExit).toHaveBeenCalledTimes(1);
+  });
+});
+
+/** Perfiles de prueba para el ranking. */
+const profile = (id: string, name: string): Profile => ({
+  id,
+  name,
+  colorId: 'blue',
+  number: 7,
+  createdAt: 0,
+});
+const TOMI = profile('p2', 'Tomi');
+const LULI = profile('p3', 'Luli');
+const row = (position: number, who: Profile, gapToAboveMs = 0): RankingRow => ({
+  position,
+  profile: who,
+  timeMs: 70000,
+  setAt: 0,
+  gapToLeaderMs: gapToAboveMs,
+  gapToAboveMs,
+});
+const outcome = (overrides: Partial<RankingOutcome> = {}): RankingOutcome => ({
+  table: LAP_TABLE,
+  position: 1,
+  previousPosition: 1,
+  total: 3,
+  personalBest: false,
+  overtaken: [],
+  trackRecord: false,
+  above: null,
+  gapToAboveMs: null,
+  ...overrides,
+});
+const rankingOf = (
+  lap: Partial<RankingOutcome>,
+  race: Partial<RankingOutcome>,
+  celebration: RaceRanking['celebration'],
+): RaceRanking => ({
+  lap: outcome(lap),
+  race: outcome({ table: raceTable(3), ...race }),
+  celebration,
+});
+
+describe('getRankingTexts', () => {
+  it('el título sigue a la celebración más grande', () => {
+    expect(getRankingTexts(rankingOf({}, {}, 'trackRecord')).title).toBe('¡Récord de la pista!');
+    expect(getRankingTexts(rankingOf({}, {}, 'personalBest')).title).toBe(
+      '¡Nuevo récord personal!',
+    );
+    expect(getRankingTexts(rankingOf({}, {}, null)).title).toBe('Tu tiempo');
+  });
+
+  it('al superar, nombra a quiénes (sin repetir entre tablas)', () => {
+    const one = rankingOf({ overtaken: [TOMI] }, { overtaken: [TOMI] }, 'overtake');
+    expect(getRankingTexts(one).title).toBe('¡Pasaste a TOMI!');
+    const two = rankingOf({ overtaken: [TOMI] }, { overtaken: [LULI] }, 'overtake');
+    expect(getRankingTexts(two).title).toBe('¡Pasaste a TOMI y a LULI!');
+    const many = rankingOf(
+      { overtaken: [TOMI, LULI] },
+      { overtaken: [profile('p4', 'Juan')] },
+      'overtake',
+    );
+    expect(getRankingTexts(many).title).toBe('¡Pasaste a 3 pilotos!');
+  });
+
+  it('el puesto en cada tabla y cuánto falta para el de arriba', () => {
+    const texts = getRankingTexts(
+      rankingOf(
+        { position: 2, above: row(1, TOMI), gapToAboveMs: 420 },
+        { position: 1, total: 1 },
+        null,
+      ),
+    );
+    expect(texts.tables).toEqual([
+      {
+        key: 'lap',
+        label: 'Mejor vuelta',
+        position: '2.º de 3',
+        detail: 'Te faltan 0.42 s para alcanzar a TOMI',
+      },
+      { key: 'race', label: 'Carrera · 3 vueltas', position: '1.º de 1', detail: '¡Primero!' },
+    ]);
+  });
+
+  it('con el mismo tiempo que el de arriba, lo dice', () => {
+    const texts = getRankingTexts(
+      rankingOf({ position: 2, above: row(1, TOMI), gapToAboveMs: 0 }, {}, null),
+    );
+    expect(texts.tables[0].detail).toBe('Empate con TOMI, que lo logró antes');
+  });
+
+  it('sin tiempo en una tabla, esa tabla no aparece', () => {
+    const texts = getRankingTexts(rankingOf({}, { position: null, total: 0 }, null));
+    expect(texts.tables.map((table) => table.key)).toEqual(['lap']);
+  });
+});
+
+describe('RaceResults con ranking', () => {
+  const renderWith = (ranking: RaceRanking, data = results()) =>
+    render(
+      <RaceResults
+        results={data}
+        stepHz={60}
+        circuitName="Autódromo del Lago"
+        ranking={ranking}
+        onRetry={jest.fn()}
+        onExit={jest.fn()}
+      />,
+    );
+
+  it('récord de la pista: tarjeta lima, trofeo y papelitos', async () => {
+    await renderWith(rankingOf({ trackRecord: true }, {}, 'trackRecord'));
+    expect(screen.getByRole('header', { name: '¡Récord de la pista!' })).toBeTruthy();
+    expect(screen.getByTestId('results-card')).toHaveStyle({ backgroundColor: COLORS.lime });
+    expect(screen.getByTestId('confetti', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('superar o mejor tiempo personal: tarjeta lima, sin papelitos', async () => {
+    await renderWith(rankingOf({ overtaken: [TOMI] }, {}, 'overtake'));
+    expect(screen.getByRole('header', { name: '¡Pasaste a TOMI!' })).toBeTruthy();
+    expect(screen.getByTestId('results-card')).toHaveStyle({ backgroundColor: COLORS.lime });
+    expect(screen.queryByTestId('confetti', { includeHiddenElements: true })).toBeNull();
+  });
+
+  it('sin celebración: tarjeta blanca y "Tu tiempo", aunque haya mejorado la vuelta', async () => {
+    await renderWith(rankingOf({}, {}, null), results({ newRecord: true }));
+    expect(screen.getByRole('header', { name: 'Tu tiempo' })).toBeTruthy();
+    expect(screen.getByTestId('results-card')).toHaveStyle({ backgroundColor: COLORS.card });
+  });
+
+  it('muestra el puesto en las dos tablas', async () => {
+    await renderWith(rankingOf({ position: 2, above: row(1, TOMI), gapToAboveMs: 420 }, {}, null));
+    expect(screen.getByTestId('results-ranking-lap')).toHaveTextContent(
+      'Mejor vuelta2.º de 3Te faltan 0.42 s para alcanzar a TOMI',
+    );
+    expect(screen.getByTestId('results-ranking-race')).toHaveTextContent(
+      'Carrera · 3 vueltas1.º de 3¡Primero!',
+    );
+  });
+
+  it('sin ranking (sin perfil) no muestra el bloque', async () => {
+    await render(
+      <RaceResults
+        results={results()}
+        stepHz={60}
+        circuitName="X"
+        onRetry={jest.fn()}
+        onExit={jest.fn()}
+      />,
+    );
+    expect(screen.queryByTestId('results-ranking')).toBeNull();
   });
 });

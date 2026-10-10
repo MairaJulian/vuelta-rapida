@@ -1,5 +1,6 @@
 import {
   createLapState,
+  formatGapSeconds,
   formatLapDelta,
   formatLapTime,
   getCurrentLap,
@@ -157,6 +158,24 @@ describe('ticksToMs y formatLapTime', () => {
     expect(formatLapTime(0)).toBe('0:00.000');
     expect(formatLapTime(-5)).toBe('0:00.000');
     expect(formatLapTime(Number.NaN)).toBe('0:00.000');
+  });
+});
+
+describe('formatGapSeconds', () => {
+  it('da segundos con dos decimales', () => {
+    expect(formatGapSeconds(420)).toBe('0.42');
+    expect(formatGapSeconds(1234)).toBe('1.24');
+    expect(formatGapSeconds(61000)).toBe('61.00');
+  });
+
+  it('redondea para arriba: con diferencia, nunca 0.00', () => {
+    expect(formatGapSeconds(4)).toBe('0.01');
+    expect(formatGapSeconds(0)).toBe('0.00');
+  });
+
+  it('tolera valores inválidos', () => {
+    expect(formatGapSeconds(-5)).toBe('0.00');
+    expect(formatGapSeconds(Number.NaN)).toBe('0.00');
   });
 });
 

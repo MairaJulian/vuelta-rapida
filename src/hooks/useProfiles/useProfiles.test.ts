@@ -142,7 +142,7 @@ describe('useProfiles', () => {
       createPlayerProfile(male);
     });
     const state = readProfiles();
-    expect(state.records).toEqual([
+    expect(state.lapRecords).toEqual([
       expect.objectContaining({ profileId: state.activeProfileId, circuitId: LAGO, lapMs: 72480 }),
     ]);
     expect(saved().unassignedRecords).toEqual({});

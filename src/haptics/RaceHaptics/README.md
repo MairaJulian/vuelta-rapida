@@ -27,6 +27,11 @@ Las vibraciones de la carrera sobre `expo-haptics`: qué momento vibra (piano, b
 | `borderHit` | `border` | Fuerte |
 | `lightsOut` | `start` | Media |
 | `finish` | `finish` | Doble |
+| `celebration` (`trackRecord`) | `trackRecord` | Doble |
+| `celebration` (`overtake`) | `overtake` | Media |
+| `celebration` (`personalBest`) | `personalBest` | Leve |
+
+`celebration` es el evento del ranking (hito 6b): lo emite la pantalla de carrera cuando aparecen los resultados. Vibra de más a menos según lo que se festeja. No existe un nivel "largo", así que el récord de la pista usa el doble, igual que la llegada.
 
 Las luces del semáforo, las vueltas y los cambios de estado no vibran. El freno vibra aparte, en los controles (`vibrateOnBrake` de `input/InputControls`).
 

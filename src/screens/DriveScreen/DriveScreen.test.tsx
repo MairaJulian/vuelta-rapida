@@ -8,7 +8,7 @@ import { getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import { useAnimatedSensor, useFrameCallback } from 'react-native-reanimated';
 
 import { AUTODROMO_DEL_LAGO, DEFAULT_CIRCUIT } from '@/core/Circuits';
-import { getBestLap, withLapRecord } from '@/core/Profiles';
+import { getBestLap, getBestRace, withLapRecord } from '@/core/Profiles';
 import type { RaceResults } from '@/core/RaceFlow';
 import { MAX_DEAD_ZONE } from '@/core/TiltSteering';
 import {
@@ -38,11 +38,13 @@ const mockRouter = {
   dismissTo: jest.fn(),
   canGoBack: () => false,
 };
+let mockParams: { circuito?: string } = {};
 jest.mock('expo-router', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { useEffect } = require('react');
   return {
     useRouter: () => mockRouter,
+    useLocalSearchParams: () => mockParams,
     // La pantalla de los tests siempre está enfocada.
     useFocusEffect: (effect: () => void | (() => void)) => useEffect(effect, [effect]),
   };
@@ -288,6 +290,78 @@ describe('DriveScreen', () => {
         .mockReturnValue({ phase: 'finished', pausedLap: null, results: RESULTS });
       await render(<DriveScreen />);
       expect(screen.getByTestId('results-driver')).toHaveTextContent('MALE · #27');
+    });
+
+    it('al llegar guarda el total y los resultados muestran el puesto en el ranking', async () => {
+      const id = createActiveProfile();
+      // Los resultados ya a la vista: la llegada actualiza el ranking y la pantalla.
+      jest
+        .mocked(useRaceStatus)
+        .mockReturnValue({ phase: 'finished', pausedLap: null, results: RESULTS });
+      await render(<DriveScreen />);
+      const { bus } = jest.mocked(useRaceStatus).mock.calls.at(-1)![0];
+      await act(() =>
+        bus.emitAll([
+          { type: 'lightsOut', tick: 0 },
+          { type: 'finish', tick: 3600, ...RESULTS },
+        ]),
+      );
+      // 3600 pasos a 60 por segundo: 60 s de carrera de 3 vueltas.
+      expect(getBestRace(readProfiles(), id, 'autodromo-del-lago', 3)).toBe(60000);
+      expect(screen.getByTestId('results-ranking-race')).toHaveTextContent(
+        'Carrera · 3 vueltas1.º de 1¡Primero!',
+      );
+      expect(screen.getByRole('header', { name: '¡Nuevo récord personal!' })).toBeTruthy();
+    });
+
+    it('al aparecer los resultados con algo que festejar, emite la celebración', async () => {
+      createActiveProfile();
+      jest
+        .mocked(useRaceStatus)
+        .mockReturnValue({ phase: 'finished', pausedLap: null, results: RESULTS });
+      await render(<DriveScreen />);
+      const { bus } = jest.mocked(useRaceStatus).mock.calls.at(-1)![0];
+      const heard: unknown[] = [];
+      bus.on('celebration', (event) => heard.push(event));
+      await act(() =>
+        bus.emitAll([
+          { type: 'lightsOut', tick: 0 },
+          { type: 'finish', tick: 3600, ...RESULTS },
+        ]),
+      );
+      // Primera carrera del único jugador: mejor tiempo personal (no hay otro con quien ser récord).
+      expect(heard).toEqual([{ type: 'celebration', kind: 'personalBest' }]);
+    });
+
+    it('sin celebración (o antes de los resultados), no emite nada', async () => {
+      createActiveProfile();
+      jest
+        .mocked(useRaceStatus)
+        .mockReturnValue({ phase: 'racing', pausedLap: null, results: null });
+      await render(<DriveScreen />);
+      const { bus } = jest.mocked(useRaceStatus).mock.calls.at(-1)![0];
+      const heard: unknown[] = [];
+      bus.on('celebration', (event) => heard.push(event));
+      await act(() =>
+        bus.emitAll([
+          { type: 'lightsOut', tick: 0 },
+          { type: 'finish', tick: 3600, ...RESULTS },
+        ]),
+      );
+      expect(heard).toEqual([]);
+    });
+
+    it('corre en la pista que llega en la ruta; con una que no existe, en la primera', async () => {
+      jest
+        .mocked(useRaceStatus)
+        .mockReturnValue({ phase: 'finished', pausedLap: null, results: RESULTS });
+      mockParams = { circuito: 'autodromo-del-lago' };
+      await render(<DriveScreen />);
+      expect(screen.getByText('Autódromo del Lago · 3 vueltas')).toBeTruthy();
+      mockParams = { circuito: 'no-existe' };
+      await render(<DriveScreen />);
+      expect(screen.getByText('Autódromo del Lago · 3 vueltas')).toBeTruthy();
+      mockParams = {};
     });
 
     it('la vuelta récord se guarda en el perfil activo', async () => {

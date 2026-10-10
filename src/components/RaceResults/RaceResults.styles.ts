@@ -68,7 +68,9 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  // Se achica si no entra ("¡Pasaste a MAXIMILIANO1 y a …!").
   title: {
+    flexShrink: 1,
     color: COLORS.ink,
     fontSize: 24,
     fontWeight: '800',
@@ -139,6 +141,36 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
+  },
+  // Puesto en las dos tablas del ranking, lado a lado.
+  ranking: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  rankingTile: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: COLORS.card,
+    boxShadow: SHADOW_SM,
+  },
+  rankingLabel: {
+    color: COLORS.muted,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  rankingPosition: {
+    color: COLORS.ink,
+    fontSize: 18,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+  },
+  rankingDetail: {
+    color: COLORS.ink,
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
   },
   laps: {
     flex: 1,

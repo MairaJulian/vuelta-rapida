@@ -5,6 +5,7 @@ export {
   EMPTY_PROFILES_STATE,
   getActiveProfile,
   getBestLap,
+  getBestRace,
   getProfile,
   MAX_CAR_NUMBER,
   MAX_NAME_LENGTH,
@@ -20,6 +21,7 @@ export {
   updateProfile,
   validateProfile,
   withLapRecord,
+  withRaceRecord,
 } from './Profiles';
 export type {
   LapRecord,
@@ -28,4 +30,5 @@ export type {
   ProfileError,
   ProfileResult,
   ProfilesState,
+  RaceRecord,
 } from './Profiles.types';

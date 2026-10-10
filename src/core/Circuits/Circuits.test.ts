@@ -11,10 +11,34 @@ import {
   AUTODROMO_DEL_LAGO,
   buildCircuit,
   CIRCUIT_DEFINITIONS,
+  CIRCUITS,
   DEFAULT_CIRCUIT,
+  getCircuit,
+  getCircuitSummary,
   TRACK_SPACING,
   withCircuitScenery,
 } from './Circuits';
+
+describe('CIRCUITS y getCircuit', () => {
+  it('hay un circuito armado por definición, en el mismo orden', () => {
+    expect(CIRCUITS.map((circuit) => circuit.id)).toEqual(
+      CIRCUIT_DEFINITIONS.map((definition) => definition.id),
+    );
+    expect(CIRCUITS[0]).toBe(DEFAULT_CIRCUIT);
+  });
+
+  it('busca por id; si no existe, da el primero', () => {
+    expect(getCircuit('autodromo-del-lago')).toBe(DEFAULT_CIRCUIT);
+    expect(getCircuit('no-existe')).toBe(DEFAULT_CIRCUIT);
+    expect(getCircuit(undefined)).toBe(DEFAULT_CIRCUIT);
+  });
+
+  it('resume largo y curvas como en el handoff', () => {
+    const summary = getCircuitSummary(DEFAULT_CIRCUIT);
+    expect(summary).toMatch(/^\d+,\d km · \d+ curvas$/);
+    expect(summary).toContain(`${DEFAULT_CIRCUIT.kerbs.length} curvas`);
+  });
+});
 
 describe('CIRCUIT_DEFINITIONS', () => {
   it.each(CIRCUIT_DEFINITIONS.map((definition) => [definition.name, definition] as const))(

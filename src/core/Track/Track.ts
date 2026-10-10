@@ -11,6 +11,7 @@ import type {
   OvalSpec,
   Pose,
   TrackData,
+  TrackOutline,
   TrackPoint,
 } from './Track.types';
 
@@ -451,6 +452,39 @@ export function getProgressDelta(from: number, to: number, length: number): numb
     delta += length;
   }
   return delta;
+}
+
+/** Puntos que alcanzan para que la silueta chica se vea suave. */
+const OUTLINE_POINTS = 160;
+
+/**
+ * Silueta del trazado ajustada a un lienzo de `width` × `height` con un margen, sin
+ * deformarla y centrada. Usa como mucho unos 160 puntos: alcanza para una tarjeta.
+ * La meta es el primer punto del trazado.
+ */
+export function getTrackOutline(
+  centerline: readonly TrackPoint[],
+  width: number,
+  height: number,
+  padding: number,
+): TrackOutline {
+  const xs = centerline.map((point) => point.x);
+  const zs = centerline.map((point) => point.z);
+  const minX = Math.min(...xs);
+  const minZ = Math.min(...zs);
+  const spanX = Math.max(...xs) - minX || 1;
+  const spanZ = Math.max(...zs) - minZ || 1;
+  const scale = Math.min((width - 2 * padding) / spanX, (height - 2 * padding) / spanZ);
+  const offsetX = (width - spanX * scale) / 2;
+  const offsetY = (height - spanZ * scale) / 2;
+  const toCanvas = (point: TrackPoint) => ({
+    x: Math.round((offsetX + (point.x - minX) * scale) * 10) / 10,
+    y: Math.round((offsetY + (point.z - minZ) * scale) * 10) / 10,
+  });
+  const step = Math.max(1, Math.ceil(centerline.length / OUTLINE_POINTS));
+  const points = centerline.filter((_, i) => i % step === 0).map(toCanvas);
+  const path = points.map((point, i) => `${i === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+  return { path: `${path} Z`, start: points[0] ?? { x: width / 2, y: height / 2 } };
 }
 
 /**

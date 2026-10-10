@@ -60,10 +60,16 @@ describe('HomeScreen', () => {
     expect(screen.getByRole('button', { name: 'Correr' })).toBeTruthy();
   });
 
-  it('Correr va a la pista', async () => {
+  it('Correr va a elegir la pista', async () => {
     await render(<HomeScreen />);
     await fireEvent.press(screen.getByRole('button', { name: 'Correr' }));
-    expect(mockRouter.push).toHaveBeenCalledWith('/pista');
+    expect(mockRouter.push).toHaveBeenCalledWith('/pistas');
+  });
+
+  it('el trofeo abre el ranking', async () => {
+    await render(<HomeScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Ranking' }));
+    expect(mockRouter.push).toHaveBeenCalledWith('/ranking');
   });
 
   it('muestra el récord del jugador activo', async () => {

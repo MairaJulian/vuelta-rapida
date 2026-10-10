@@ -66,6 +66,14 @@ describe('useRaceAudio', () => {
     warn.mockRestore();
   });
 
+  it('las celebraciones del ranking suenan', async () => {
+    const { audio, emit } = await renderAudio();
+    await emit({ type: 'celebration', kind: 'overtake' });
+    expect(audio.play).toHaveBeenLastCalledWith({ sound: 'overtake', volume: 1 });
+    await emit({ type: 'celebration', kind: 'trackRecord' });
+    expect(audio.play).toHaveBeenLastCalledWith({ sound: 'trackRecord', volume: 1 });
+  });
+
   it('sin sonido silencia todo, y lo vuelve a prender en caliente', async () => {
     const { audio, rerender } = await renderAudio({ enabled: false });
     expect(audio.setMuted).toHaveBeenLastCalledWith(true);

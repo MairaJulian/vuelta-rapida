@@ -8,6 +8,7 @@ import {
   EMPTY_PROFILES_STATE,
   getActiveProfile,
   getBestLap,
+  getBestRace,
   MAX_NAME_LENGTH,
   nameKey,
   nameLength,
@@ -20,6 +21,7 @@ import {
   updateProfile,
   validateProfile,
   withLapRecord,
+  withRaceRecord,
 } from './Profiles';
 import type { Profile, ProfileDraft, ProfilesState } from './Profiles.types';
 
@@ -240,7 +242,7 @@ describe('createProfile', () => {
     };
     const state = create(before, 'p1');
     expect(state.unassignedRecords).toEqual({});
-    expect(state.records).toEqual([
+    expect(state.lapRecords).toEqual([
       { profileId: 'p1', circuitId: LAGO, lapMs: 72480, setAt: NOW },
       { profileId: 'p1', circuitId: 'puerto', lapMs: 80000, setAt: NOW },
     ]);
@@ -255,9 +257,9 @@ describe('createProfile', () => {
   });
 
   it('no modifica el estado que recibe', () => {
-    const before: ProfilesState = { ...EMPTY_PROFILES_STATE, profiles: [], records: [] };
+    const before: ProfilesState = { ...EMPTY_PROFILES_STATE, profiles: [], lapRecords: [] };
     Object.freeze(before.profiles);
-    Object.freeze(before.records);
+    Object.freeze(before.lapRecords);
     create(before, 'p1');
     expect(before.profiles).toEqual([]);
   });
@@ -305,9 +307,16 @@ describe('deleteProfile', () => {
     let state = twoPlayers();
     state = withLapRecord(state, 'p1', LAGO, 70000, NOW)!;
     state = withLapRecord(state, 'p2', LAGO, 71000, NOW)!;
+    state = withRaceRecord(state, 'p1', LAGO, 3, 200000, NOW)!;
+    state = withRaceRecord(state, 'p2', LAGO, 3, 210000, NOW)!;
     const next = deleteProfile(state, 'p1');
     expect(next.profiles.map((profile) => profile.id)).toEqual(['p2']);
-    expect(next.records).toEqual([{ profileId: 'p2', circuitId: LAGO, lapMs: 71000, setAt: NOW }]);
+    expect(next.lapRecords).toEqual([
+      { profileId: 'p2', circuitId: LAGO, lapMs: 71000, setAt: NOW },
+    ]);
+    expect(next.raceRecords).toEqual([
+      { profileId: 'p2', circuitId: LAGO, laps: 3, totalMs: 210000, setAt: NOW },
+    ]);
   });
 
   it('si era el activo, no queda nadie jugando', () => {
@@ -347,7 +356,7 @@ describe('withLapRecord', () => {
     expect(withLapRecord(state, 'p1', LAGO, 72000, NOW)).toBeNull();
     expect(withLapRecord(state, 'p1', LAGO, 90000, NOW)).toBeNull();
     state = withLapRecord(state, 'p1', LAGO, 71000, NOW + 5)!;
-    expect(state.records).toEqual([
+    expect(state.lapRecords).toEqual([
       { profileId: 'p1', circuitId: LAGO, lapMs: 71000, setAt: NOW + 5 },
     ]);
   });
@@ -378,6 +387,47 @@ describe('withLapRecord', () => {
   });
 });
 
+describe('withRaceRecord', () => {
+  it('guarda la primera carrera y solo la reemplaza con una más rápida', () => {
+    let state = twoPlayers();
+    state = withRaceRecord(state, 'p1', LAGO, 3, 200000, NOW)!;
+    expect(getBestRace(state, 'p1', LAGO, 3)).toBe(200000);
+    expect(withRaceRecord(state, 'p1', LAGO, 3, 200000, NOW + 1)).toBeNull();
+    expect(withRaceRecord(state, 'p1', LAGO, 3, 250000, NOW + 1)).toBeNull();
+    state = withRaceRecord(state, 'p1', LAGO, 3, 190000, NOW + 2)!;
+    expect(state.raceRecords).toEqual([
+      { profileId: 'p1', circuitId: LAGO, laps: 3, totalMs: 190000, setAt: NOW + 2 },
+    ]);
+  });
+
+  it('cada cantidad de vueltas es una tabla aparte', () => {
+    let state = twoPlayers();
+    state = withRaceRecord(state, 'p1', LAGO, 3, 200000, NOW)!;
+    state = withRaceRecord(state, 'p1', LAGO, 5, 330000, NOW)!;
+    expect(getBestRace(state, 'p1', LAGO, 3)).toBe(200000);
+    expect(getBestRace(state, 'p1', LAGO, 5)).toBe(330000);
+    expect(getBestRace(state, 'p1', LAGO, 1)).toBeNull();
+    expect(state.raceRecords).toHaveLength(2);
+  });
+
+  it('no toca las mejores vueltas', () => {
+    const base = withLapRecord(twoPlayers(), 'p1', LAGO, 70000, NOW)!;
+    const state = withRaceRecord(base, 'p1', LAGO, 3, 200000, NOW)!;
+    expect(state.lapRecords).toBe(base.lapRecords);
+  });
+
+  it('sin perfil (o con uno que no existe) no se guarda', () => {
+    expect(withRaceRecord(twoPlayers(), null, LAGO, 3, 200000, NOW)).toBeNull();
+    expect(withRaceRecord(twoPlayers(), 'p9', LAGO, 3, 200000, NOW)).toBeNull();
+  });
+
+  it('ignora tiempos y vueltas inválidos', () => {
+    expect(withRaceRecord(twoPlayers(), 'p1', LAGO, 3, 0, NOW)).toBeNull();
+    expect(withRaceRecord(twoPlayers(), 'p1', LAGO, 0, 200000, NOW)).toBeNull();
+    expect(withRaceRecord(twoPlayers(), 'p1', LAGO, 2.5, 200000, NOW)).toBeNull();
+  });
+});
+
 describe('parseProfilesState y serializeProfilesState', () => {
   it('sin nada guardado, sin perfiles', () => {
     expect(parseProfilesState(null)).toEqual(EMPTY_PROFILES_STATE);
@@ -388,6 +438,7 @@ describe('parseProfilesState y serializeProfilesState', () => {
   it('lee lo que se guardó', () => {
     let state = twoPlayers();
     state = withLapRecord(state, 'p1', LAGO, 70000, NOW)!;
+    state = withRaceRecord(state, 'p2', LAGO, 3, 200000, NOW)!;
     state = { ...state, unassignedRecords: { puerto: 81000 } };
     expect(parseProfilesState(serializeProfilesState(state))).toEqual(state);
   });
@@ -407,7 +458,8 @@ describe('parseProfilesState y serializeProfilesState', () => {
       'version',
       'profiles',
       'activeProfileId',
-      'records',
+      'lapRecords',
+      'raceRecords',
       'unassignedRecords',
     ]);
   });
@@ -436,7 +488,7 @@ describe('parseProfilesState y serializeProfilesState', () => {
     const parsed = parseProfilesState(
       JSON.stringify({
         profiles: [{ id: 'p1', name: 'Male', colorId: 'blue', number: 27, createdAt: NOW }],
-        records: [
+        lapRecords: [
           { profileId: 'p1', circuitId: LAGO, lapMs: 72000, setAt: NOW },
           { profileId: 'p1', circuitId: LAGO, lapMs: 71000 },
           { profileId: 'p9', circuitId: LAGO, lapMs: 60000, setAt: NOW },
@@ -447,9 +499,31 @@ describe('parseProfilesState y serializeProfilesState', () => {
         activeProfileId: 'p9',
       }),
     );
-    expect(parsed.records).toEqual([{ profileId: 'p1', circuitId: LAGO, lapMs: 71000, setAt: 0 }]);
+    expect(parsed.lapRecords).toEqual([
+      { profileId: 'p1', circuitId: LAGO, lapMs: 71000, setAt: 0 },
+    ]);
     expect(parsed.unassignedRecords).toEqual({ [LAGO]: 73000 });
     expect(parsed.activeProfileId).toBeNull();
+  });
+
+  it('de las carreras, descarta las inválidas y deja la mejor por perfil, pista y vueltas', () => {
+    const parsed = parseProfilesState(
+      JSON.stringify({
+        profiles: [{ id: 'p1', name: 'Male', colorId: 'blue', number: 27, createdAt: NOW }],
+        raceRecords: [
+          { profileId: 'p1', circuitId: LAGO, laps: 3, totalMs: 200000, setAt: NOW },
+          { profileId: 'p1', circuitId: LAGO, laps: 3, totalMs: 190000, setAt: NOW + 1 },
+          { profileId: 'p1', circuitId: LAGO, laps: 5, totalMs: 330000 },
+          { profileId: 'p1', circuitId: LAGO, laps: 0, totalMs: 100000, setAt: NOW },
+          { profileId: 'p1', circuitId: LAGO, laps: 3, totalMs: -1, setAt: NOW },
+          { profileId: 'p9', circuitId: LAGO, laps: 3, totalMs: 100000, setAt: NOW },
+        ],
+      }),
+    );
+    expect(parsed.raceRecords).toEqual([
+      { profileId: 'p1', circuitId: LAGO, laps: 3, totalMs: 190000, setAt: NOW + 1 },
+      { profileId: 'p1', circuitId: LAGO, laps: 5, totalMs: 330000, setAt: 0 },
+    ]);
   });
 
   it('devuelve un estado nuevo, no el vacío congelado', () => {

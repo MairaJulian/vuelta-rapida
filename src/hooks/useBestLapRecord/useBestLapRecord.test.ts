@@ -53,7 +53,7 @@ describe('useBestLapRecord', () => {
     const { result } = await renderRecord();
     await act(() => result.current.saveLap(4320)); // 72 s a 60 pasos por segundo
     expect(result.current.recordMs).toBe(72000);
-    expect(JSON.parse(storage.getItemSync(PROFILES_KEY)).records).toEqual([
+    expect(JSON.parse(storage.getItemSync(PROFILES_KEY)).lapRecords).toEqual([
       expect.objectContaining({ profileId: male, circuitId: LAGO, lapMs: 72000 }),
     ]);
   });
@@ -98,7 +98,7 @@ describe('useBestLapRecord', () => {
     await act(() =>
       updateProfiles((state) => ({
         ...state,
-        records: [{ profileId: male, circuitId: LAGO, lapMs: 60000, setAt: 1 }],
+        lapRecords: [{ profileId: male, circuitId: LAGO, lapMs: 60000, setAt: 1 }],
       })),
     );
     await act(() => saveLap(4320));

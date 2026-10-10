@@ -1,5 +1,6 @@
 export {
   createLapState,
+  formatGapSeconds,
   formatLapDelta,
   formatLapTime,
   getCurrentLap,

@@ -8,7 +8,7 @@ Ninguna.
 - El modo de control, la calibración, la sensibilidad y los interruptores de sonido y vibración salen de las preferencias del celular (`usePlayerPreferences`). Sin modo elegido, usa botones.
 - El color y el número del auto, el récord y el nombre de los resultados son del perfil activo (`useProfiles`). Sin perfil activo (una ruta directa de desarrollo), el auto es azul y sin número.
 
-Corre en `DEFAULT_CIRCUIT` (`core/Circuits`), con `DEFAULT_RACE_CONFIG`, `DEFAULT_DRIVING_CONFIG`, `DEFAULT_CAMERA_CONFIG`, `DEFAULT_TILT_CONFIG` y `DEFAULT_SCENERY_DISPLAY`, y toma el tamaño de `useWindowDimensions`. La escenografía del circuito se genera al montar la pantalla (`withCircuitScenery`).
+Corre en la pista que llega en la ruta (`/pista?circuito=…`, que busca `getCircuit` de `core/Circuits`; sin parámetro o con uno que no existe, la primera), con `DEFAULT_RACE_CONFIG`, `DEFAULT_DRIVING_CONFIG`, `DEFAULT_CAMERA_CONFIG`, `DEFAULT_TILT_CONFIG` y `DEFAULT_SCENERY_DISPLAY`, y toma el tamaño de `useWindowDimensions`. La escenografía del circuito se genera al montar la pantalla (`withCircuitScenery`).
 
 ## Ejemplo
 
@@ -28,6 +28,7 @@ export default DriveScreen;
 | `useTiltOutput` | Crea el resultado de la inclinación, para que lo lean el modo de control y el panel. |
 | `useProfiles` | El perfil activo: color y número del auto, y "NOMBRE · #NN" en los resultados. |
 | `useBestLapRecord` | Lee el récord del perfil activo en el circuito y guarda las vueltas que lo mejoran (evento `newRecord`). |
+| `useRaceRanking` | Al llegar guarda el total de la carrera y compara el ranking de la pista en las dos tablas (mejor vuelta y carrera completa). |
 | `createEventBus` | El bus de la carrera: el loop publica los eventos y las demás piezas los escuchan. |
 | `useRaceLoop` | Avanza la carrera (`core/RaceFlow`) en el hilo de UI, produce las transformaciones y recibe las órdenes (semáforo, pausa, reinicio). |
 | `useRaceAudio` | Motor y efectos (`audio/RaceAudio`): sigue los eventos y la velocidad (`onEngine`), se congela en la pausa y obedece la preferencia de sonido. |
@@ -54,6 +55,7 @@ export default DriveScreen;
 
 - La pantalla solo compone: la entrada, la simulación y el dibujo son piezas independientes que se comunican por valores compartidos y por el bus de eventos.
 - **Las capas salen de los eventos:** la pausa y los resultados se muestran según `useRaceStatus`, que escucha el bus. La pausa aparece en el cuadro siguiente a la orden, cuando llega el aviso `phase`. Así el semáforo, la pausa, el sonido y la vibración ven siempre lo mismo.
+- **La celebración se emite al mostrar los resultados:** cuando aparece la tarjeta y el ranking dice que hubo algo que festejar, la pantalla emite `{ type: 'celebration', kind }` en el bus. El sonido y la vibración lo escuchan. No sale de la simulación, por eso lo emite la pantalla y no el loop: así suena con la tarjeta y no 1,5 s antes.
 - **Salir con `dismissTo('/inicio')`:** Inicio queda abajo en la pila, así que se vuelve a él en lugar de apilar otro. Si no estaba (por ejemplo, al abrir la pista directo), la reemplaza.
 - **El botón atrás no sale de la carrera:** pausa, y en la pausa continúa. Solo tras la llegada sale. Se escucha con `useFocusEffect`, así no tapa el atrás de la calibración cuando se abre desde el panel.
 - **El botón de pausa está siempre:** tras la llegada no hace nada, pero quitarlo correría la píldora "Mejor" durante el segundo y medio que tardan los resultados.

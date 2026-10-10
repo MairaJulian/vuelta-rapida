@@ -13,6 +13,9 @@ Fuente y licencia de cada asset del juego.
 | `border.wav` | Golpe contra el borde | Sintetizado con `scripts/generate-sounds.mjs` | Vuelta Rápida | CC0 |
 | `lap.wav` | Vuelta completa | Sintetizado con `scripts/generate-sounds.mjs` | Vuelta Rápida | CC0 |
 | `finish.wav` | Jingle de llegada (provisorio) | Sintetizado con `scripts/generate-sounds.mjs` | Vuelta Rápida | CC0 |
+| `personal-best.wav` | Campanita del récord personal | Sintetizado con `scripts/generate-sounds.mjs` | Vuelta Rápida | CC0 |
+| `overtake.wav` | Arpegio al superar a otro jugador | Sintetizado con `scripts/generate-sounds.mjs` | Vuelta Rápida | CC0 |
+| `track-record.wav` | Fanfarria del récord de la pista | Sintetizado con `scripts/generate-sounds.mjs` | Vuelta Rápida | CC0 |
 
 ### Cómo se generan
 

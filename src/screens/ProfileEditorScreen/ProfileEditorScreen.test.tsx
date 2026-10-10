@@ -219,7 +219,7 @@ describe('ProfileEditorScreen', () => {
       await fireEvent.press(screen.getByRole('button', { name: 'Borrar' }));
       const state = readProfiles();
       expect(state.profiles.map((profile) => profile.name)).toEqual(['Tomi']);
-      expect(state.records).toEqual([]);
+      expect(state.lapRecords).toEqual([]);
       expect(mockRouter.dismissTo).toHaveBeenCalledWith('/jugadores');
       // La pantalla sigue montada un instante: no redirige por su cuenta.
       expect(screen.queryByText('redirect:/jugadores')).toBeNull();

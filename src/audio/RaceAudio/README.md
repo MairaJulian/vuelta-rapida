@@ -18,7 +18,7 @@ El sonido de la carrera sobre react-native-audio-api: el motor en loop, con camb
 
 | Método | Descripción |
 |---|---|
-| `load()` | Decodifica los siete sonidos y arranca el motor en ralentí. |
+| `load()` | Decodifica los diez sonidos y arranca el motor en ralentí. |
 | `setEngineSpeed(ratio)` | Velocidad de 0 a 1. Con cambios, pasa por la caja: el tono sigue a las revoluciones con una constante de 60 ms y salta en cada cambio. |
 | `play({ sound, volume })` | Suena un efecto, con su volumen de 0 a 1. |
 | `setMix(mix)` | Volúmenes, tono y cambios de marcha, en caliente. |
@@ -36,6 +36,11 @@ El sonido de la carrera sobre react-native-audio-api: el motor en loop, con camb
 | `borderHit` | `border`: golpe sordo | De 0,3 a 1, según el impacto (pleno desde 15 m/s). |
 | `lapCompleted` | `lap`: dos notas que suben | 1. La última vuelta no suena: suena la llegada. |
 | `finish` | `finish`: jingle de 8 bits | 1 |
+| `celebration` (`personalBest`) | `personalBest`: campanita corta | 1 |
+| `celebration` (`overtake`) | `overtake`: arpegio de 8 bits que sube | 1 |
+| `celebration` (`trackRecord`) | `trackRecord`: fanfarria de 2,4 s | 1 |
+
+`celebration` (hito 6b) no sale de la simulación: lo emite la pantalla cuando aparecen los resultados, 1,5 s después de la llegada. Así la celebración suena con la tarjeta, después del jingle de llegada.
 
 ## Ejemplo
 

@@ -313,6 +313,9 @@ export const HAPTIC_MOMENTS: [HapticMoment, string][] = [
   ['border', 'Borde'],
   ['start', 'Largada'],
   ['finish', 'Llegada'],
+  ['trackRecord', 'Récord de la pista'],
+  ['overtake', 'Superar a otro'],
+  ['personalBest', 'Récord personal'],
 ];
 
 const HAPTIC_OPTIONS = HAPTIC_LEVELS.map(({ level, label }) => ({ value: level, label }));

@@ -4,6 +4,7 @@ import type { AudioBuffer, AudioBufferSourceNode } from 'react-native-audio-api'
 import { DEFAULT_GEARBOX_PACE, GEARBOXES, stepGearbox } from '@/audio/EngineGears';
 import { clamp } from '@/core/MathUtils';
 import type { RaceEvent } from '@/core/RaceFlow';
+import type { CelebrationKind } from '@/core/Ranking';
 
 import type {
   RaceAudio,
@@ -26,6 +27,9 @@ export const RACE_SOUND_SOURCES: RaceSoundSources = {
   border: require('../../../assets/sounds/border.wav'),
   lap: require('../../../assets/sounds/lap.wav'),
   finish: require('../../../assets/sounds/finish.wav'),
+  personalBest: require('../../../assets/sounds/personal-best.wav'),
+  overtake: require('../../../assets/sounds/overtake.wav'),
+  trackRecord: require('../../../assets/sounds/track-record.wav'),
 };
 
 /**
@@ -84,6 +88,13 @@ function scaledVolume(value: number, full: number, floor: number): number {
   return floor + (1 - floor) * clamp(value / full, 0, 1);
 }
 
+/** El sonido de cada celebración del ranking. */
+const CELEBRATION_SOUNDS: Record<CelebrationKind, RaceSound> = {
+  trackRecord: 'trackRecord',
+  overtake: 'overtake',
+  personalBest: 'personalBest',
+};
+
 /**
  * Qué suena con cada evento de la carrera; `null` si ninguno. La última vuelta no
  * suena como vuelta: suena la llegada.
@@ -105,12 +116,24 @@ export function getSoundCue(event: RaceEvent): RaceSoundCue | null {
       return event.lap < event.totalLaps ? { sound: 'lap', volume: 1 } : null;
     case 'finish':
       return { sound: 'finish', volume: 1 };
+    case 'celebration':
+      return { sound: CELEBRATION_SOUNDS[event.kind], volume: 1 };
     default:
       return null;
   }
 }
 
-const SOUNDS: RaceSound[] = ['light', 'go', 'kerb', 'border', 'lap', 'finish'];
+const SOUNDS: RaceSound[] = [
+  'light',
+  'go',
+  'kerb',
+  'border',
+  'lap',
+  'finish',
+  'personalBest',
+  'overtake',
+  'trackRecord',
+];
 
 /**
  * Arma el sonido de una carrera con react-native-audio-api: el motor en loop con

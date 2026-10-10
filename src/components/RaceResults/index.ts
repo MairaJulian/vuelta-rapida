@@ -1,2 +1,2 @@
-export { getRaceResultsTexts, RaceResults } from './RaceResults';
-export type { RaceResultsProps, RaceResultsTexts } from './RaceResults.types';
+export { getRaceResultsTexts, getRankingTexts, RaceResults } from './RaceResults';
+export type { RaceResultsProps, RaceResultsTexts, RankingTexts } from './RaceResults.types';

@@ -2,7 +2,8 @@
 export type HapticLevel = 'off' | 'light' | 'medium' | 'heavy' | 'double';
 
 /** Momentos de la carrera que vibran. */
-export type HapticMoment = 'kerb' | 'border' | 'start' | 'finish';
+export type HapticMoment =
+  'kerb' | 'border' | 'start' | 'finish' | 'trackRecord' | 'overtake' | 'personalBest';
 
 /** Intensidad de cada momento. Se ajusta en el panel de desarrollo; vale solo para la sesión. */
 export type RaceHapticsConfig = Record<HapticMoment, HapticLevel>;

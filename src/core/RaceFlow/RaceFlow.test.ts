@@ -379,8 +379,11 @@ describe('eventos', () => {
     expect(ofType(events, 'lapCompleted')).toHaveLength(2);
     expect(ofType(events, 'finish')).toHaveLength(1);
     // Los pasos de los eventos nunca retroceden.
-    events.forEach((event, i) => {
-      if (i > 0) expect(event.tick).toBeGreaterThanOrEqual(events[i - 1].tick);
+    // (La simulación no emite `celebration`: ese evento lo emite la pantalla y no tiene paso.)
+    const ticks = events.flatMap((event) => ('tick' in event ? [event.tick] : []));
+    expect(ticks).toHaveLength(events.length);
+    ticks.forEach((tick, i) => {
+      if (i > 0) expect(tick).toBeGreaterThanOrEqual(ticks[i - 1]);
     });
   });
 
