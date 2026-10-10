@@ -2,6 +2,7 @@ import { act, renderHook } from '@testing-library/react-native';
 import Storage from 'expo-sqlite/kv-store';
 
 import { DEFAULT_PLAYER_PREFERENCES } from '@/core/PlayerPreferences';
+import { SAVE_VERSION } from '@/core/SaveData';
 
 import {
   PREFERENCES_KEY,
@@ -44,10 +45,28 @@ describe('usePlayerPreferences', () => {
       tiltNeutralAngle: 0.1,
       tiltSensitivity: 6,
       tiltDeadZone: 0.05,
-      bestLapsMs: {},
       soundEnabled: true,
       vibrationEnabled: true,
     });
+  });
+
+  it('con datos de antes de los perfiles, conserva las preferencias y migra el disco', () => {
+    storage.setItemSync(
+      PREFERENCES_KEY,
+      JSON.stringify({ controlMode: 'buttons', soundEnabled: false, bestLapsMs: { lago: 70000 } }),
+    );
+    reloadPlayerPreferences();
+    expect(readPlayerPreferences()).toMatchObject({ controlMode: 'buttons', soundEnabled: false });
+    expect(JSON.parse(storage.getItemSync(PREFERENCES_KEY))).toEqual({
+      version: SAVE_VERSION,
+      controlMode: 'buttons',
+      soundEnabled: false,
+    });
+  });
+
+  it('guarda con el número de versión', () => {
+    updatePlayerPreferences({ soundEnabled: false });
+    expect(JSON.parse(storage.getItemSync(PREFERENCES_KEY)).version).toBe(SAVE_VERSION);
   });
 
   it('guarda los cambios y los conserva al volver a leer del disco', async () => {

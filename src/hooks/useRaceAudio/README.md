@@ -29,6 +29,7 @@ const loop = useRaceLoop({ ...params, onEvents: bus.emitAll, onEngine });
 - **Un sonido por pantalla:** se crea al montar y se cierra al desmontar (salir a Inicio libera el audio).
 - **Pausa con `suspend`:** el aviso `phase` hacia `paused` congela el contexto entero (motor y efectos que estén sonando); al salir de la pausa, `resume`. Reiniciar desde la pausa también sale de ella.
 - **Segundo plano aparte:** tras la llegada la carrera no se pausa, pero al pasar a segundo plano el audio igual se congela. Al volver se reanuda, salvo que la carrera haya quedado en pausa.
+- **Si los sonidos no cargan, la carrera sigue en silencio.** En desarrollo, además, se avisa con `console.warn`. En el dev build los WAV se descargan desde Metro por la red: si la conexión es mala, la carrera queda muda sin ningún otro síntoma. En la app final vienen dentro del APK.
 - **Silenciar no detiene:** sin sonido, el motor sigue corriendo en silencio; prenderlo de nuevo en la pausa no necesita volver a cargar nada.
 - **El motor recibe la velocidad del loop** (`onEngine`, unas 20 veces por segundo), sin leer valores compartidos desde el hilo de JS.
 - **Orden de los efectos:** primero se crea el sonido y después se aplican la preferencia y la mezcla, en efectos separados que también corren cuando cambian.

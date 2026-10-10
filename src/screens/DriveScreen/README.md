@@ -4,7 +4,9 @@ Pantalla de carrera: el auto espera en la grilla con el semáforo, larga al apag
 
 ## Props
 
-Ninguna. El modo de control, la calibración, la sensibilidad, el récord y los interruptores de sonido y vibración salen de las preferencias del jugador (`usePlayerPreferences`). Sin modo elegido, usa botones.
+Ninguna.
+- El modo de control, la calibración, la sensibilidad y los interruptores de sonido y vibración salen de las preferencias del celular (`usePlayerPreferences`). Sin modo elegido, usa botones.
+- El color y el número del auto, el récord y el nombre de los resultados son del perfil activo (`useProfiles`). Sin perfil activo (una ruta directa de desarrollo), el auto es azul y sin número.
 
 Corre en `DEFAULT_CIRCUIT` (`core/Circuits`), con `DEFAULT_RACE_CONFIG`, `DEFAULT_DRIVING_CONFIG`, `DEFAULT_CAMERA_CONFIG`, `DEFAULT_TILT_CONFIG` y `DEFAULT_SCENERY_DISPLAY`, y toma el tamaño de `useWindowDimensions`. La escenografía del circuito se genera al montar la pantalla (`withCircuitScenery`).
 
@@ -24,7 +26,8 @@ export default DriveScreen;
 | `useDrivingInput` | Crea la entrada compartida. |
 | `ButtonControls` o `TiltControls` | Escriben la entrada: botones multitáctiles, o inclinación con frenos laterales. |
 | `useTiltOutput` | Crea el resultado de la inclinación, para que lo lean el modo de control y el panel. |
-| `useBestLapRecord` | Lee el récord del circuito y guarda las vueltas que lo mejoran (evento `newRecord`). |
+| `useProfiles` | El perfil activo: color y número del auto, y "NOMBRE · #NN" en los resultados. |
+| `useBestLapRecord` | Lee el récord del perfil activo en el circuito y guarda las vueltas que lo mejoran (evento `newRecord`). |
 | `createEventBus` | El bus de la carrera: el loop publica los eventos y las demás piezas los escuchan. |
 | `useRaceLoop` | Avanza la carrera (`core/RaceFlow`) en el hilo de UI, produce las transformaciones y recibe las órdenes (semáforo, pausa, reinicio). |
 | `useRaceAudio` | Motor y efectos (`audio/RaceAudio`): sigue los eventos y la velocidad (`onEngine`), se congela en la pausa y obedece la preferencia de sonido. |
@@ -33,7 +36,7 @@ export default DriveScreen;
 | `useSceneryAtlas` | Dibuja una vez la textura de árboles, sombras y partículas. |
 | `useSceneryView` | Elige los árboles que ve la cámara (por celdas) y da la transformación de cada capa con paralaje. |
 | `useParticles` | Mueve el polvo (al rozar el borde) y el humo (al derrapar o frenar fuerte) en el hilo de UI. |
-| `DriveCanvas` | Dibuja con Skia el pasto, la pista, la escenografía, las partículas y el auto. |
+| `DriveCanvas` | Dibuja con Skia el pasto, la pista, la escenografía, las partículas y el auto del jugador. |
 | `LapHud` | Vuelta, tiempo de la vuelta, mejor vuelta y botón de pausa. |
 | `StartLights` | Semáforo de largada; sigue los eventos del bus. |
 | `PauseMenu` | Pausa: Continuar, Reiniciar, Salir al menú, y los interruptores de sonido y vibración. |

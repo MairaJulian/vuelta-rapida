@@ -7,6 +7,8 @@ export interface CarShapeProps {
    * cuadro; en un menú, una transformación fija.
    */
   transform: SharedValue<Transforms3d> | Transforms3d;
-  /** Color de la carrocería. Por defecto, el azul del jugador. */
+  /** Color de la carrocería, la trompa y el alerón delantero. Por defecto, el azul. */
   bodyColor?: string;
+  /** Número del auto, sobre el disco blanco. Sin número, el disco queda vacío. */
+  number?: number | null;
 }

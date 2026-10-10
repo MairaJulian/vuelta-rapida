@@ -33,7 +33,13 @@ export function useRaceAudio({
   useEffect(() => {
     const audio = createAudio();
     audioRef.current = audio;
-    audio.load().catch(() => undefined);
+    audio.load().catch((error: unknown) => {
+      // Sin sonidos el juego sigue, en silencio. En desarrollo se avisa: los WAV llegan
+      // desde Metro por la red y, si la conexión falla, la carrera queda muda sin error.
+      if (__DEV__) {
+        console.warn('No se pudieron cargar los sonidos de la carrera:', error);
+      }
+    });
     return () => {
       audioRef.current = null;
       audio.close();

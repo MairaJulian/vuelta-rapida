@@ -11,10 +11,10 @@ import type { StartScreenProps } from './StartScreen.types';
 /**
  * Entrada del juego: no dibuja nada, decide a dónde ir con las preferencias
  * guardadas. Con la inclinación activada: la primera vez, a elegir el control; con
- * inclinación sin calibrar, a la calibración; si no, a la pista. Con la inclinación
- * desactivada (`FEATURE_FLAGS.tiltControl`), siempre a la pista con botones: si había
- * inclinación guardada, primero la cambia a botones. La lectura es síncrona: no hay
- * pantalla de carga.
+ * inclinación sin calibrar, a la calibración; si no, a elegir quién juega. Con la
+ * inclinación desactivada (`FEATURE_FLAGS.tiltControl`), siempre a elegir quién juega,
+ * con botones: si había inclinación guardada, primero la cambia a botones. La lectura
+ * es síncrona: no hay pantalla de carga.
  */
 export function StartScreen({ tiltEnabled = FEATURE_FLAGS.tiltControl }: StartScreenProps) {
   const { preferences, updatePreferences } = usePlayerPreferences();

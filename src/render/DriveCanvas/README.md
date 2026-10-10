@@ -13,6 +13,8 @@ Lienzo Skia de la pantalla de manejo. Dentro del grupo de la cámara, en coorden
 | `atlas` | `SkImage \| null` (opcional) | Textura de árboles, sombras y partículas (`useSceneryAtlas`). |
 | `particles` | `SharedValue<ParticleState>` (opcional) | Polvo y humo (`useParticles`). |
 | `display` | `SceneryDisplayConfig` (opcional) | Qué se muestra y con qué intensidad. Por defecto, `DEFAULT_SCENERY_DISPLAY`. |
+| `carColor` | `string` (opcional) | Color de la carrocería (el del perfil activo). Por defecto, el azul. |
+| `carNumber` | `number \| null` (opcional) | Número del auto (el del perfil activo). Sin número, el disco queda vacío. |
 
 Las dos transformaciones las produce `useRaceLoop`.
 

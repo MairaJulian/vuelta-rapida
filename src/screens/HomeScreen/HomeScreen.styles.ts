@@ -11,7 +11,11 @@ export const COLORS = {
   /** blue-num: el número gigante sobre el panel azul */
   blueNumber: '#4880EA',
   /** Con el auto azul, en el panel azul se muestra blanco. */
-  car: '#FFFFFF',
+  carOnBlue: '#FFFFFF',
+  /** Presionado de la píldora del piloto (tinta). */
+  inkPressed: '#2A2F3A',
+  /** "Cambiar" sobre la píldora tinta. */
+  changeText: 'rgba(255, 255, 255, 0.72)',
 } as const;
 
 /** Medidas de la pantalla 01, en dp. */
@@ -25,10 +29,9 @@ export const LAYOUT = {
   carWidth: 100,
   carRotation: (-20 * Math.PI) / 180,
   carCanvas: { width: 220, height: 280 },
+  /** Píldora del piloto, abajo a la izquierda del panel. */
+  driverInset: 14,
 } as const;
-
-/** Número del auto en el panel. Todavía no se personaliza: el 7 de la escudería Cóndor (azul). */
-export const CAR_NUMBER = '7';
 
 /** Mini bandera a cuadros del chip: 2 × 2 casillas de 7 dp. */
 const CHECKER = 7;
@@ -47,6 +50,11 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  panelArt: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   // Número gigante (900, 360 dp) cortado por el panel.
   number: {
     position: 'absolute',
@@ -58,9 +66,34 @@ export const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: -20,
   },
-  carCanvas: {
-    width: LAYOUT.carCanvas.width,
-    height: LAYOUT.carCanvas.height,
+  // Con dos cifras, más chico: a 360 dp no entran en el panel con la fuente del sistema
+  // (el handoff usa Archivo angosta) y la segunda cifra se cortaba.
+  numberTwoDigits: {
+    right: 6,
+    top: -36,
+    fontSize: 290,
+    lineHeight: 330,
+    letterSpacing: -16,
+  },
+  // La píldora mide 36 de alto; el área de toque llega a 48.
+  driver: {
+    position: 'absolute',
+    left: LAYOUT.driverInset,
+    bottom: LAYOUT.driverInset,
+    right: LAYOUT.driverInset,
+    paddingVertical: 6,
+  },
+  driverBadge: {
+    paddingRight: 14,
+  },
+  driverBadgePressed: {
+    backgroundColor: COLORS.inkPressed,
+  },
+  change: {
+    marginLeft: 4,
+    color: COLORS.changeText,
+    fontSize: 13,
+    fontWeight: '700',
   },
   column: {
     position: 'absolute',
@@ -100,9 +133,13 @@ export const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: -2,
   },
-  run: {
+  // Fila de Correr y Garage (Ø 56).
+  actions: {
     marginTop: 22,
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
+    gap: 12,
   },
   record: {
     position: 'absolute',

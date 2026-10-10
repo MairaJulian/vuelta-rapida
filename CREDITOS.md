@@ -47,3 +47,10 @@ node scripts/generate-sounds.mjs --engine <ruta>/motorseamless11.wav
 | Qué es | Fuente | Autor | Licencia |
 |---|---|---|---|
 | Trazados de los íconos, peso fill | [`@phosphor-icons/core`](https://github.com/phosphor-icons/core) 2.1.1, copiados al código | Phosphor Icons (Helena Zhang y Tobias Fried) | MIT |
+
+## Monoplaza (`src/render/CarShape/`)
+
+| Qué es | Fuente | Autor | Licencia |
+|---|---|---|---|
+| Silueta del monoplaza en vista cenital, recoloreada con el color de cada jugador | Handoff de diseño (`docs/design/.../Monoplaza.dc.html`), dibujada como vectores en Skia | Vuelta Rápida | Obra propia |
+| Número del auto | Fuente del sistema (sans-serif, itálica negrita) | — | — |

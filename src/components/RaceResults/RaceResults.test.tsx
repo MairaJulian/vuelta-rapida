@@ -110,6 +110,25 @@ describe('RaceResults', () => {
     expect(screen.getByLabelText('Vuelta 3: 1:12.655, +0.753')).toBeTruthy();
   });
 
+  it('encabeza las vueltas con el piloto: "NOMBRE · #NN"', async () => {
+    await render(
+      <RaceResults
+        results={results()}
+        stepHz={60}
+        circuitName="Autódromo del Lago"
+        driver={{ name: 'Male', number: 27 }}
+        onRetry={jest.fn()}
+        onExit={jest.fn()}
+      />,
+    );
+    expect(screen.getByTestId('results-driver')).toHaveTextContent('MALE · #27');
+  });
+
+  it('sin piloto dice "Tus vueltas"', async () => {
+    await render9(results());
+    expect(screen.getByTestId('results-driver')).toHaveTextContent('Tus vueltas');
+  });
+
   it('Otra vez y Salir llaman a sus acciones', async () => {
     const onRetry = jest.fn();
     const onExit = jest.fn();

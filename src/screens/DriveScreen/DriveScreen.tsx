@@ -10,6 +10,7 @@ import { PauseMenu } from '@/components/PauseMenu';
 import { RaceResults } from '@/components/RaceResults';
 import { StartLights } from '@/components/StartLights';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
+import { getCarColor } from '@/core/CarPalette';
 import { DEFAULT_CIRCUIT, withCircuitScenery } from '@/core/Circuits';
 import { DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
 import { createEventBus } from '@/core/EventBus';
@@ -28,6 +29,7 @@ import type { Circuit } from '@/core/Track';
 import { useBestLapRecord } from '@/hooks/useBestLapRecord';
 import { useParticles } from '@/hooks/useParticles';
 import { usePlayerPreferences } from '@/hooks/usePlayerPreferences';
+import { useProfiles } from '@/hooks/useProfiles';
 import { useRaceAudio } from '@/hooks/useRaceAudio';
 import { useRaceHaptics } from '@/hooks/useRaceHaptics';
 import { useRaceLoop } from '@/hooks/useRaceLoop';
@@ -53,9 +55,10 @@ const DevPanel: typeof DevPanelComponent | null = __DEV__
 const STEP_HZ = DEFAULT_FIXED_STEP_CONFIG.stepHz;
 
 /**
- * Pantalla de carrera: el circuito, el auto, la cámara, el modo de control (botones o
- * inclinación), el semáforo, el HUD de vueltas, la pausa, los resultados y el panel
- * de ajuste en desarrollo. Compone piezas; no calcula nada.
+ * Pantalla de carrera: el circuito, el auto del jugador activo (su color y su número),
+ * la cámara, el modo de control (botones o inclinación), el semáforo, el HUD de
+ * vueltas, la pausa, los resultados y el panel de ajuste en desarrollo. Compone
+ * piezas; no calcula nada.
  */
 export function DriveScreen(_props: DriveScreenProps) {
   useKeepAwake();
@@ -63,6 +66,10 @@ export function DriveScreen(_props: DriveScreenProps) {
   const viewport = useMemo(() => ({ width, height }), [width, height]);
   const router = useRouter();
   const { preferences, updatePreferences } = usePlayerPreferences();
+  // Sin perfil activo (una ruta directa de desarrollo): el auto azul, sin número.
+  const { activeProfile } = useProfiles();
+  const carColor = activeProfile ? getCarColor(activeProfile.colorId).hex : undefined;
+  const carNumber = activeProfile?.number ?? null;
   const [drivingConfig, setDrivingConfig] = useState(DEFAULT_DRIVING_CONFIG);
   const [cameraConfig, setCameraConfig] = useState(DEFAULT_CAMERA_CONFIG);
   // El circuito es fijo hasta que exista la selección de pista; el panel cambia el ancho.
@@ -221,6 +228,8 @@ export function DriveScreen(_props: DriveScreenProps) {
         atlas={atlas}
         particles={particles}
         display={sceneryDisplay}
+        carColor={carColor}
+        carNumber={carNumber}
       />
       {controlMode === 'tilt' ? (
         <TiltControls
@@ -256,6 +265,7 @@ export function DriveScreen(_props: DriveScreenProps) {
           results={results}
           stepHz={STEP_HZ}
           circuitName={track.name}
+          driver={activeProfile}
           onRetry={restartRace}
           onExit={exit}
         />

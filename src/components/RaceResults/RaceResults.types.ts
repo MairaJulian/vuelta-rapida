@@ -7,6 +7,8 @@ export interface RaceResultsProps {
   stepHz: number;
   /** Nombre del circuito. */
   circuitName: string;
+  /** Quién corrió: encabeza la columna de vueltas ("MALE · #27"). Sin piloto, "Tus vueltas". */
+  driver?: { name: string; number: number } | null;
   /** "Otra vez": carrera nueva. */
   onRetry: () => void;
   /** "Salir": vuelve a Inicio. */

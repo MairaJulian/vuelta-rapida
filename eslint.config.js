@@ -30,6 +30,7 @@ module.exports = defineConfig([
                 '@/input',
                 '@/render',
                 '@/screens',
+                '@/storage',
               ],
               message: 'core es TypeScript puro: no puede importar librerías de UI ni otras capas.',
             },

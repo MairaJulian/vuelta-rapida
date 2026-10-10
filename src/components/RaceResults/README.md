@@ -9,6 +9,7 @@ Resultados de la carrera (pantalla 09 del handoff). A la izquierda, la tarjeta c
 | `results` | `RaceResults` (de `core/RaceFlow`) | Total, vueltas, mejor vuelta y récord, en pasos. |
 | `stepHz` | `number` | Pasos por segundo, para pasarlos a tiempo. |
 | `circuitName` | `string` | Nombre del circuito. |
+| `driver` | `{ name, number } \| null` (opcional) | Quién corrió: encabeza la columna de vueltas ("MALE · #27"). Sin piloto, "Tus vueltas". |
 | `onRetry` | `() => void` | "Otra vez": carrera nueva. |
 | `onExit` | `() => void` | "Salir": vuelve a Inicio. |
 
@@ -39,7 +40,7 @@ const results = getRaceResults(loop.race.get());
 - **Delta contra el récord anterior, no contra el fantasma:** el fantasma todavía no existe. La primera carrera en un circuito dice "Primer récord".
 - **"Salir" en lugar de "Elegir pista":** todavía hay un solo circuito. Sale a Inicio.
 - **Celebración:** con récord nuevo, además de la tarjeta lima, caen papelitos (`Confetti`) y suena el jingle de llegada.
-- **Sin "NOMBRE · #NN":** el auto todavía no se personaliza. La columna dice "Tus vueltas".
+- **"NOMBRE · #NN" del perfil activo** encabeza la columna de vueltas (hito 6a), en mayúsculas como el resto de los rótulos. Sin perfil (una ruta directa de desarrollo), dice "Tus vueltas".
 - **Tiempo grande en 76 con la fuente del sistema** (el handoff usa 96 con Archivo angosta), con `adjustsFontSizeToFit` por si no entra.
 - **Las vueltas en un `ScrollView`:** con más de 3 vueltas (se pueden elegir en el panel de desarrollo) no entran en 360 dp de alto.
 - Se dibuja sobre la carrera, que sigue montada abajo: "Otra vez" larga al instante, sin volver a cargar la pista.

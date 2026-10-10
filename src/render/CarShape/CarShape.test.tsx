@@ -1,7 +1,10 @@
 import { render } from '@testing-library/react-native';
 
+import { CAR_COLORS, colorDistance } from '@/core/CarPalette';
+import { COLORS as TRACK_COLORS } from '@/render/TrackLayer/TrackLayer.styles';
+
 import { CarShape } from './CarShape';
-import { CAR_SCALE, COLORS, VIEWBOX } from './CarShape.styles';
+import { CAR_SCALE, COLORS, NUMBER_TEXT, SHAPES, VIEWBOX } from './CarShape.styles';
 
 const shared = <Value,>(value: Value) => ({ value }) as never;
 
@@ -44,5 +47,48 @@ describe('CarShape', () => {
     expect(tree).toContain(COLORS.dark);
     expect(tree).toContain(COLORS.helmet);
     expect(tree).toContain('M15 37 Q20 31 25 37');
+  });
+
+  it('solo la pintura (carrocería, trompa y alerón delantero) toma el color', async () => {
+    const screen = await render(<CarShape transform={shared([])} bodyColor="#F164AF" />);
+    const painted = screen.container.queryAll((node) => node.props.color === '#F164AF');
+    expect(painted.map((node) => node.type)).toEqual(['Path', 'Path', 'RoundedRect']);
+  });
+
+  it('sin número, el disco queda vacío', async () => {
+    const screen = await render(<CarShape transform={shared([])} />);
+    expect(screen.container.queryAll((node) => node.type === 'SkiaText')).toHaveLength(0);
+  });
+
+  it('dibuja el número centrado en el disco, en el color de las gomas', async () => {
+    const screen = await render(<CarShape transform={shared([])} number={27} />);
+    const [text] = screen.container.queryAll((node) => node.type === 'SkiaText');
+    expect(text.props.text).toBe('27');
+    expect(text.props.color).toBe(COLORS.dark);
+    // La fuente simulada mide 0,6 del tamaño por letra: 2 × 8,5 × 0,6 = 10,2.
+    expect(text.props.x).toBeCloseTo(-5.1);
+    const group = screen.container.queryAll((node) => node.type === 'Group').at(-1)!;
+    expect(group.props.transform).toEqual([
+      { translateX: SHAPES.numberDisc.cx },
+      { translateY: SHAPES.numberDisc.cy },
+      { scale: 1 },
+    ]);
+  });
+
+  it('si el número no entra en el disco, lo achica', async () => {
+    const screen = await render(<CarShape transform={shared([])} number={888} />);
+    const group = screen.container.queryAll((node) => node.type === 'Group').at(-1)!;
+    expect(group.props.transform[2].scale).toBeCloseTo(NUMBER_TEXT.maxWidth / (3 * 8.5 * 0.6));
+  });
+});
+
+describe('paleta de autos sobre la pista', () => {
+  // Umbrales: el azul de siempre (0,19 del asfalto) se ve bien en la pista; la tinta del
+  // handoff (0,04 de las gomas) pierde la silueta.
+  it('cada color se distingue del asfalto y de las gomas y alerones', () => {
+    CAR_COLORS.forEach((color) => {
+      expect(colorDistance(color.hex, TRACK_COLORS.asphalt)).toBeGreaterThan(0.18);
+      expect(colorDistance(color.hex, COLORS.dark)).toBeGreaterThan(0.3);
+    });
   });
 });
