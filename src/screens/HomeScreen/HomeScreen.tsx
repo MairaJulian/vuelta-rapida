@@ -17,9 +17,9 @@ import { COLORS, LAYOUT, styles } from './HomeScreen.styles';
 import type { HomeScreenProps } from './HomeScreen.types';
 
 /**
- * Inicio (pantalla 01 del handoff) del jugador activo: el logo, el botón Correr, el
- * Garage y su récord, con el panel azul de su auto y su número a la derecha. La
- * píldora del piloto, abajo en el panel, vuelve a "¿Quién juega?".
+ * Inicio (pantalla 01 del handoff) del jugador activo: el logo, Correr (a la selección
+ * de pista), el Garage, el Ranking y su récord, con el panel azul de su auto y su
+ * número a la derecha. La píldora del piloto, abajo en el panel, vuelve a "¿Quién juega?".
  */
 export function HomeScreen(_props: HomeScreenProps) {
   const router = useRouter();
@@ -115,7 +115,7 @@ export function HomeScreen(_props: HomeScreenProps) {
             label="Correr"
             variant="run"
             circleIcon="play"
-            onPress={() => router.push('/pista')}
+            onPress={() => router.push('/pistas')}
           />
           <IconButton
             icon="wrench"
@@ -123,6 +123,13 @@ export function HomeScreen(_props: HomeScreenProps) {
             size={56}
             onPress={() => router.push({ pathname: '/piloto', params: { id: activeProfile.id } })}
             testID="home-garage"
+          />
+          <IconButton
+            icon="trophy"
+            label="Ranking"
+            size={56}
+            onPress={() => router.push('/ranking')}
+            testID="home-ranking"
           />
         </View>
       </View>

@@ -1,5 +1,5 @@
 import { useKeepAwake } from 'expo-keep-awake';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppState, BackHandler, useWindowDimensions, View } from 'react-native';
 
@@ -11,7 +11,7 @@ import { RaceResults } from '@/components/RaceResults';
 import { StartLights } from '@/components/StartLights';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
 import { getCarColor } from '@/core/CarPalette';
-import { DEFAULT_CIRCUIT, withCircuitScenery } from '@/core/Circuits';
+import { getCircuit, withCircuitScenery } from '@/core/Circuits';
 import { DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
 import { createEventBus } from '@/core/EventBus';
 import { DEFAULT_FIXED_STEP_CONFIG } from '@/core/FixedStep';
@@ -33,6 +33,7 @@ import { useProfiles } from '@/hooks/useProfiles';
 import { useRaceAudio } from '@/hooks/useRaceAudio';
 import { useRaceHaptics } from '@/hooks/useRaceHaptics';
 import { useRaceLoop } from '@/hooks/useRaceLoop';
+import { useRaceRanking } from '@/hooks/useRaceRanking';
 import { useRaceStatus } from '@/hooks/useRaceStatus';
 import { useSceneryAtlas } from '@/hooks/useSceneryAtlas';
 import { useSceneryView } from '@/hooks/useSceneryView';
@@ -72,8 +73,9 @@ export function DriveScreen(_props: DriveScreenProps) {
   const carNumber = activeProfile?.number ?? null;
   const [drivingConfig, setDrivingConfig] = useState(DEFAULT_DRIVING_CONFIG);
   const [cameraConfig, setCameraConfig] = useState(DEFAULT_CAMERA_CONFIG);
-  // El circuito es fijo hasta que exista la selección de pista; el panel cambia el ancho.
-  const [track, setTrack] = useState<Circuit>(DEFAULT_CIRCUIT);
+  // La pista elegida (`/pista?circuito=…`); sin parámetro, la primera. El panel cambia el ancho.
+  const { circuito } = useLocalSearchParams<{ circuito?: string }>();
+  const [track, setTrack] = useState<Circuit>(() => getCircuit(circuito));
   // La escenografía se genera recién montada la pantalla, no al dibujarla: tarda unos
   // cientos de milisegundos en el celular y así no demora el comienzo de la transición.
   useEffect(() => {
@@ -144,6 +146,15 @@ export function DriveScreen(_props: DriveScreenProps) {
   useEffect(() => bus.on('newRecord', (event) => saveLap(event.lapTicks)), [bus, saveLap]);
 
   const { phase, pausedLap, results } = useRaceStatus({ bus, lapView: loop.lapView });
+  // Al llegar: el total de la carrera se guarda y se compara el ranking de la pista.
+  const { ranking } = useRaceRanking({ bus, circuitId: track.id, stepHz: STEP_HZ });
+  // Las celebraciones suenan y vibran junto con la tarjeta de resultados, no con la llegada.
+  const celebration = results ? (ranking?.celebration ?? null) : null;
+  useEffect(() => {
+    if (celebration) {
+      bus.emit({ type: 'celebration', kind: celebration });
+    }
+  }, [bus, celebration]);
 
   // El semáforo empieza apenas se monta la pantalla, y de nuevo en cada reinicio.
   const { startLights, restart, pause, resume } = loop;
@@ -266,6 +277,7 @@ export function DriveScreen(_props: DriveScreenProps) {
           stepHz={STEP_HZ}
           circuitName={track.name}
           driver={activeProfile}
+          ranking={ranking}
           onRetry={restartRace}
           onExit={exit}
         />

@@ -1,6 +1,6 @@
 # HomeScreen
 
-Inicio (pantalla 01 del handoff) del jugador activo: el logo "VUELTA RÁPIDA", el botón **Correr**, el **Garage** y su récord, con el panel azul de su auto y su número a la derecha. Es a donde vuelven "Salir al menú" de la Pausa y "Salir" de los Resultados.
+Inicio (pantalla 01 del handoff) del jugador activo: el logo "VUELTA RÁPIDA", el botón **Correr** (que abre la selección de pista), el **Garage**, el **Ranking** y su récord, con el panel azul de su auto y su número a la derecha. Es a donde vuelven "Salir al menú" de la Pausa y "Salir" de los Resultados.
 
 ## Props
 
@@ -37,6 +37,7 @@ La píldora `DriverBadge` está documentada en `ProfileEditorScreen`.
 
 ## Decisiones de diseño
 
+- **Ranking** (trofeo, `IconButton` de Ø 56): abre `/ranking`. **Correr** ya no va directo a la pista: abre `/pistas` (hito 6b).
 - **Garage edita el perfil activo** (`/piloto?id=…`): es la misma personalización que se abre desde el lápiz de "¿Quién juega?".
 - **"Cambiar" vuelve con `dismissTo('/jugadores')`:** "¿Quién juega?" está debajo en la pila, así que se vuelve a ella en lugar de apilar otra.
 - **Ajustes no está todavía:** llega con su pantalla.
