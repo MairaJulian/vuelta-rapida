@@ -1,7 +1,10 @@
 import { CAR_COLORS, DEFAULT_CAR_COLOR_ID, isCarColorId } from '@/core/CarPalette';
+import { parseGhostRecording } from '@/core/Ghost';
+import type { GhostRecording } from '@/core/Ghost';
 import { serializeSaveDocument } from '@/core/SaveData';
 
 import type {
+  GhostEntry,
   LapRecord,
   Profile,
   ProfileDraft,
@@ -32,6 +35,7 @@ export const EMPTY_PROFILES_STATE: ProfilesState = Object.freeze({
   activeProfileId: null,
   lapRecords: [],
   raceRecords: [],
+  ghosts: [],
   unassignedRecords: Object.freeze({}),
 });
 
@@ -218,8 +222,8 @@ export function updateProfile(
 }
 
 /**
- * Borra un perfil y sus récords (de vuelta y de carrera): sale de todas las tablas del
- * ranking. Si era el activo, no queda nadie jugando.
+ * Borra un perfil, sus récords (de vuelta y de carrera) y sus fantasmas: sale de todas las
+ * tablas del ranking. Si era el activo, no queda nadie jugando.
  */
 export function deleteProfile(state: ProfilesState, id: string): ProfilesState {
   if (!getProfile(state, id)) {
@@ -231,6 +235,7 @@ export function deleteProfile(state: ProfilesState, id: string): ProfilesState {
     activeProfileId: state.activeProfileId === id ? null : state.activeProfileId,
     lapRecords: state.lapRecords.filter((record) => record.profileId !== id),
     raceRecords: state.raceRecords.filter((record) => record.profileId !== id),
+    ghosts: state.ghosts.filter((ghost) => ghost.profileId !== id),
   };
 }
 
@@ -336,6 +341,49 @@ export function withRaceRecord(
   };
 }
 
+/** Fantasma de un perfil en un circuito, o `null` si todavía no grabó ninguna vuelta ahí. */
+export function getGhost(
+  state: ProfilesState,
+  profileId: string | null,
+  circuitId: string,
+): GhostEntry | null {
+  return (
+    state.ghosts.find((item) => item.profileId === profileId && item.circuitId === circuitId) ??
+    null
+  );
+}
+
+/**
+ * Estado con la grabación de una vuelta como fantasma del perfil: la guarda si es la
+ * primera del circuito o más rápida que la que había (un fantasma por perfil y
+ * circuito); si no, devuelve `null` (nada que guardar). Sin perfil, o con uno que no
+ * existe, no se guarda: no hay a quién ponerle el fantasma.
+ */
+export function withGhost(
+  state: ProfilesState,
+  profileId: string | null,
+  circuitId: string,
+  recording: GhostRecording,
+  now: number,
+): ProfilesState | null {
+  const owner = getProfile(state, profileId)?.id ?? null;
+  if (owner === null) {
+    return null;
+  }
+  const current = getGhost(state, owner, circuitId);
+  if (current !== null && current.recording.lapMs <= recording.lapMs) {
+    return null;
+  }
+  const ghost: GhostEntry = { profileId: owner, circuitId, setAt: now, recording };
+  return {
+    ...state,
+    ghosts: [
+      ...state.ghosts.filter((item) => !(item.profileId === owner && item.circuitId === circuitId)),
+      ghost,
+    ],
+  };
+}
+
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -421,6 +469,20 @@ const parseRaceRecords = (value: unknown, profileIds: Set<string>) =>
     (entry) => entry.totalMs,
   );
 
+const parseGhosts = (value: unknown, profileIds: Set<string>) =>
+  parseBest<GhostEntry>(
+    value,
+    profileIds,
+    (item, profileId) => {
+      const recording = parseGhostRecording(item.recording);
+      return typeof item.circuitId === 'string' && recording
+        ? { profileId, circuitId: item.circuitId, setAt: finiteOr(item.setAt, 0), recording }
+        : null;
+    },
+    (entry) => JSON.stringify([entry.profileId, entry.circuitId]),
+    (entry) => entry.recording.lapMs,
+  );
+
 /**
  * Lee el documento de perfiles ya migrado (`core/SaveData`). Tolera texto vacío, JSON
  * roto y datos inválidos: descarta lo que no sirve y conserva el resto, así un dato
@@ -439,6 +501,7 @@ export function parseProfilesState(raw: string | null): ProfilesState {
       profiles: [],
       lapRecords: [],
       raceRecords: [],
+      ghosts: [],
       unassignedRecords: {},
     };
   }
@@ -465,6 +528,7 @@ export function parseProfilesState(raw: string | null): ProfilesState {
     activeProfileId: typeof active === 'string' && ids.has(active) ? active : null,
     lapRecords: parseLapRecords(data.lapRecords, ids),
     raceRecords: parseRaceRecords(data.raceRecords, ids),
+    ghosts: parseGhosts(data.ghosts, ids),
     unassignedRecords,
   };
 }
@@ -492,6 +556,12 @@ export function serializeProfilesState(state: ProfilesState): string {
       laps,
       totalMs,
       setAt,
+    })),
+    ghosts: state.ghosts.map(({ profileId, circuitId, setAt, recording }) => ({
+      profileId,
+      circuitId,
+      setAt,
+      recording,
     })),
     unassignedRecords: state.unassignedRecords,
   });

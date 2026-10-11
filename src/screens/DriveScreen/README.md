@@ -28,6 +28,8 @@ export default DriveScreen;
 | `useTiltOutput` | Crea el resultado de la inclinación, para que lo lean el modo de control y el panel. |
 | `useProfiles` | El perfil activo: color y número del auto, y "NOMBRE · #NN" en los resultados. |
 | `useBestLapRecord` | Lee el récord del perfil activo en el circuito y guarda las vueltas que lo mejoran (evento `newRecord`). |
+| `useGhostRecording` | Guarda como fantasma del perfil activo la vuelta que mejora su récord (evento `recordTrace`). |
+| `useRaceGhost` | Elige el fantasma según las preferencias, lo reproduce en el hilo de UI y calcula la diferencia con el jugador. |
 | `useRaceRanking` | Al llegar guarda el total de la carrera y compara el ranking de la pista en las dos tablas (mejor vuelta y carrera completa). |
 | `createEventBus` | El bus de la carrera: el loop publica los eventos y las demás piezas los escuchan. |
 | `useRaceLoop` | Avanza la carrera (`core/RaceFlow`) en el hilo de UI, produce las transformaciones y recibe las órdenes (semáforo, pausa, reinicio). |
@@ -37,8 +39,8 @@ export default DriveScreen;
 | `useSceneryAtlas` | Dibuja una vez la textura de árboles, sombras y partículas. |
 | `useSceneryView` | Elige los árboles que ve la cámara (por celdas) y da la transformación de cada capa con paralaje. |
 | `useParticles` | Mueve el polvo (al rozar el borde) y el humo (al derrapar o frenar fuerte) en el hilo de UI. |
-| `DriveCanvas` | Dibuja con Skia el pasto, la pista, la escenografía, las partículas y el auto del jugador. |
-| `LapHud` | Vuelta, tiempo de la vuelta, mejor vuelta y botón de pausa. |
+| `DriveCanvas` | Dibuja con Skia el pasto, la pista, la escenografía, las partículas, el auto fantasma y el auto del jugador. |
+| `LapHud` | Vuelta, tiempo de la vuelta, mejor vuelta, diferencia con el fantasma y botón de pausa. |
 | `StartLights` | Semáforo de largada; sigue los eventos del bus. |
 | `PauseMenu` | Pausa: Continuar, Reiniciar, Salir al menú, y los interruptores de sonido y vibración. |
 | `RaceResults` | Resultados, con papelitos si hubo récord: "Otra vez" y "Salir". |

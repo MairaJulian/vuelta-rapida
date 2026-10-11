@@ -6,6 +6,7 @@ export {
   getActiveProfile,
   getBestLap,
   getBestRace,
+  getGhost,
   getProfile,
   MAX_CAR_NUMBER,
   MAX_NAME_LENGTH,
@@ -20,10 +21,12 @@ export {
   suggestProfileDraft,
   updateProfile,
   validateProfile,
+  withGhost,
   withLapRecord,
   withRaceRecord,
 } from './Profiles';
 export type {
+  GhostEntry,
   LapRecord,
   Profile,
   ProfileDraft,

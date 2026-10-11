@@ -50,13 +50,23 @@ El celular lo comparten varios chicos: al abrir el juego se elige quién juega (
   1. Subir `SAVE_VERSION`.
   2. Sumar un paso `{ from, to, migrate }` a `SAVE_MIGRATIONS`, con un test que parta de datos reales de la versión anterior.
   - Nunca cambiar el formato sin migración.
-  - v1 = hasta el hito 5b (sin versión, con los récords en las preferencias). v2 = perfiles. v3 = ranking (`lapRecords` y `raceRecords`).
+  - v1 = hasta el hito 5b (sin versión, con los récords en las preferencias). v2 = perfiles. v3 = ranking (`lapRecords` y `raceRecords`). v4 = fantasma (`ghosts` en los perfiles y `ghostSource` en las preferencias).
 - **`src/storage/SaveStore`** es el único que toca el disco: migra antes del primer acceso y escribe en el orden de `SAVE_DOCUMENTS`. Los hooks (`usePlayerPreferences`, `useProfiles`) guardan a través de él. `core` no lo importa (regla de ESLint).
 - **Récords por perfil y tabla,** unidos por `profileId` (no por nombre), con la fecha para desempatar: la mejor vuelta por pista (`lapRecords`) y la mejor carrera por pista y cantidad de vueltas (`raceRecords`).
 - **El ranking no se guarda:** `core/Ranking` lo calcula con esos récords (orden, diferencias y celebraciones). Editar o borrar un perfil se refleja solo.
 - **Flujo de una carrera con ranking:** Inicio → `/pistas` (selección) → `/pista?circuito=…`. `useRaceRanking` toma la foto de los récords al largar, guarda el total al llegar y compara; la pantalla emite el evento `celebration` cuando aparecen los resultados (es el único evento del bus que no sale de la simulación).
 - **El color del auto se guarda como id de la paleta** (`core/CarPalette`), nunca como hex.
 - **Un solo asset del auto** (`CarShape`): la "pintura" toma el color del perfil y el número va en el disco.
+
+## Fantasma
+
+- **Grabación (`core/Ghost`, `core/RaceFlow`):** durante cada vuelta la carrera acumula la pose del auto (x, z, rumbo) a 30 muestras por segundo (`RaceState.lapTrace`), con el tiempo relativo al inicio de la vuelta. Solo la vuelta que mejora el récord del perfil sale en un evento (`recordTrace`, junto a `newRecord`); `useGhostRecording` la codifica y la guarda.
+- **Guardado:** un fantasma por perfil y pista, en `ProfilesState.ghosts` (mismo documento que los perfiles, así borrar un perfil se lleva sus fantasmas). Formato compacto y versionado (`GhostRecording`, `v: 1`): enteros en cm y mrad, delta-codificados, unos 10 bytes por muestra (~20 KB una vuelta de 70 s). Cambiarlo exige subir `GHOST_FORMAT_VERSION` o `SAVE_VERSION` con migración. Al leer, `parseGhostRecording` descarta lo que no valida.
+- **Reproducción:** por interpolación entre muestras (`getGhostPose`), con el reloj de la vuelta en curso (`getRaceLapClockMs`): independiente de los fps y reinicia en cada cruce de meta. Se calcula en el hilo de UI (`useRaceGhost`); la preparación (decodificar y medir el progreso sobre la pista) corre una vez en JS.
+- **Diferencia en vivo:** `getGhostGap` busca el instante en que el fantasma estaba donde está el auto y lo resta del tiempo de la vuelta (segundos; positiva = el jugador va atrás). El progreso de la vuelta 1 empieza en negativo (la grilla está 15 m antes de la meta), igual para el auto y para el fantasma.
+- **Elección:** `PlayerPreferences.ghostSource` (`mine` por defecto, `record`, `none`), se elige en la selección de pista; `core/GhostChoice` lo resuelve y dice qué opciones existen (las que no, se muestran desactivadas). El fantasma se elige al abrir la carrera y al volver a la grilla, no a mitad de carrera.
+- **Render y HUD:** `render/GhostCar` (auto translúcido con el color de su dueño y su nombre encima; sin colisión) y chip de diferencia en `LapHud` (verde si va más rápido, rojo si más lento, siempre con signo). El ícono del fantasma es propio, no de Phosphor.
+- **Decisiones del hito 8 que se apartan del handoff:** el fantasma se dibuja relleno y translúcido (el handoff lo dibuja sin relleno, con contorno punteado), y la selección de fantasma no está en el handoff. La grabación es solo de vueltas récord: un fantasma grabado en una vuelta lanzada va "por delante" de la vuelta 1 de una carrera (que sale de la grilla); la diferencia es real.
 
 ## Pistas
 

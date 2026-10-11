@@ -5,6 +5,7 @@ import type { ParticleState } from '@/core/Particles';
 import type { Scenery } from '@/core/Scenery';
 import type { SceneryDisplayConfig } from '@/core/SceneryView';
 import type { TrackData } from '@/core/Track';
+import type { RaceGhostView } from '@/hooks/useRaceGhost';
 import type { UseSceneryViewResult } from '@/hooks/useSceneryView';
 
 export interface DriveCanvasProps {
@@ -26,4 +27,6 @@ export interface DriveCanvasProps {
   carColor?: string;
   /** Número del auto (el del perfil activo); sin número, el disco queda vacío. */
   carNumber?: number | null;
+  /** Auto fantasma (`useRaceGhost`): se dibuja debajo del auto del jugador. Sin esto, no hay fantasma. */
+  ghost?: RaceGhostView | null;
 }

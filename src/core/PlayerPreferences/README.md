@@ -5,11 +5,12 @@ Preferencias que se guardan entre partidas: modo de control, calibración de la 
 ## Tipos
 
 - `ControlMode`: `'tilt' | 'buttons'`.
-- `PlayerPreferences`: `{ controlMode, tiltNeutralAngle, tiltSensitivity, tiltDeadZone, soundEnabled, vibrationEnabled }`.
+- `PlayerPreferences`: `{ controlMode, tiltNeutralAngle, tiltSensitivity, tiltDeadZone, soundEnabled, ghostSource, vibrationEnabled }`.
   - `controlMode`: `null` hasta que el jugador elige.
   - `tiltNeutralAngle`: en radianes; `null` sin calibrar.
   - `tiltSensitivity`: de 1 a 10.
   - `tiltDeadZone`: en radianes, de 1° a 9°. Inicial, 5°.
+  - `ghostSource`: qué fantasma corre al lado del jugador: `mine` (su mejor vuelta, por defecto), `record` (el récord de la pista) o `none`. Es del celular, no del perfil: se elige en la selección de pista y se resuelve con `core/GhostChoice`.
   - `soundEnabled` y `vibrationEnabled`: si suenan el motor y los efectos, y si vibra el celular (también con el freno). Inicial, los dos prendidos. Se cambian desde la pausa.
 - `StartStep`: `'choose-control' | 'calibrate' | 'drive'`.
 

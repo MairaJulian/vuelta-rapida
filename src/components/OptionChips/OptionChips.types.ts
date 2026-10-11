@@ -1,6 +1,8 @@
 export interface OptionChip<Value extends string> {
   value: Value;
   label: string;
+  /** Desactivada: se ve apagada y no se puede elegir. */
+  disabled?: boolean;
 }
 
 export interface OptionChipsProps<Value extends string> {

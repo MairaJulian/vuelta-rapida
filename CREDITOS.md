@@ -50,6 +50,7 @@ node scripts/generate-sounds.mjs --engine <ruta>/motorseamless11.wav
 | Qué es | Fuente | Autor | Licencia |
 |---|---|---|---|
 | Trazados de los íconos, peso fill | [`@phosphor-icons/core`](https://github.com/phosphor-icons/core) 2.1.1, copiados al código | Phosphor Icons (Helena Zhang y Tobias Fried) | MIT |
+| Ícono `ghost` (fantasma) | Dibujado a mano en el proyecto, en el estilo relleno de los demás | Este proyecto | — |
 
 ## Monoplaza (`src/render/CarShape/`)
 

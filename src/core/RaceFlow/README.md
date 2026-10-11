@@ -49,6 +49,7 @@ Todos llevan `tick`: el paso de la carrera (sin contar la pausa).
 | `borderHit` | `impactSpeed` (m/s) | Empieza un contacto con el borde, si pasaron 0,5 s desde el último aviso. |
 | `kerbEnter` | `speed` (m/s) | El auto entra a un piano, si pasaron 0,3 s desde el último aviso. |
 | `newRecord` | `lapTicks`, `previousTicks` | Una vuelta mejora el récord vigente. |
+| `recordTrace` | `lapTicks`, `sampleHz`, `samples[]` | Acompaña a `newRecord`: las muestras de esa vuelta (`[x, z, rumbo, ...]`, la última en la meta) para guardarla como fantasma. |
 | `finish` | Los `RaceResults`: `totalTicks`, `lapTicks[]`, `bestLapTicks`, `bestLapIndex`, `newRecord`, `previousRecordTicks` | La llegada. |
 
 ## Ejemplo
@@ -66,6 +67,7 @@ if (events.length > 0) scheduleOnRN(dispatch, events); // al bus del hilo de JS
 - **Todo en pasos de simulación:** el semáforo, el cronómetro y los tiempos mínimos entre avisos. La misma semilla y la misma entrada dan exactamente la misma carrera, a cualquier fps.
 - **La vuelta 1 se cuenta desde la largada**, como en una carrera real: el auto larga 15 m antes de la meta y el cronómetro arranca al apagarse las luces. Así el total es la suma de las vueltas y el reloj del HUD corre desde la largada. `LapTimer` sigue validando cada vuelta con las puertas del circuito; la carrera solo registra en qué paso terminó cada una.
 - **Una vuelta deshecha no se cuenta dos veces:** si el auto vuelve marcha atrás sobre la meta, `LapTimer` deshace la vuelta, pero la carrera solo suma vueltas cuando el contador supera las que ya terminó.
+- **Fantasma (hito 8):** `RaceState.lapTrace` acumula la pose del auto cada `getGhostSampleGap(stepHz)` pasos (30 muestras por segundo a 60 pasos) desde el inicio de la vuelta: la 1 desde que se apagan las luces, las siguientes desde cada cruce de meta. Solo la vuelta que mejora el récord sale en un evento (`recordTrace`); las demás se descartan al empezar la siguiente. `getRaceLapClockMs(race)` da el tiempo de la vuelta en curso con la fracción del paso, que es el reloj de la reproducción (`core/Ghost`).
 - **Récord:** la carrera recibe el récord guardado (`setup.recordTicks`). Una vuelta que lo mejora lo reemplaza y se avisa con `newRecord`; las siguientes se comparan con el nuevo.
 - **Avisos de contacto:** solo al empezar un contacto (deslizarse contra el borde es un solo toque) y con un tiempo mínimo desde el último, para que un roce que se corta y vuelve no se repita.
 - **Eventos dentro del estado:** los pasos los juntan en `events` y el loop los retira con `takeRaceEvents`. Las órdenes de la pantalla (pausa, reinicio) también dejan su evento ahí, así todo sale por el mismo camino y una sola vez.

@@ -3,6 +3,7 @@ import { Canvas, Group } from '@shopify/react-native-skia';
 import { DEFAULT_SCENERY_DISPLAY } from '@/core/SceneryView';
 import { AsphaltDetails } from '@/render/AsphaltDetails';
 import { CarShape } from '@/render/CarShape';
+import { GhostCar } from '@/render/GhostCar';
 import { GrassLayer } from '@/render/GrassLayer';
 import { ParticleLayer } from '@/render/ParticleLayer';
 import { SceneryLayer } from '@/render/SceneryLayer';
@@ -13,8 +14,8 @@ import type { DriveCanvasProps } from './DriveCanvas.types';
 
 /**
  * Escena de manejo: dentro del grupo de la cámara, en coordenadas del mundo, el pasto,
- * la pista, la escenografía del suelo, las partículas, el auto y, encima, la
- * escenografía con altura. Solo aplica transformaciones; no calcula nada.
+ * la pista, la escenografía del suelo, las partículas, el auto fantasma, el auto del
+ * jugador y, encima, la escenografía con altura. Solo aplica transformaciones; no calcula nada.
  */
 export function DriveCanvas({
   track,
@@ -26,6 +27,7 @@ export function DriveCanvas({
   display = DEFAULT_SCENERY_DISPLAY,
   carColor,
   carNumber = null,
+  ghost = null,
 }: DriveCanvasProps) {
   const { scenery } = track;
   const shown = display.visible && scenery && sceneryView ? { scenery, view: sceneryView } : null;
@@ -45,6 +47,15 @@ export function DriveCanvas({
         ) : null}
         {display.particles && particles ? (
           <ParticleLayer particles={particles} image={atlas} />
+        ) : null}
+        {ghost ? (
+          <GhostCar
+            transform={ghost.transform}
+            labelTransform={ghost.labelTransform}
+            opacity={ghost.opacity}
+            color={ghost.color}
+            name={ghost.name}
+          />
         ) : null}
         <CarShape transform={carTransform} bodyColor={carColor} number={carNumber} />
         {shown ? (
