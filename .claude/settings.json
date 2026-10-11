@@ -27,7 +27,11 @@
       "Bash(git push -f *)",
       "Bash(rm -rf *)",
       "Read(./.env)",
-      "Read(./.env.*)"
+      "Read(./.env.*)",
+      "Read(./android/build/**)",
+      "Read(./android/.gradle/**)",
+      "Read(./android/app/build/**)",
+      "Read(./android/app/.cxx/**)"
     ]
   }
 }
