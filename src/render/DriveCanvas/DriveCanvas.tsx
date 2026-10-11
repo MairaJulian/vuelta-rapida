@@ -6,6 +6,7 @@ import { CarShape } from '@/render/CarShape';
 import { GhostCar } from '@/render/GhostCar';
 import { GrassLayer } from '@/render/GrassLayer';
 import { ParticleLayer } from '@/render/ParticleLayer';
+import { RivalCar } from '@/render/RivalCar';
 import { SceneryLayer } from '@/render/SceneryLayer';
 import { TrackLayer } from '@/render/TrackLayer';
 
@@ -14,8 +15,8 @@ import type { DriveCanvasProps } from './DriveCanvas.types';
 
 /**
  * Escena de manejo: dentro del grupo de la cámara, en coordenadas del mundo, el pasto,
- * la pista, la escenografía del suelo, las partículas, el auto fantasma, el auto del
- * jugador y, encima, la escenografía con altura. Solo aplica transformaciones; no calcula nada.
+ * la pista, la escenografía del suelo, las partículas, el auto fantasma, los rivales, el
+ * auto del jugador y, encima, la escenografía con altura. Solo aplica transformaciones; no calcula nada.
  */
 export function DriveCanvas({
   track,
@@ -28,6 +29,7 @@ export function DriveCanvas({
   carColor,
   carNumber = null,
   ghost = null,
+  rivals = null,
 }: DriveCanvasProps) {
   const { scenery } = track;
   const shown = display.visible && scenery && sceneryView ? { scenery, view: sceneryView } : null;
@@ -57,6 +59,18 @@ export function DriveCanvas({
             name={ghost.name}
           />
         ) : null}
+        {rivals
+          ? rivals.drivers.map((driver, index) => (
+              <RivalCar
+                key={driver.id}
+                cars={rivals.cars}
+                index={index}
+                cameraView={rivals.cameraView}
+                color={driver.color}
+                name={driver.name}
+              />
+            ))
+          : null}
         <CarShape transform={carTransform} bodyColor={carColor} number={carNumber} />
         {shown ? (
           <SceneryLayer scenery={shown.scenery} atlas={atlas} view={shown.view} level="raised" />

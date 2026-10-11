@@ -6,7 +6,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { createCameraState, getCameraView, stepCamera } from '@/core/Camera';
 import type { CameraState, CameraView } from '@/core/Camera';
 import { createCarState, getSpeed } from '@/core/DrivingModel';
-import type { CarState } from '@/core/DrivingModel';
+import type { CarState, DrivingConfig } from '@/core/DrivingModel';
 import { getRenderCar } from '@/core/DrivingSim';
 import { DEFAULT_FIXED_STEP_CONFIG } from '@/core/FixedStep';
 import { smoothFps } from '@/core/FpsMeter';
@@ -14,6 +14,8 @@ import {
   advanceRace,
   createRace,
   getRaceLapView,
+  getRacePlace,
+  getRenderRivals,
   pauseRace,
   restartRace,
   resumeRace,
@@ -21,7 +23,9 @@ import {
   takeRaceEvents,
 } from '@/core/RaceFlow';
 import type { RaceConfig, RaceSetup, RaceState } from '@/core/RaceFlow';
-import { getStartPose } from '@/core/Track';
+import { AI_LEVELS, buildSpeedProfile, DEFAULT_AI_LEVEL_ID } from '@/core/RivalAI';
+import type { AiLevelId } from '@/core/RivalAI';
+import { getGridPose, getGridProgress, getStartPose } from '@/core/Track';
 import type { Circuit } from '@/core/Track';
 
 import type { UseRaceLoopParams, UseRaceLoopResult } from './useRaceLoop.types';
@@ -31,27 +35,55 @@ export const ENGINE_SAMPLE_MS = 50;
 
 const defaultSeed = () => Date.now();
 
+/** Auto detenido en un puesto de la grilla. */
+function createGridCar(track: Circuit, slot: number): CarState {
+  const pose = getGridPose(track, slot);
+  return createCarState(pose.x, pose.z, pose.heading);
+}
+
+/**
+ * Datos de la carrera. Sin rivales, el jugador largó 15 m antes de la meta; con ellos,
+ * los rivales ocupan los primeros puestos de la grilla y el jugador el último.
+ */
 function createSetup(
   track: Circuit,
   config: RaceConfig,
   recordTicks: number | null,
   seed: number,
+  drivingConfig: DrivingConfig,
+  rivalCount: number,
+  aiLevel: AiLevelId,
 ): RaceSetup {
-  const start = getStartPose(track);
+  const base = { seed, recordTicks, stepHz: DEFAULT_FIXED_STEP_CONFIG.stepHz, config };
+  if (rivalCount <= 0) {
+    const start = getStartPose(track);
+    return { ...base, car: createCarState(start.x, start.z, start.heading) };
+  }
+  const level = AI_LEVELS[aiLevel];
   return {
-    car: createCarState(start.x, start.z, start.heading),
-    seed,
-    recordTicks,
-    stepHz: DEFAULT_FIXED_STEP_CONFIG.stepHz,
-    config,
+    ...base,
+    car: createGridCar(track, rivalCount),
+    field: {
+      lapLength: track.length,
+      playerProgress: getGridProgress(track, rivalCount),
+      // La velocidad objetivo se calcula con el manejo de este momento, una vez por carrera.
+      speedProfile: buildSpeedProfile(track, drivingConfig, level),
+      rivals: Array.from({ length: rivalCount }, (_, slot) => ({
+        id: `rival-${slot + 1}`,
+        car: createGridCar(track, slot),
+        startProgress: getGridProgress(track, slot),
+        seed: seed + (slot + 1) * 7919,
+        level,
+      })),
+    },
   };
 }
 
 /**
  * Corre la carrera en el hilo de UI, un paso fijo a la vez: el semáforo, el auto,
- * las vueltas y la llegada (`core/RaceFlow`). Expone valores compartidos para el
- * render y el HUD, entrega los eventos al hilo de JS y recibe las órdenes de la
- * pantalla (semáforo, pausa, reinicio). No dibuja nada.
+ * los rivales con IA, las vueltas y la llegada (`core/RaceFlow`). Expone valores
+ * compartidos para el render y el HUD, entrega los eventos al hilo de JS y recibe las
+ * órdenes de la pantalla (semáforo, pausa, reinicio). No dibuja nada.
  */
 export function useRaceLoop({
   input,
@@ -63,14 +95,19 @@ export function useRaceLoop({
   recordTicks,
   onEvents,
   onEngine,
+  rivalCount = 0,
+  aiLevel = DEFAULT_AI_LEVEL_ID,
   createSeed = defaultSeed,
 }: UseRaceLoopParams): UseRaceLoopResult {
   // La primera carrera se arma una sola vez; las siguientes, con `restart`.
   const [initialRace] = useState(() =>
-    createRace(createSetup(track, raceConfig, recordTicks, createSeed())),
+    createRace(
+      createSetup(track, raceConfig, recordTicks, createSeed(), drivingConfig, rivalCount, aiLevel),
+    ),
   );
   const race = useSharedValue<RaceState>(initialRace);
   const car = useSharedValue<CarState>(initialRace.sim.car);
+  const rivalCars = useSharedValue<CarState[]>(initialRace.rivals.map((rival) => rival.sim.car));
   const camera = useSharedValue<CameraState>(createCameraState());
   const fps = useSharedValue(0);
   const engineClock = useSharedValue(0);
@@ -103,6 +140,9 @@ export function useRaceLoop({
     }
     const drawn = getRenderCar(next.sim, DEFAULT_FIXED_STEP_CONFIG);
     car.set(drawn);
+    if (next.rivals.length > 0) {
+      rivalCars.set(getRenderRivals(next, DEFAULT_FIXED_STEP_CONFIG));
+    }
     if (onEngine) {
       const elapsed = engineClock.get() + frameMs;
       if (elapsed >= ENGINE_SAMPLE_MS) {
@@ -150,6 +190,7 @@ export function useRaceLoop({
   });
 
   const lapView = useDerivedValue(() => getRaceLapView(race.get()));
+  const placeView = useDerivedValue(() => getRacePlace(race.get()));
 
   const carTransform = useDerivedValue<Transforms3d>(() => {
     const current = car.get();
@@ -179,23 +220,46 @@ export function useRaceLoop({
   }, [race]);
 
   const restart = useCallback(() => {
-    const setup = createSetup(track, raceConfig, recordTicks, createSeed());
+    const setup = createSetup(
+      track,
+      raceConfig,
+      recordTicks,
+      createSeed(),
+      drivingConfig,
+      rivalCount,
+      aiLevel,
+    );
     race.modify((current) => {
       'worklet';
       return restartRace(current, setup);
     });
     car.set(setup.car);
+    rivalCars.set(setup.field ? setup.field.rivals.map((rival) => rival.car) : []);
     camera.set(createCameraState());
-  }, [camera, car, createSeed, race, raceConfig, recordTicks, track]);
+  }, [
+    aiLevel,
+    camera,
+    car,
+    createSeed,
+    drivingConfig,
+    race,
+    raceConfig,
+    recordTicks,
+    rivalCars,
+    rivalCount,
+    track,
+  ]);
 
   return {
     race,
     car,
+    rivalCars,
     fps,
     cameraView,
     cameraTransform,
     carTransform,
     lapView,
+    placeView,
     startLights,
     pause,
     resume,

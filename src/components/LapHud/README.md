@@ -10,6 +10,7 @@ HUD de la carrera (pantalla 07 del handoff): "Vuelta 2/3" arriba a la izquierda,
 | `recordMs` | `number \| null` | Récord guardado del circuito, en ms (de `useBestLapRecord`). |
 | `stepHz` | `number` | Pasos de simulación por segundo, para pasar los pasos a tiempo. |
 | `ghostDelta` | `DerivedValue<number | null>` (opcional) | Diferencia con el fantasma en segundos, positiva si el jugador va atrás (de `useRaceGhost`). Con un número se muestra el chip; con `null` o sin la prop, no. |
+| `placeView` | `DerivedValue<RacePlaceView>` (opcional) | Puesto del jugador y autos en carrera (`useRaceLoop`). Con rivales muestra "2/4" bajo la píldora de la vuelta; con un solo auto, o sin la prop, nada. |
 | `onPause` | `() => void` (opcional) | Abre la pausa. Sin esta prop no hay botón. |
 | `style` | `StyleProp<ViewStyle>` | Estilo extra del contenedor. |
 
