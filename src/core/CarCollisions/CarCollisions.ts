@@ -4,13 +4,13 @@ import { clamp } from '@/core/MathUtils';
 import type { CarCollisionResult, CollisionConfig } from './CarCollisions.types';
 
 /**
- * Valores iniciales. El radio de 1,5 m deja los autos (2 × 4,5 m) a 3 m entre centros: lado
+ * Valores iniciales. El radio de 1,3 m deja los autos (2 × 4,5 m) a 2,6 m entre centros: lado
  * a lado no se tocan y en fila se superponen poco. El empujón es leve, y el que choca por
  * detrás pierde 1,2 por segundo de contacto; el que recibe el choque, casi nada.
  */
 export const DEFAULT_COLLISION_CONFIG: CollisionConfig = Object.freeze({
   enabled: true,
-  radius: 1.5,
+  radius: 1.3,
   pushSpeed: 1.5,
   rearLossRate: 1.2,
   frontLossRate: 0.3,

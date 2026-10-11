@@ -14,7 +14,7 @@ Choques entre autos: cada auto es un círculo; al solaparse, se separan, se empu
 | Parámetro       | Inicial | Qué es                                                                                          |
 | --------------- | ------- | ----------------------------------------------------------------------------------------------- |
 | `enabled`       | `true`  | Si los autos chocan. Se elige en la selección de pista (`PlayerPreferences.collisionsEnabled`). |
-| `radius`        | 1,5 m   | Radio del círculo de cada auto. Dos autos chocan a menos del doble.                             |
+| `radius`        | 1,3 m   | Radio del círculo de cada auto. Dos autos chocan a menos del doble.                             |
 | `pushSpeed`     | 1,5 m/s | Velocidad con que se alejan tras el choque.                                                     |
 | `rearLossRate`  | 1,2 /s  | Pérdida de velocidad del que choca por detrás (`exp(−tasa·dt)`, mientras dura el contacto).     |
 | `frontLossRate` | 0,3 /s  | Pérdida del que recibe el choque.                                                               |
@@ -40,6 +40,6 @@ Por cada par solapado, en orden fijo:
 - **Sin giro:** solo se tocan posición y velocidad, nunca el rumbo ni la dirección. Un choque no genera trompos; el agarre lateral del modelo de manejo absorbe el empujón.
 - **No conoce la pista:** `RaceFlow` devuelve cada auto movido al asfalto (`resolveTrackContact`) y repite hasta 3 pasadas por paso. Un empujón nunca saca a un auto de la pista, y los choques con el borde siguen como siempre.
 - **Masas iguales y sin rebote:** la separación se reparte a partes iguales y el empujón es un tope de velocidad, no un rebote. Es leve y estable aunque varios autos se apilen.
-- **Radio propio:** `radius` no es `DrivingConfig.collisionRadius` (1 m, el que usa el borde de la pista). El auto mide 2 × 4,5 m: con un solo círculo, 1,5 m deja los autos lado a lado sin tocarse y en fila superpuestos un poco.
+- **Radio propio:** `radius` no es `DrivingConfig.collisionRadius` (1 m, el que usa el borde de la pista). El auto mide 2 × 4,5 m: con un solo círculo, 1,3 m deja los autos lado a lado sin tocarse (0,6 m de aire) y en fila superpuestos un poco.
 - **Tasa, no multa:** la pérdida es continua (como `wallFriction`): un roce corto casi no cuesta; apretarse contra otro auto, sí.
 - Los avisos (`carHit`, con tiempo mínimo entre uno y otro) los da `RaceFlow`, solo cuando el jugador está involucrado.
