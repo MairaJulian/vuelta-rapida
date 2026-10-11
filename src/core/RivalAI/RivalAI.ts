@@ -4,6 +4,7 @@ import { getForwardSpeed, getMaxSteerAngle } from '@/core/DrivingModel';
 import type { DrivingConfig, DrivingInput } from '@/core/DrivingModel';
 import { createDrivingSim, stepDrivingSim } from '@/core/DrivingSim';
 import { clamp, wrapAngle } from '@/core/MathUtils';
+import { getRaceDistance } from '@/core/RacePositions';
 import { createRandomState, nextRandomBetween } from '@/core/SeededRandom';
 import { getCurvatureProfile, getPoseAtProgress, getSegmentAtProgress } from '@/core/Track';
 import type { Circuit } from '@/core/Track';
@@ -23,7 +24,7 @@ import type {
 export const RIVAL_COUNT = 3;
 
 /**
- * Niveles de dificultad. Hoy solo existe el fácil (rivales a un 78–86 % de lo que
+ * Niveles de dificultad. Hoy solo existe el fácil (rivales a un 88–95 % de lo que
  * aguantan las curvas, con trazada y frenada imprecisas); medio y difícil se suman acá.
  */
 export const AI_LEVELS: Readonly<Record<AiLevelId, AiLevel>> = Object.freeze({
@@ -31,15 +32,20 @@ export const AI_LEVELS: Readonly<Record<AiLevelId, AiLevel>> = Object.freeze({
     id: 'easy',
     lookAheadMin: 9,
     lookAheadTime: 0.35,
-    paceMin: 0.78,
-    paceMax: 0.86,
-    lateralAccel: 24,
+    lookAheadCurveTime: 0.45,
+    paceMin: 0.88,
+    paceMax: 0.95,
+    lateralAccel: 30,
     steerReserve: 0.65,
     brakeDecelFactor: 0.6,
     brakeGain: 0.3,
     lineError: 1,
     lineChangeSeconds: 1.5,
     lineRate: 0.8,
+    catchUpRange: 150,
+    catchUpBoost: 0.15,
+    catchUpEase: 0.12,
+    maxPace: 0.97,
     speedError: 0.06,
   }),
 });
@@ -73,6 +79,8 @@ const RIVAL_COLOR_ORDER: readonly CarColorId[] = Object.freeze([
 
 /** Velocidad mínima que la IA pide en una curva, en m/s: nunca se clava. */
 const MIN_CORNER_SPEED = 7;
+/** Distancia mínima a la que mira la IA en una curva cerrada, en metros. */
+const MIN_LOOK_AHEAD = 5;
 /** Pasos de la búsqueda binaria de la velocidad que permite el giro de las ruedas. */
 const STEER_SEARCH_STEPS = 14;
 
@@ -205,13 +213,16 @@ function stepDriver(driver: RivalDriver, tick: number, limit: number, dt: number
  * Entrada del rival: la misma que el jugador (dirección y freno), sin atajos de física.
  * Dirección: persecución pura hacia un punto de la trazada, adelante a una distancia que
  * crece con la velocidad (y corrido por el desvío del rival). Freno: proporcional a lo
- * que se pasa de la velocidad objetivo del tramo (`profile`, con su ritmo y su error).
+ * que se pasa de la velocidad objetivo del tramo (`profile`, con su ritmo, su error y el
+ * ajuste por la distancia al jugador: `playerDistance`, la distancia de carrera del jugador).
+ * El objetivo nunca pasa de `maxPace` veces el límite seguro del tramo.
  */
 export function getRivalInput(
   rival: RivalState,
   circuit: Circuit,
   profile: readonly number[],
   config: DrivingConfig,
+  playerDistance: number,
 ): DrivingInput {
   'worklet';
   const { driver, sim } = rival;
@@ -220,7 +231,24 @@ export function getRivalInput(
   const forward = getForwardSpeed(car);
   const progress = sim.laps.progress ?? 0;
 
-  const lookAhead = level.lookAheadMin + level.lookAheadTime * Math.max(forward, 0);
+  const { segment } = getSegmentAtProgress(circuit, progress);
+  // Jugador adelante (gap > 0): el rival acelera; jugador atrás: se relaja. Sin pasar del perfil.
+  const gap = playerDistance - getRaceDistance(sim.laps, circuit.length);
+  const catchUp =
+    gap > 0
+      ? level.catchUpBoost * Math.min(gap / level.catchUpRange, 1)
+      : -level.catchUpEase * Math.min(-gap / level.catchUpRange, 1);
+  const limit = profile[segment];
+  const target = Math.min(
+    limit * level.maxPace,
+    limit * driver.pace * driver.speedScale * (1 + catchUp),
+  );
+
+  // En una curva cerrada el límite de velocidad es bajo: mirar menos adelante evita cortarla.
+  const lookAhead = Math.min(
+    level.lookAheadMin + level.lookAheadTime * Math.max(forward, 0),
+    Math.max(MIN_LOOK_AHEAD, limit * level.lookAheadCurveTime),
+  );
   const aim = getPoseAtProgress(circuit, progress + lookAhead, driver.lineOffset);
   const dx = aim.x - car.x;
   const dz = aim.z - car.z;
@@ -230,8 +258,6 @@ export function getRivalInput(
   const maxWheel = getMaxSteerAngle(forward, config);
   const steer = maxWheel > 0 ? clamp(wheel / maxWheel, -1, 1) : 0;
 
-  const { segment } = getSegmentAtProgress(circuit, progress);
-  const target = profile[segment] * driver.pace * driver.speedScale;
   const brake = clamp((forward - target) * level.brakeGain, 0, 1);
   return { steer, brake };
 }
@@ -249,11 +275,12 @@ export function stepRival(
   coastConfig: DrivingConfig,
   rules: RivalRules,
   dt: number,
+  playerDistance: number,
 ): RivalState {
   'worklet';
   const tick = rival.sim.tick + 1;
   const driver = stepDriver(rival.driver, tick, getTrackLimit(circuit, config), dt);
-  const input = getRivalInput({ ...rival, driver }, circuit, profile, config);
+  const input = getRivalInput({ ...rival, driver }, circuit, profile, config, playerDistance);
   if (rival.finishTick !== null) {
     const sim = stepDrivingSim(
       rival.sim,

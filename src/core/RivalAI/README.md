@@ -9,9 +9,13 @@ La IA de los rivales como TypeScript puro y worklets: cada rival maneja con el *
 3. **Imprecisión** (`stepDriver`): cada `lineChangeSeconds` se sortean, con un generador con semilla (`core/SeededRandom`), un desvío de la trazada (hasta `lineError` m, y nunca más de un 40 % del ancho libre) y un factor de la velocidad objetivo (error de frenada, `1 ± speedError`). El desvío se alcanza a `lineRate` m/s, así no hay saltos. La misma semilla da la misma carrera.
 4. **Ritmo propio:** a cada rival se le sortea un ritmo entre `paceMin` y `paceMax` (fracción de la velocidad objetivo que usa), para que no vayan pegados.
 
+## Ajuste de ritmo según el jugador (rubber banding)
+
+Cada paso, el rival compara su distancia de carrera con la del jugador: si va detrás, su ritmo sube hasta `catchUpBoost` (+15 %); si va delante, baja hasta `catchUpEase` (−12 %), en proporción a la distancia y hasta `catchUpRange` (150 m). El objetivo nunca pasa de `maxPace` (97 %) del límite seguro del tramo, así que las curvas siguen con margen. Sin esto, un jugador que pasa a los rivales los pierde de vista: el jugador llega a 42 m/s y ellos, al 88–95 %, a unos 38. En las curvas cerradas la IA además mira menos adelante (`lookAheadCurveTime`), porque con el punto lejano cortaba la curva por dentro y tocaba el borde.
+
 ## Dificultad
 
-`AI_LEVELS` guarda los parámetros de cada nivel (`AiLevel`). Por ahora solo existe `easy` (78–86 % de la velocidad segura, `lineError` 1 m, freno al 60 %); medio y difícil se suman como una entrada más sin tocar el código de la IA. `DEFAULT_AI_LEVEL_ID` es `easy`.
+`AI_LEVELS` guarda los parámetros de cada nivel (`AiLevel`). Por ahora solo existe `easy` (88–95 % de la velocidad segura, `lineError` 1 m, freno al 60 %); medio y difícil se suman como una entrada más sin tocar el código de la IA. `DEFAULT_AI_LEVEL_ID` es `easy`.
 
 ## API
 

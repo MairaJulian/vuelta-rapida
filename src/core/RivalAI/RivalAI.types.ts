@@ -13,6 +13,8 @@ export interface AiLevel {
   lookAheadMin: number;
   /** Segundos de camino que mira de más: la distancia crece con la velocidad. */
   lookAheadTime: number;
+  /** Segundos de camino que mira en una curva: con el límite de velocidad del tramo da su distancia máxima, para no cortarla. */
+  lookAheadCurveTime: number;
   /** Ritmo de cada rival, de `paceMin` a `paceMax`: fracción de la velocidad segura que usa (se sortea). */
   paceMin: number;
   paceMax: number;
@@ -30,6 +32,17 @@ export interface AiLevel {
   lineChangeSeconds: number;
   /** Con qué rapidez se corre hacia la nueva trazada, en m/s. */
   lineRate: number;
+  /**
+   * Distancia al jugador, en metros, a la que el ajuste de ritmo llega a su máximo: el
+   * rival que va detrás acelera y el que va delante se relaja, según cuánto los separa.
+   */
+  catchUpRange: number;
+  /** Ritmo extra del rival que va detrás del jugador, como fracción (0,15 = +15 %). */
+  catchUpBoost: number;
+  /** Ritmo que pierde el rival que va delante del jugador, como fracción (0,12 = −12 %). */
+  catchUpEase: number;
+  /** Tope del ritmo con todos los ajustes, como fracción del límite seguro del tramo: deja margen en las curvas. */
+  maxPace: number;
   /** Error de frenada: la velocidad objetivo se multiplica por 1 ± este valor (se sortea). */
   speedError: number;
 }

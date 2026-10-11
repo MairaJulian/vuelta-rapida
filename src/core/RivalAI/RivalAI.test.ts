@@ -49,21 +49,33 @@ describe('IA de los rivales', () => {
         }
       });
 
-      it.each([1, 2, 3])('con la semilla %i nunca toca el borde y completa la carrera', (seed) => {
-        let rivals = startRivals(circuit, seed);
-        const rules = { totalLaps: LAPS, finishBrake: 0.5 };
-        let touches = 0;
-        let tick = 0;
-        while (tick < MAX_TICKS && rivals.some((rival) => rival.finishTick === null)) {
-          rivals = rivals.map((rival) =>
-            stepRival(rival, circuit, profile, DEFAULT_DRIVING_CONFIG, COAST_CONFIG, rules, DT),
-          );
-          touches += rivals.filter((rival) => rival.sim.contact.touching).length;
-          tick += 1;
-        }
-        expect(touches).toBe(0);
-        expect(rivals.map((rival) => rival.finishTick !== null)).toEqual([true, true, true]);
-      });
+      it.each([1, 2, 3])(
+        'con la semilla %i y el jugador muy adelante (ritmo máximo) nunca toca el borde y completa la carrera',
+        (seed) => {
+          let rivals = startRivals(circuit, seed);
+          const rules = { totalLaps: LAPS, finishBrake: 0.5 };
+          let touches = 0;
+          let tick = 0;
+          while (tick < MAX_TICKS && rivals.some((rival) => rival.finishTick === null)) {
+            rivals = rivals.map((rival) =>
+              stepRival(
+                rival,
+                circuit,
+                profile,
+                DEFAULT_DRIVING_CONFIG,
+                COAST_CONFIG,
+                rules,
+                DT,
+                1e9,
+              ),
+            );
+            touches += rivals.filter((rival) => rival.sim.contact.touching).length;
+            tick += 1;
+          }
+          expect(touches).toBe(0);
+          expect(rivals.map((rival) => rival.finishTick !== null)).toEqual([true, true, true]);
+        },
+      );
     },
   );
 
@@ -75,7 +87,7 @@ describe('IA de los rivales', () => {
       const rules = { totalLaps: LAPS, finishBrake: 0.5 };
       for (let tick = 0; tick < 1200; tick += 1) {
         rivals = rivals.map((rival) =>
-          stepRival(rival, circuit, profile, DEFAULT_DRIVING_CONFIG, COAST_CONFIG, rules, DT),
+          stepRival(rival, circuit, profile, DEFAULT_DRIVING_CONFIG, COAST_CONFIG, rules, DT, 0),
         );
       }
       return rivals.map((rival) => rival.sim.car);

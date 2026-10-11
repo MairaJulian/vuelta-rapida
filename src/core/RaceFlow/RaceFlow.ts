@@ -179,10 +179,20 @@ function stepRivals(
     return rivals;
   }
   const rules = { totalLaps: race.config.totalLaps, finishBrake: race.config.finishBrake };
+  const playerDistance = getRaceDistance(race.sim.laps, race.lapLength);
   const next: RivalState[] = [];
   for (let i = 0; i < rivals.length; i += 1) {
     next.push(
-      stepRival(rivals[i], circuit, race.speedProfile, drivingConfig, coastConfig, rules, dt),
+      stepRival(
+        rivals[i],
+        circuit,
+        race.speedProfile,
+        drivingConfig,
+        coastConfig,
+        rules,
+        dt,
+        playerDistance,
+      ),
     );
   }
   return next;
