@@ -209,19 +209,26 @@ describe('getRankingTexts', () => {
     const texts = getRankingTexts(
       rankingOf(
         { position: 2, above: row(1, TOMI), gapToAboveMs: 420 },
-        { position: 1, total: 1 },
+        { position: 1, total: 2 },
         null,
       ),
     );
     expect(texts.tables).toEqual([
       {
         key: 'lap',
-        label: 'Mejor vuelta',
+        label: 'Ranking · mejor vuelta',
         position: '2.º de 3',
         detail: 'Te faltan 0.42 s para alcanzar a TOMI',
       },
-      { key: 'race', label: 'Carrera · 3 vueltas', position: '1.º de 1', detail: '¡Primero!' },
+      { key: 'race', label: 'Ranking · 3 vueltas', position: '1.º de 2', detail: '¡Primero!' },
     ]);
+  });
+
+  it('una tabla con un solo perfil no aparece', () => {
+    const texts = getRankingTexts(
+      rankingOf({ position: 1, total: 1 }, { position: 1, total: 1 }, null),
+    );
+    expect(texts.tables).toEqual([]);
   });
 
   it('con el mismo tiempo que el de arriba, lo dice', () => {
@@ -273,10 +280,10 @@ describe('RaceResults con ranking', () => {
   it('muestra el puesto en las dos tablas', async () => {
     await renderWith(rankingOf({ position: 2, above: row(1, TOMI), gapToAboveMs: 420 }, {}, null));
     expect(screen.getByTestId('results-ranking-lap')).toHaveTextContent(
-      'Mejor vuelta2.º de 3Te faltan 0.42 s para alcanzar a TOMI',
+      'Ranking · mejor vuelta2.º de 3Te faltan 0.42 s para alcanzar a TOMI',
     );
     expect(screen.getByTestId('results-ranking-race')).toHaveTextContent(
-      'Carrera · 3 vueltas1.º de 3¡Primero!',
+      'Ranking · 3 vueltas1.º de 3¡Primero!',
     );
   });
 

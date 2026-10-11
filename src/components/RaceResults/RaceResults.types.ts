@@ -36,10 +36,10 @@ export interface RaceResultsProps {
 export interface RankingTexts {
   /** Título de la tarjeta según la celebración ("¡Récord de la pista!", "Tu tiempo"). */
   title: string;
-  /** Una por tabla en la que está el jugador: mejor vuelta y carrera completa. */
+  /** Una por tabla en la que está el jugador y hay más de un perfil: mejor vuelta y carrera completa. */
   tables: {
     key: 'lap' | 'race';
-    /** "Mejor vuelta" o "Carrera · 3 vueltas". */
+    /** "Ranking · mejor vuelta" o "Ranking · 3 vueltas". */
     label: string;
     /** "2.º de 4". */
     position: string;

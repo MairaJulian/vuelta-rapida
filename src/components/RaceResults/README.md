@@ -62,7 +62,7 @@ const results = getRaceResults(loop.race.get());
   | Mejor tiempo personal | "¡Nuevo récord personal!"                                 | lima y trofeo | no        |
   | Nada                  | "Tu tiempo"                                               | blanca        | no        |
 
-  Encima de las vueltas, dos fichas con el puesto en cada tabla ("Mejor vuelta · 2.º de 4" y "Carrera · 3 vueltas · 1.º de 4"), y si no es primero, "Te faltan 0.42 s para alcanzar a TOMI" (la diferencia con el de arriba, redondeada para arriba). Sin `ranking` (sin perfil), la tarjeta celebra solo el récord de vuelta, como antes.
+  Encima de las vueltas, dos fichas con el puesto en el ranking de la pista, de todos los perfiles (no la clasificación de la carrera): "Ranking · mejor vuelta · 2.º de 4" y "Ranking · 3 vueltas · 1.º de 4". Una tabla con un solo perfil no muestra su ficha (ser "1.º de 1" no dice nada); si ninguna tiene más de uno, no hay fichas. Si no es primero, "Te faltan 0.42 s para alcanzar a TOMI" (la diferencia con el de arriba, redondeada para arriba). Sin `ranking` (sin perfil), la tarjeta celebra solo el récord de vuelta, como antes.
 
 - **El delta de la píldora sigue siendo contra el récord personal de vuelta,** aunque el título dependa del ranking: son dos datos distintos.
 - **"NOMBRE · #NN" del perfil activo** encabeza la columna de vueltas (hito 6a), en mayúsculas como el resto de los rótulos. Sin perfil (una ruta directa de desarrollo), dice "Tus vueltas".
