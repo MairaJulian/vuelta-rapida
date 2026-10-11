@@ -15,6 +15,7 @@ Lienzo Skia de la pantalla de manejo. Dentro del grupo de la cámara, en coorden
 | `display` | `SceneryDisplayConfig` (opcional) | Qué se muestra y con qué intensidad. Por defecto, `DEFAULT_SCENERY_DISPLAY`. |
 | `carColor` | `string` (opcional) | Color de la carrocería (el del perfil activo). Por defecto, el azul. |
 | `carNumber` | `number \| null` (opcional) | Número del auto (el del perfil activo). Sin número, el disco queda vacío. |
+| `ghost` | `RaceGhostView` (opcional) | Auto fantasma (`useRaceGhost`): translúcido, con el color y el nombre de su dueño. Sin esto, no hay fantasma. |
 
 Las dos transformaciones las produce `useRaceLoop`.
 
@@ -43,8 +44,9 @@ const particles = useParticles({ race: loop.race, car: loop.car, input, enabled:
 3. Detalles del asfalto (`AsphaltDetails`).
 4. Escenografía del suelo: sombras y barreras (`SceneryLayer`, `ground`).
 5. Partículas (`ParticleLayer`).
-6. Auto (`CarShape`).
-7. Escenografía con altura y paralaje: arbustos, carteles, tribuna y árboles (`SceneryLayer`, `raised`).
+6. Auto fantasma (`GhostCar`), si hay.
+7. Auto del jugador (`CarShape`).
+8. Escenografía con altura y paralaje: arbustos, carteles, tribuna y árboles (`SceneryLayer`, `raised`).
 
 ## Decisiones de diseño
 
