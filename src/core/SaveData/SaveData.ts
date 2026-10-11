@@ -9,7 +9,7 @@ import type {
 } from './SaveData.types';
 
 /** Versión actual de los datos guardados. Subirla exige sumar un paso a `SAVE_MIGRATIONS`. */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /** Versión de los datos guardados antes de que existiera el número de versión (hito 6a). */
 export const LEGACY_SAVE_VERSION = 1;
@@ -150,12 +150,25 @@ function addRivalPreferences({ profiles, preferences }: SaveDocuments): SaveDocu
   };
 }
 
+/**
+ * v5 → v6 (hito 9b, colisiones): las preferencias suman si los autos chocan entre sí
+ * (`collisionsEnabled`, activado). Si el documento ya tiene el campo, una migración
+ * anterior se cortó después de escribirlo: se deja como está. Los perfiles no cambian.
+ */
+function addCollisionsPreference({ profiles, preferences }: SaveDocuments): SaveDocuments {
+  if (preferences === null || preferences.collisionsEnabled !== undefined) {
+    return { profiles, preferences };
+  }
+  return { profiles, preferences: { ...preferences, collisionsEnabled: true } };
+}
+
 /** Pasos de migración, uno por versión. */
 export const SAVE_MIGRATIONS: readonly SaveMigration[] = Object.freeze([
   { from: 1, to: 2, migrate: moveRecordsToProfiles },
   { from: 2, to: 3, migrate: addRaceRecords },
   { from: 3, to: 4, migrate: addGhosts },
   { from: 4, to: 5, migrate: addRivalPreferences },
+  { from: 5, to: 6, migrate: addCollisionsPreference },
 ]);
 
 /**

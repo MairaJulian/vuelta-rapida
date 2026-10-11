@@ -51,6 +51,7 @@ describe('usePlayerPreferences', () => {
       rivalCount: 3,
       aiLevel: 'easy',
       dynamicDifficulty: true,
+      collisionsEnabled: true,
     });
   });
 
@@ -69,6 +70,7 @@ describe('usePlayerPreferences', () => {
       rivalCount: 3,
       aiLevel: 'easy',
       dynamicDifficulty: true,
+      collisionsEnabled: true,
     });
   });
 

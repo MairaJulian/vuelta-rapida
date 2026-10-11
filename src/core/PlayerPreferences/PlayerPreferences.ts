@@ -27,6 +27,7 @@ export const DEFAULT_PLAYER_PREFERENCES: PlayerPreferences = Object.freeze({
   rivalCount: RIVAL_COUNT,
   aiLevel: DEFAULT_AI_LEVEL_ID,
   dynamicDifficulty: true,
+  collisionsEnabled: true,
 });
 
 const MIN_SENSITIVITY = 1;
@@ -109,6 +110,10 @@ export function parsePlayerPreferences(raw: string | null): PlayerPreferences {
       typeof fields.dynamicDifficulty === 'boolean'
         ? fields.dynamicDifficulty
         : DEFAULT_PLAYER_PREFERENCES.dynamicDifficulty,
+    collisionsEnabled:
+      typeof fields.collisionsEnabled === 'boolean'
+        ? fields.collisionsEnabled
+        : DEFAULT_PLAYER_PREFERENCES.collisionsEnabled,
   };
 }
 
@@ -128,6 +133,7 @@ export function serializePlayerPreferences(preferences: PlayerPreferences): stri
     rivalCount: preferences.rivalCount,
     aiLevel: preferences.aiLevel,
     dynamicDifficulty: preferences.dynamicDifficulty,
+    collisionsEnabled: preferences.collisionsEnabled,
   });
 }
 

@@ -28,6 +28,7 @@ const saved: PlayerPreferences = {
   rivalCount: 2,
   aiLevel: 'hard',
   dynamicDifficulty: false,
+  collisionsEnabled: false,
 };
 
 describe('parsePlayerPreferences', () => {
@@ -68,6 +69,7 @@ describe('parsePlayerPreferences', () => {
       rivalCount: 3,
       aiLevel: 'easy',
       dynamicDifficulty: true,
+      collisionsEnabled: true,
     });
   });
 

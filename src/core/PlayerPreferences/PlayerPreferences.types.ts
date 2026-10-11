@@ -34,6 +34,8 @@ export interface PlayerPreferences {
   aiLevel: AiLevelId;
   /** Si los rivales aprietan cuando el jugador va muy adelante y aflojan cuando va muy atrás. */
   dynamicDifficulty: boolean;
+  /** Si los autos chocan entre sí. Apagado, se atraviesan. */
+  collisionsEnabled: boolean;
 }
 
 /** Primer paso al abrir el juego, según lo que ya está guardado. */
