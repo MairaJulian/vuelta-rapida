@@ -324,6 +324,101 @@ export function getStartPose(track: TrackData): Pose {
   return { x: finish.x, z: finish.z, heading: finish.heading };
 }
 
+/** Distancia entre dos puestos de la grilla, a lo largo del trazado, en metros. */
+export const GRID_SLOT_GAP = 8;
+/** Corrimiento lateral de los puestos de la grilla (alternados a izquierda y derecha), en metros. */
+export const GRID_SIDE_OFFSET = 2;
+
+/**
+ * Segmento del trazado donde cae un progreso (distancia desde la meta) y la parte
+ * recorrida de él, de 0 a 1. Búsqueda binaria; el progreso se lleva a [0, largo).
+ */
+export function getSegmentAtProgress(
+  circuit: Circuit,
+  progress: number,
+): { segment: number; t: number } {
+  'worklet';
+  const { distances, length } = circuit;
+  const count = distances.length;
+  const along = ((progress % length) + length) % length;
+  let low = 0;
+  let high = count - 1;
+  while (low < high) {
+    const middle = (low + high + 1) >> 1;
+    if (distances[middle] <= along) {
+      low = middle;
+    } else {
+      high = middle - 1;
+    }
+  }
+  const end = low + 1 < count ? distances[low + 1] : length;
+  const span = end - distances[low];
+  return { segment: low, t: span > 0 ? (along - distances[low]) / span : 0 };
+}
+
+/**
+ * Pose sobre el trazado a `progress` metros de la meta, con el rumbo del tramo.
+ * `offset` corre el punto hacia la derecha de la marcha (negativo, a la izquierda).
+ */
+export function getPoseAtProgress(circuit: Circuit, progress: number, offset: number = 0): Pose {
+  'worklet';
+  const { centerline } = circuit;
+  const { segment, t } = getSegmentAtProgress(circuit, progress);
+  const a = centerline[segment];
+  const b = centerline[segment + 1 < centerline.length ? segment + 1 : 0];
+  const heading = Math.atan2(b.x - a.x, a.z - b.z);
+  return {
+    x: a.x + (b.x - a.x) * t + Math.cos(heading) * offset,
+    z: a.z + (b.z - a.z) * t + Math.sin(heading) * offset,
+    heading,
+  };
+}
+
+/**
+ * Puesto de la grilla: el 0 es la pole, `START_GAP` metros antes de la meta; cada
+ * puesto siguiente va `GRID_SLOT_GAP` metros más atrás y del lado contrario. En pistas
+ * angostas el corrimiento se achica para que el auto quede dentro del asfalto.
+ */
+export function getGridPose(circuit: Circuit, slot: number): Pose {
+  const side = Math.min(GRID_SIDE_OFFSET, circuit.width / 4);
+  return getPoseAtProgress(circuit, getGridProgress(circuit, slot), slot % 2 === 0 ? -side : side);
+}
+
+/** Progreso (distancia desde la meta) del puesto de la grilla, en [0, largo). */
+export function getGridProgress(circuit: Circuit, slot: number): number {
+  const along = circuit.length - START_GAP - slot * GRID_SLOT_GAP;
+  return ((along % circuit.length) + circuit.length) % circuit.length;
+}
+
+/**
+ * Curvatura del trazado en cada punto, en 1/m (siempre positiva). Mide el giro entre
+ * los puntos a unos `CURVATURE_WINDOW` metros antes y después, dividido por el largo
+ * medio de esos dos tramos, igual que `getCurveSections`.
+ */
+export function getCurvatureProfile(track: TrackData): number[] {
+  const points = track.centerline;
+  const count = points.length;
+  if (count < 3) {
+    return points.map(() => 0);
+  }
+  let lapLength = 0;
+  points.forEach((point, i) => {
+    const next = points[(i + 1) % count];
+    lapLength += Math.hypot(next.x - point.x, next.z - point.z);
+  });
+  const reach = Math.max(1, Math.round(CURVATURE_WINDOW / (lapLength / count)));
+  return points.map((point, i) => {
+    const previous = points[(i - reach + count) % count];
+    const next = points[(i + reach) % count];
+    const turn = Math.abs(wrapAngle(headingBetween(point, next) - headingBetween(previous, point)));
+    const averageLength =
+      (Math.hypot(point.x - previous.x, point.z - previous.z) +
+        Math.hypot(next.x - point.x, next.z - point.z)) /
+      2;
+    return averageLength > 0 ? turn / averageLength : 0;
+  });
+}
+
 /**
  * Segmentos a cada lado del de referencia que revisa la búsqueda local. En un paso
  * el auto avanza menos de un metro; 25 segmentos son 50 m en los circuitos.

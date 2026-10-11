@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { formatLapDelta, formatLapTime, ticksToMs } from '@/core/LapTimer';
 import type { RaceLapView } from '@/core/RaceFlow';
+import type { RacePlaceView } from '@/core/RacePositions';
 
 import {
   COLORS,
@@ -15,7 +16,7 @@ import {
   PAUSE_SIZE,
   styles,
 } from './LapHud.styles';
-import type { GhostDeltaChip, LapHudProps, LapHudTexts } from './LapHud.types';
+import type { GhostDeltaChip, LapHudProps, LapHudTexts, PlaceHudTexts } from './LapHud.types';
 
 /** Textos del HUD: la vuelta en curso con el total ("2" y "/3"), su tiempo y el récord. */
 export function getLapHudTexts(
@@ -29,6 +30,11 @@ export function getLapHudTexts(
     time: formatLapTime(ticksToMs(view.lapTicks, stepHz)),
     best: recordMs === null ? NO_RECORD : formatLapTime(recordMs),
   };
+}
+
+/** Puesto del HUD ("2" y "/4"); `null` si corre un solo auto: sin rivales no hay puesto. */
+export function getPlaceHudTexts(view: RacePlaceView): PlaceHudTexts | null {
+  return view.total > 1 ? { place: String(view.place), total: `/${view.total}` } : null;
 }
 
 /**
@@ -47,14 +53,23 @@ export function getGhostDeltaChip(deltaSeconds: number | null): GhostDeltaChip |
  * HUD de la carrera (pantalla 07 del handoff, sin minimapa): "Vuelta 2/3"
  * arriba a la izquierda, el tiempo de la vuelta al centro, y "Mejor" y el botón de
  * pausa arriba a la derecha. Lee la vuelta de la carrera unas 20 veces por
- * segundo; la simulación no espera a React. Con un fantasma, debajo del cronómetro va el
+ * segundo; la simulación no espera a React. Con rivales, bajo la vuelta va el puesto ("2/4"). Con un fantasma, debajo del cronómetro va el
  * chip de diferencia: verde si el jugador va más rápido, rojo si va más lento. Solo el
  * botón de pausa recibe toques.
  */
-export function LapHud({ lapView, recordMs, stepHz, ghostDelta, onPause, style }: LapHudProps) {
+export function LapHud({
+  lapView,
+  recordMs,
+  stepHz,
+  ghostDelta,
+  placeView,
+  onPause,
+  style,
+}: LapHudProps) {
   const insets = useSafeAreaInsets();
   const [texts, setTexts] = useState(() => getLapHudTexts(lapView.get(), recordMs, stepHz));
   const [chip, setChip] = useState<GhostDeltaChip | null>(null);
+  const [placeTexts, setPlaceTexts] = useState<PlaceHudTexts | null>(null);
 
   useEffect(() => {
     const refresh = () => {
@@ -75,14 +90,22 @@ export function LapHud({ lapView, recordMs, stepHz, ghostDelta, onPause, style }
         current?.text === next?.text && current?.faster === next?.faster ? current : next,
       );
     };
+    const refreshPlace = () => {
+      const next = placeView ? getPlaceHudTexts(placeView.get()) : null;
+      setPlaceTexts((current) =>
+        current?.place === next?.place && current?.total === next?.total ? current : next,
+      );
+    };
     refresh();
     refreshChip();
+    refreshPlace();
     const timer = setInterval(() => {
       refresh();
       refreshChip();
+      refreshPlace();
     }, HUD_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [lapView, recordMs, stepHz, ghostDelta]);
+  }, [lapView, recordMs, stepHz, ghostDelta, placeView]);
 
   return (
     <View testID="lap-hud" style={[styles.container, { top: OFFSETS.top + insets.top }, style]}>
@@ -97,6 +120,17 @@ export function LapHud({ lapView, recordMs, stepHz, ghostDelta, onPause, style }
           <Text style={styles.lapTotal}>{texts.totalLaps}</Text>
         </Text>
       </View>
+      {placeTexts ? (
+        <View
+          testID="lap-hud-place"
+          style={[styles.placePill, { left: OFFSETS.side + insets.left }]}
+          accessible
+          accessibilityLabel={`Vas ${placeTexts.place} de ${placeTexts.total.slice(1)}`}
+        >
+          <Text style={styles.placeValue}>{placeTexts.place}</Text>
+          <Text style={styles.placeTotal}>{placeTexts.total}</Text>
+        </View>
+      ) : null}
       <View
         style={styles.timerPill}
         accessible

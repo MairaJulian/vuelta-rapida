@@ -10,7 +10,7 @@ import { PauseMenu } from '@/components/PauseMenu';
 import { RaceResults } from '@/components/RaceResults';
 import { StartLights } from '@/components/StartLights';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
-import { getCarColor } from '@/core/CarPalette';
+import { DEFAULT_CAR_COLOR_ID, getCarColor } from '@/core/CarPalette';
 import { getCircuit, withCircuitScenery } from '@/core/Circuits';
 import { DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
 import { createEventBus } from '@/core/EventBus';
@@ -21,6 +21,7 @@ import { withTiltPreferences } from '@/core/PlayerPreferences';
 import type { PlayerPreferences } from '@/core/PlayerPreferences';
 import { DEFAULT_RACE_CONFIG } from '@/core/RaceFlow';
 import type { RaceEvent } from '@/core/RaceFlow';
+import { createRivalRoster, DEFAULT_AI_LEVEL_ID, RIVAL_COUNT } from '@/core/RivalAI';
 import { withScenery } from '@/core/Scenery';
 import { DEFAULT_SCENERY_DISPLAY } from '@/core/SceneryView';
 import { calibrateTilt, DEFAULT_TILT_CONFIG, withTiltSteering } from '@/core/TiltSteering';
@@ -74,6 +75,18 @@ export function DriveScreen(_props: DriveScreenProps) {
   const { activeProfile } = useProfiles();
   const carColor = activeProfile ? getCarColor(activeProfile.colorId).hex : undefined;
   const carNumber = activeProfile?.number ?? null;
+  // Los rivales: nombres y colores inventados, siempre distintos al del jugador.
+  const rivalDrivers = useMemo(
+    () =>
+      createRivalRoster(activeProfile?.colorId ?? DEFAULT_CAR_COLOR_ID, RIVAL_COUNT).map(
+        (rival) => ({
+          id: rival.id,
+          name: rival.name.toUpperCase(),
+          color: getCarColor(rival.colorId).hex,
+        }),
+      ),
+    [activeProfile?.colorId],
+  );
   const [drivingConfig, setDrivingConfig] = useState(DEFAULT_DRIVING_CONFIG);
   const [cameraConfig, setCameraConfig] = useState(DEFAULT_CAMERA_CONFIG);
   // La pista elegida (`/pista?circuito=…`); sin parámetro, la primera. El panel cambia el ancho.
@@ -133,7 +146,13 @@ export function DriveScreen(_props: DriveScreenProps) {
     recordTicks,
     onEvents: bus.emitAll,
     onEngine,
+    rivalCount: RIVAL_COUNT,
+    aiLevel: DEFAULT_AI_LEVEL_ID,
   });
+  const rivals = useMemo(
+    () => ({ cars: loop.rivalCars, cameraView: loop.cameraView, drivers: rivalDrivers }),
+    [loop.rivalCars, loop.cameraView, rivalDrivers],
+  );
 
   const sceneryView = useSceneryView({
     scenery: sceneryDisplay.visible ? track.scenery : undefined,
@@ -256,6 +275,7 @@ export function DriveScreen(_props: DriveScreenProps) {
         carColor={carColor}
         carNumber={carNumber}
         ghost={ghost}
+        rivals={rivals}
       />
       {controlMode === 'tilt' ? (
         <TiltControls
@@ -272,6 +292,7 @@ export function DriveScreen(_props: DriveScreenProps) {
         recordMs={recordMs}
         stepHz={STEP_HZ}
         ghostDelta={delta}
+        placeView={loop.placeView}
         onPause={pause}
       />
       <StartLights bus={bus} lightCount={raceConfig.lightCount} />

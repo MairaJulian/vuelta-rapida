@@ -6,6 +6,7 @@ Pantalla de carrera: el auto espera en la grilla con el semáforo, larga al apag
 
 Ninguna.
 - El modo de control, la calibración, la sensibilidad y los interruptores de sonido y vibración salen de las preferencias del celular (`usePlayerPreferences`). Sin modo elegido, usa botones.
+- Corre contra `RIVAL_COUNT` (3) rivales con IA en dificultad fácil (`core/RivalAI`), con nombres inventados y colores de la paleta distintos al del jugador. Salen en los primeros puestos de la grilla y el jugador en el último; el HUD muestra su puesto ("2/4"). Los autos no chocan entre sí.
 - El color y el número del auto, el récord y el nombre de los resultados son del perfil activo (`useProfiles`). Sin perfil activo (una ruta directa de desarrollo), el auto es azul y sin número.
 
 Corre en la pista que llega en la ruta (`/pista?circuito=…`, que busca `getCircuit` de `core/Circuits`; sin parámetro o con uno que no existe, la primera), con `DEFAULT_RACE_CONFIG`, `DEFAULT_DRIVING_CONFIG`, `DEFAULT_CAMERA_CONFIG`, `DEFAULT_TILT_CONFIG` y `DEFAULT_SCENERY_DISPLAY`, y toma el tamaño de `useWindowDimensions`. La escenografía del circuito se genera al montar la pantalla (`withCircuitScenery`).

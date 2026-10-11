@@ -1,12 +1,24 @@
 import type { SkImage, Transforms3d } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
 
+import type { CameraView } from '@/core/Camera';
+import type { CarState } from '@/core/DrivingModel';
 import type { ParticleState } from '@/core/Particles';
 import type { Scenery } from '@/core/Scenery';
 import type { SceneryDisplayConfig } from '@/core/SceneryView';
 import type { TrackData } from '@/core/Track';
 import type { RaceGhostView } from '@/hooks/useRaceGhost';
 import type { UseSceneryViewResult } from '@/hooks/useSceneryView';
+
+/** Los rivales a dibujar: dónde está cada uno (`useRaceLoop`) y quién es (`createRivalRoster`). */
+export interface RivalsView {
+  /** Autos rivales en el orden de la grilla (`rivalCars` de `useRaceLoop`). */
+  cars: SharedValue<CarState[]>;
+  /** Cámara actual, para dejar los nombres derechos (`cameraView` de `useRaceLoop`). */
+  cameraView: SharedValue<CameraView>;
+  /** Nombre y color de cada rival, en el mismo orden que `cars`. */
+  drivers: { id: string; name: string; color: string }[];
+}
 
 export interface DriveCanvasProps {
   /** Circuito a dibujar. Si trae escenografía (`scenery`), se dibuja también. */
@@ -29,4 +41,6 @@ export interface DriveCanvasProps {
   carNumber?: number | null;
   /** Auto fantasma (`useRaceGhost`): se dibuja debajo del auto del jugador. Sin esto, no hay fantasma. */
   ghost?: RaceGhostView | null;
+  /** Rivales con IA: se dibujan sobre el fantasma y debajo del auto del jugador. Sin esto, el jugador corre solo. */
+  rivals?: RivalsView | null;
 }

@@ -4,6 +4,8 @@ import type { DerivedValue, SharedValue } from 'react-native-reanimated';
 import type { CameraConfig, CameraView, Viewport } from '@/core/Camera';
 import type { CarState, DrivingConfig, DrivingInput } from '@/core/DrivingModel';
 import type { RaceConfig, RaceEvent, RaceLapView, RaceState } from '@/core/RaceFlow';
+import type { RacePlaceView } from '@/core/RacePositions';
+import type { AiLevelId } from '@/core/RivalAI';
 import type { Circuit } from '@/core/Track';
 
 export interface UseRaceLoopParams {
@@ -31,6 +33,14 @@ export interface UseRaceLoopParams {
    * veces por segundo: de 0 (detenido) a 1 (velocidad máxima). Tiene que ser estable.
    */
   onEngine?: (speedRatio: number) => void;
+  /**
+   * Rivales con IA (0 por defecto: el jugador corre solo, en su puesto de siempre). Con
+   * rivales, ellos ocupan los primeros puestos de la grilla y el jugador el último.
+   * Vale desde la próxima carrera.
+   */
+  rivalCount?: number;
+  /** Dificultad de los rivales. Por defecto, la fácil. Vale desde la próxima carrera. */
+  aiLevel?: AiLevelId;
   /** Semilla de cada carrera nueva. Por defecto, la hora; los tests pasan una fija. */
   createSeed?: () => number;
 }
@@ -40,6 +50,8 @@ export interface UseRaceLoopResult {
   race: SharedValue<RaceState>;
   /** Estado del auto a dibujar (interpolado), actualizado cada cuadro. */
   car: SharedValue<CarState>;
+  /** Estado de los rivales a dibujar (interpolados), en el orden de la grilla; vacío sin rivales. */
+  rivalCars: SharedValue<CarState[]>;
   /** fps suavizados de la pantalla. */
   fps: SharedValue<number>;
   /** Lo que muestra la cámara: punto del centro de la pantalla, zoom y giro. Para el paralaje y para no dibujar lo que no se ve. */
@@ -50,6 +62,8 @@ export interface UseRaceLoopResult {
   carTransform: DerivedValue<Transforms3d>;
   /** Vuelta en curso, total de vueltas y tiempo de la vuelta, para el HUD. */
   lapView: DerivedValue<RaceLapView>;
+  /** Puesto del jugador y autos en carrera, para el HUD ("2/4"). */
+  placeView: DerivedValue<RacePlaceView>;
   /** Empieza el semáforo (solo desde la grilla). */
   startLights: () => void;
   /** Pausa la carrera (grilla, semáforo o carrera). */

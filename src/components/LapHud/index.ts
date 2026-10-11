@@ -1,2 +1,2 @@
-export { getLapHudTexts, LapHud } from './LapHud';
-export type { LapHudProps, LapHudTexts } from './LapHud.types';
+export { getLapHudTexts, getPlaceHudTexts, LapHud } from './LapHud';
+export type { LapHudProps, LapHudTexts, PlaceHudTexts } from './LapHud.types';

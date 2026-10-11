@@ -15,6 +15,7 @@ Lienzo Skia de la pantalla de manejo. Dentro del grupo de la cámara, en coorden
 | `display` | `SceneryDisplayConfig` (opcional) | Qué se muestra y con qué intensidad. Por defecto, `DEFAULT_SCENERY_DISPLAY`. |
 | `carColor` | `string` (opcional) | Color de la carrocería (el del perfil activo). Por defecto, el azul. |
 | `carNumber` | `number \| null` (opcional) | Número del auto (el del perfil activo). Sin número, el disco queda vacío. |
+| `rivals` | `RivalsView` (opcional) | Rivales con IA: dónde está cada uno (`rivalCars` de `useRaceLoop`), la cámara y el nombre y color de cada uno. Se dibujan con `RivalCar` sobre el fantasma y bajo el auto del jugador. Sin esto, el jugador corre solo. |
 | `ghost` | `RaceGhostView` (opcional) | Auto fantasma (`useRaceGhost`): translúcido, con el color y el nombre de su dueño. Sin esto, no hay fantasma. |
 
 Las dos transformaciones las produce `useRaceLoop`.

@@ -1,6 +1,7 @@
 import type { CarState } from '@/core/DrivingModel';
 import type { DrivingSimState } from '@/core/DrivingSim';
 import type { CelebrationKind } from '@/core/Ranking';
+import type { RivalSetup, RivalState } from '@/core/RivalAI';
 import type { RandomState } from '@/core/SeededRandom';
 
 /**
@@ -35,6 +36,17 @@ export interface RaceConfig {
   finishBrake: number;
 }
 
+/** Los rivales de una carrera y lo que hace falta para ordenar a todos los autos. */
+export interface RaceFieldSetup {
+  /** Largo de la vuelta, en metros. */
+  lapLength: number;
+  /** Progreso del jugador en la grilla, en metros desde la meta (cerca del largo de la vuelta). */
+  playerProgress: number;
+  /** Velocidad objetivo de los rivales en cada punto del trazado (`buildSpeedProfile`). */
+  speedProfile: number[];
+  rivals: RivalSetup[];
+}
+
 /** Datos para armar una carrera. */
 export interface RaceSetup {
   /** Auto en la grilla, detenido. */
@@ -46,6 +58,8 @@ export interface RaceSetup {
   /** Pasos de simulación por segundo. */
   stepHz: number;
   config: RaceConfig;
+  /** Rivales y largo de la vuelta; sin esto, el jugador corre solo. */
+  field?: RaceFieldSetup;
 }
 
 /**
@@ -121,6 +135,15 @@ export interface RaceState {
    * Vacía antes de largar y tras la llegada.
    */
   lapTrace: number[];
+  /** Largo de la vuelta, en metros; 0 si la carrera no tiene rivales (sin puestos). */
+  lapLength: number;
+  /**
+   * Los rivales con IA, en orden de grilla (el jugador sale último). Corren con el mismo
+   * modelo de manejo, el semáforo y las vueltas que el jugador; no chocan entre sí.
+   */
+  rivals: RivalState[];
+  /** Velocidad objetivo de los rivales en cada punto del trazado. */
+  speedProfile: number[];
   /** Eventos todavía no entregados, en orden. `takeRaceEvents` los retira. */
   events: RaceEvent[];
 }
