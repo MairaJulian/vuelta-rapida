@@ -157,6 +157,18 @@ export interface RaceLapView {
   lapTicks: number;
 }
 
+/** Un auto en la clasificación de la carrera (`getRaceClassification`). */
+export interface ClassificationEntry {
+  /** `PLAYER_ID` para el jugador; el id del rival para los demás. */
+  id: string;
+  /** Puesto, desde 1. */
+  place: number;
+  /** Vuelta en curso, de 1 a `totalLaps` (la última si ya llegó). */
+  lap: number;
+  /** Paso del cronómetro de la llegada; `null` si todavía corre. */
+  finishTick: number | null;
+}
+
 /** Resultado de una carrera terminada. */
 export interface RaceResults {
   /** Desde la largada hasta la llegada, en pasos: la suma de las vueltas. */

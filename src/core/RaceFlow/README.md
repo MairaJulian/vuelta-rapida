@@ -11,48 +11,49 @@ grid ──startLights──> lights ──luces apagadas──> racing ──N 
 restartRace: desde cualquier estado, carrera nueva en grid
 ```
 
-| Estado | Qué pasa |
-|---|---|
-| `grid` | El auto quieto. Espera `startLights` (la pantalla la manda cuando los sonidos están listos). |
-| `lights` | Se enciende una luz por segundo (la primera, al segundo). Con las cinco encendidas, una espera al azar de 0,5 a 1,5 s y se apagan juntas. El auto sigue sin simularse. |
-| `racing` | El auto se simula. El cronómetro (`sim.tick`) arranca en 0 en el paso en que se apagan las luces. |
-| `finished` | Al completar la última vuelta. El auto sigue sin acelerador y con freno hasta detenerse; el cronómetro queda en el total. |
-| `paused` | No avanza nada: ni el semáforo ni el auto ni los tiempos. |
+| Estado     | Qué pasa                                                                                                                                                               |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `grid`     | El auto quieto. Espera `startLights` (la pantalla la manda cuando los sonidos están listos).                                                                           |
+| `lights`   | Se enciende una luz por segundo (la primera, al segundo). Con las cinco encendidas, una espera al azar de 0,5 a 1,5 s y se apagan juntas. El auto sigue sin simularse. |
+| `racing`   | El auto se simula. El cronómetro (`sim.tick`) arranca en 0 en el paso en que se apagan las luces.                                                                      |
+| `finished` | Al completar la última vuelta. El auto sigue sin acelerador y con freno hasta detenerse; el cronómetro queda en el total.                                              |
+| `paused`   | No avanza nada: ni el semáforo ni el auto ni los tiempos.                                                                                                              |
 
 ## API
 
-| Función | Qué hace |
-|---|---|
-| `createRace(setup)` | Carrera nueva en la grilla. Sortea la espera del semáforo con `setup.seed`. |
-| `advanceRace(race, frameMs, input, drivingConfig, circuit, stepConfig)` | Avanza un cuadro en pasos fijos. Suma los eventos de esos pasos a `events`. |
-| `startLights` / `pauseRace` / `resumeRace` | Órdenes de la pantalla. Fuera del estado en que valen, devuelven la carrera tal cual. |
-| `restartRace(race, setup)` | Carrera nueva, con el aviso `phase` hacia `grid`. |
-| `takeRaceEvents(race)` | Retira los eventos pendientes: `{ race, events }`. |
-| `getRacePlace(race)` / `getRaceStandings(race)` | Puesto del jugador (`{ place, total }`, para el HUD) y puesto de cada auto (el jugador con `PLAYER_ID`). |
-| `getRenderRivals(race, stepConfig)` | Los rivales interpolados para dibujar este cuadro. |
-| `getRaceLapView(race)` | `{ lap, totalLaps, lapTicks }` para el HUD. |
-| `getRaceClockTicks(race)` | Cronómetro: desde la largada; tras la llegada, el total. |
-| `getRaceResults(race)` | Total, vueltas, mejor vuelta y récord; `null` antes de la llegada. |
-| `getFinishResults(event)` | Los mismos resultados, sacados del evento `finish`. |
-| `getAllLightsOnTick` / `getLightsOutTick` | Pasos desde el comienzo del semáforo hasta las cinco luces y hasta la largada. |
-| `shouldNotifyContact(...)` | Regla de los avisos de borde y de piano (ver abajo). |
-| `DEFAULT_RACE_CONFIG` | 3 vueltas, 5 luces a 1 s, espera de 0,5 a 1,5 s, 0,5 s entre toques, 0,3 s entre pianos, freno de llegada 0,5. |
+| Función                                                                 | Qué hace                                                                                                                               |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `createRace(setup)`                                                     | Carrera nueva en la grilla. Sortea la espera del semáforo con `setup.seed`.                                                            |
+| `advanceRace(race, frameMs, input, drivingConfig, circuit, stepConfig)` | Avanza un cuadro en pasos fijos. Suma los eventos de esos pasos a `events`.                                                            |
+| `startLights` / `pauseRace` / `resumeRace`                              | Órdenes de la pantalla. Fuera del estado en que valen, devuelven la carrera tal cual.                                                  |
+| `restartRace(race, setup)`                                              | Carrera nueva, con el aviso `phase` hacia `grid`.                                                                                      |
+| `takeRaceEvents(race)`                                                  | Retira los eventos pendientes: `{ race, events }`.                                                                                     |
+| `getRaceClassification(race)`                                           | La clasificación de todos los autos, del primero al último (`{ id, place, lap, finishTick }`), para la tabla del HUD y los resultados. |
+| `getRacePlace(race)` / `getRaceStandings(race)`                         | Puesto del jugador (`{ place, total }`, para el HUD) y puesto de cada auto (el jugador con `PLAYER_ID`).                               |
+| `getRenderRivals(race, stepConfig)`                                     | Los rivales interpolados para dibujar este cuadro.                                                                                     |
+| `getRaceLapView(race)`                                                  | `{ lap, totalLaps, lapTicks }` para el HUD.                                                                                            |
+| `getRaceClockTicks(race)`                                               | Cronómetro: desde la largada; tras la llegada, el total.                                                                               |
+| `getRaceResults(race)`                                                  | Total, vueltas, mejor vuelta y récord; `null` antes de la llegada.                                                                     |
+| `getFinishResults(event)`                                               | Los mismos resultados, sacados del evento `finish`.                                                                                    |
+| `getAllLightsOnTick` / `getLightsOutTick`                               | Pasos desde el comienzo del semáforo hasta las cinco luces y hasta la largada.                                                         |
+| `shouldNotifyContact(...)`                                              | Regla de los avisos de borde y de piano (ver abajo).                                                                                   |
+| `DEFAULT_RACE_CONFIG`                                                   | 3 vueltas, 5 luces a 1 s, espera de 0,5 a 1,5 s, 0,5 s entre toques, 0,3 s entre pianos, freno de llegada 0,5.                         |
 
 ## Eventos (`RaceEvent`)
 
 Todos llevan `tick`: el paso de la carrera (sin contar la pausa).
 
-| Evento | Datos | Cuándo |
-|---|---|---|
-| `phase` | `from`, `to` | Cada cambio de estado, también la pausa, la vuelta de la pausa y el reinicio. |
-| `lightOn` | `light` (1 a 5) | Se enciende una luz. |
-| `lightsOut` | — | Se apagan las luces: la largada. |
-| `lapCompleted` | `lap`, `totalLaps`, `lapTicks` | Termina una vuelta. Con `lap === totalLaps` es la última: le sigue `finish`. |
-| `borderHit` | `impactSpeed` (m/s) | Empieza un contacto con el borde, si pasaron 0,5 s desde el último aviso. |
-| `kerbEnter` | `speed` (m/s) | El auto entra a un piano, si pasaron 0,3 s desde el último aviso. |
-| `newRecord` | `lapTicks`, `previousTicks` | Una vuelta mejora el récord vigente. |
-| `recordTrace` | `lapTicks`, `sampleHz`, `samples[]` | Acompaña a `newRecord`: las muestras de esa vuelta (`[x, z, rumbo, ...]`, la última en la meta) para guardarla como fantasma. |
-| `finish` | Los `RaceResults`: `totalTicks`, `lapTicks[]`, `bestLapTicks`, `bestLapIndex`, `newRecord`, `previousRecordTicks` | La llegada. |
+| Evento         | Datos                                                                                                             | Cuándo                                                                                                                        |
+| -------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `phase`        | `from`, `to`                                                                                                      | Cada cambio de estado, también la pausa, la vuelta de la pausa y el reinicio.                                                 |
+| `lightOn`      | `light` (1 a 5)                                                                                                   | Se enciende una luz.                                                                                                          |
+| `lightsOut`    | —                                                                                                                 | Se apagan las luces: la largada.                                                                                              |
+| `lapCompleted` | `lap`, `totalLaps`, `lapTicks`                                                                                    | Termina una vuelta. Con `lap === totalLaps` es la última: le sigue `finish`.                                                  |
+| `borderHit`    | `impactSpeed` (m/s)                                                                                               | Empieza un contacto con el borde, si pasaron 0,5 s desde el último aviso.                                                     |
+| `kerbEnter`    | `speed` (m/s)                                                                                                     | El auto entra a un piano, si pasaron 0,3 s desde el último aviso.                                                             |
+| `newRecord`    | `lapTicks`, `previousTicks`                                                                                       | Una vuelta mejora el récord vigente.                                                                                          |
+| `recordTrace`  | `lapTicks`, `sampleHz`, `samples[]`                                                                               | Acompaña a `newRecord`: las muestras de esa vuelta (`[x, z, rumbo, ...]`, la última en la meta) para guardarla como fantasma. |
+| `finish`       | Los `RaceResults`: `totalTicks`, `lapTicks[]`, `bestLapTicks`, `bestLapIndex`, `newRecord`, `previousRecordTicks` | La llegada.                                                                                                                   |
 
 ## Ejemplo
 

@@ -5,6 +5,7 @@ export {
   getAllLightsOnTick,
   getFinishResults,
   getLightsOutTick,
+  getRaceClassification,
   getRaceClockTicks,
   getRaceLapClockMs,
   getRaceLapView,
@@ -21,6 +22,7 @@ export {
   takeRaceEvents,
 } from './RaceFlow';
 export type {
+  ClassificationEntry,
   PausablePhase,
   RaceConfig,
   RaceEvent,
