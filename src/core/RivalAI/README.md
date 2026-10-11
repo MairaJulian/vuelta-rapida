@@ -15,14 +15,17 @@ Cada paso, el rival compara su distancia de carrera con la del jugador: si va de
 
 ## Dificultad
 
-`AI_LEVELS` guarda los parámetros de cada nivel (`AiLevel`). Por ahora solo existe `easy` (88–95 % de la velocidad segura, `lineError` 1 m, freno al 60 %); medio y difícil se suman como una entrada más sin tocar el código de la IA. `DEFAULT_AI_LEVEL_ID` es `easy`.
+`AI_LEVELS` guarda los parámetros de cada nivel (`AiLevel`) y `AI_LEVEL_IDS` los ordena de menos a más exigente. `easy` corre al 88–95 % de la velocidad segura (`lineError` 1 m, freno al 60 %); `medium`, al 92–98 % (0,7 m, freno al 70 %); `hard`, al 97–102 % (0,4 m, freno al 80 %). Cada nivel es unos 6–8 % más rápido por vuelta que el anterior. Los tres se prueban en todas las pistas con la grilla llena. `DEFAULT_AI_LEVEL_ID` es `easy`.
+
+**Dificultad dinámica:** es el ajuste de ritmo de arriba (activo cuando el jugador va muy adelante o muy atrás). `withDynamicDifficulty(level, false)` devuelve el nivel con `catchUpBoost` y `catchUpEase` en 0: los rivales corren a su ritmo sorteado, sin mirar al jugador.
 
 ## API
 
 | Exporta                                                                     | Qué hace                                                                                                                                               |
 | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `RIVAL_COUNT`                                                               | Rivales por carrera: 3.                                                                                                                                |
-| `AI_LEVELS`, `DEFAULT_AI_LEVEL_ID`                                          | Parámetros de los niveles y el de por defecto.                                                                                                         |
+| `RIVAL_COUNT`, `MAX_RIVALS`                                                 | Rivales por defecto (3) y tope que se puede elegir (5).                                                                                                |
+| `AI_LEVELS`, `AI_LEVEL_IDS`, `DEFAULT_AI_LEVEL_ID`                          | Parámetros de los niveles, su orden y el de por defecto.                                                                                               |
+| `withDynamicDifficulty(level, enabled)`                                     | El nivel con o sin el ajuste de ritmo según el jugador.                                                                                                |
 | `createRivalRoster(playerColorId, count?)`                                  | Nombre y color de cada rival (`RivalIdentity`): nombres inventados, colores de la paleta distintos entre sí y al del jugador.                          |
 | `buildSpeedProfile(circuit, drivingConfig, level)`                          | Velocidad objetivo de cada punto del trazado. Una vez por carrera, en el hilo de JS.                                                                   |
 | `createRival(setup)`                                                        | Rival quieto en su puesto de la grilla, con el ritmo sorteado de la semilla. _worklet_                                                                 |

@@ -4,14 +4,17 @@ import { getGridPose, getGridProgress, GRID_SLOT_GAP } from '@/core/Track';
 import type { Circuit } from '@/core/Track';
 
 import {
+  AI_LEVEL_IDS,
   AI_LEVELS,
   buildSpeedProfile,
   createRival,
   createRivalRoster,
+  MAX_RIVALS,
   RIVAL_COUNT,
   stepRival,
+  withDynamicDifficulty,
 } from './RivalAI';
-import type { RivalState } from './RivalAI.types';
+import type { AiLevel, RivalState } from './RivalAI.types';
 
 const STEP_HZ = 60;
 const DT = 1 / STEP_HZ;
@@ -22,62 +25,114 @@ const LAPS = 2;
 const MAX_TICKS = LAPS * 240 * STEP_HZ;
 
 /** Los rivales en la grilla, con semillas distintas. */
-function startRivals(circuit: Circuit, seed: number): RivalState[] {
-  return Array.from({ length: RIVAL_COUNT }, (_, slot) => {
+function startRivals(
+  circuit: Circuit,
+  seed: number,
+  level: AiLevel = LEVEL,
+  count: number = RIVAL_COUNT,
+): RivalState[] {
+  return Array.from({ length: count }, (_, slot) => {
     const pose = getGridPose(circuit, slot);
     return createRival({
       id: `rival-${slot + 1}`,
       car: createCarState(pose.x, pose.z, pose.heading),
       startProgress: getGridProgress(circuit, slot),
       seed: seed + slot * 101,
-      level: LEVEL,
+      level,
     });
   });
 }
 
 describe('IA de los rivales', () => {
-  describe.each(CIRCUITS.map((circuit) => [circuit.name, circuit] as const))(
-    '%s',
-    (_name, circuit) => {
-      const profile = buildSpeedProfile(circuit, DEFAULT_DRIVING_CONFIG, LEVEL);
+  describe.each(AI_LEVEL_IDS.map((id) => [id, AI_LEVELS[id]] as const))(
+    'nivel %s',
+    (_id, level) => {
+      describe.each(CIRCUITS.map((circuit) => [circuit.name, circuit] as const))(
+        '%s',
+        (_name, circuit) => {
+          const profile = buildSpeedProfile(circuit, DEFAULT_DRIVING_CONFIG, level);
 
-      it('la velocidad objetivo queda entre el mínimo y el tope del auto', () => {
-        expect(profile).toHaveLength(circuit.centerline.length);
-        for (const speed of profile) {
-          expect(speed).toBeGreaterThan(0);
-          expect(speed).toBeLessThanOrEqual(DEFAULT_DRIVING_CONFIG.maxSpeed);
-        }
-      });
+          it('la velocidad objetivo queda entre el mínimo y el tope del auto', () => {
+            expect(profile).toHaveLength(circuit.centerline.length);
+            for (const speed of profile) {
+              expect(speed).toBeGreaterThan(0);
+              expect(speed).toBeLessThanOrEqual(DEFAULT_DRIVING_CONFIG.maxSpeed);
+            }
+          });
 
-      it.each([1, 2, 3])(
-        'con la semilla %i y el jugador muy adelante (ritmo máximo) nunca toca el borde y completa la carrera',
-        (seed) => {
-          let rivals = startRivals(circuit, seed);
-          const rules = { totalLaps: LAPS, finishBrake: 0.5 };
-          let touches = 0;
-          let tick = 0;
-          while (tick < MAX_TICKS && rivals.some((rival) => rival.finishTick === null)) {
-            rivals = rivals.map((rival) =>
-              stepRival(
-                rival,
-                circuit,
-                profile,
-                DEFAULT_DRIVING_CONFIG,
-                COAST_CONFIG,
-                rules,
-                DT,
-                1e9,
-              ),
-            );
-            touches += rivals.filter((rival) => rival.sim.contact.touching).length;
-            tick += 1;
-          }
-          expect(touches).toBe(0);
-          expect(rivals.map((rival) => rival.finishTick !== null)).toEqual([true, true, true]);
+          it.each([1, 2, 3])(
+            'con la semilla %i, el jugador muy adelante (ritmo máximo) y la grilla llena, nunca toca el borde y completa la carrera',
+            (seed) => {
+              let rivals = startRivals(circuit, seed, level, MAX_RIVALS);
+              const rules = { totalLaps: LAPS, finishBrake: 0.5 };
+              let touches = 0;
+              let tick = 0;
+              while (tick < MAX_TICKS && rivals.some((rival) => rival.finishTick === null)) {
+                rivals = rivals.map((rival) =>
+                  stepRival(
+                    rival,
+                    circuit,
+                    profile,
+                    DEFAULT_DRIVING_CONFIG,
+                    COAST_CONFIG,
+                    rules,
+                    DT,
+                    1e9,
+                  ),
+                );
+                touches += rivals.filter((rival) => rival.sim.contact.touching).length;
+                tick += 1;
+              }
+              expect(touches).toBe(0);
+              expect(rivals.every((rival) => rival.finishTick !== null)).toBe(true);
+            },
+          );
         },
       );
     },
   );
+
+  it('los niveles van de menos a más exigentes', () => {
+    const paces = AI_LEVEL_IDS.map((id) => AI_LEVELS[id].paceMax);
+    expect(paces).toEqual([...paces].sort((a, b) => a - b));
+  });
+
+  describe('withDynamicDifficulty', () => {
+    it('activada deja el nivel como está', () => {
+      expect(withDynamicDifficulty(AI_LEVELS.medium, true)).toBe(AI_LEVELS.medium);
+    });
+
+    it('desactivada quita el ajuste de ritmo y no toca el resto', () => {
+      const level = withDynamicDifficulty(AI_LEVELS.medium, false);
+      expect(level.catchUpBoost).toBe(0);
+      expect(level.catchUpEase).toBe(0);
+      expect(level).toEqual({ ...AI_LEVELS.medium, catchUpBoost: 0, catchUpEase: 0 });
+    });
+
+    it('sin ajuste, un rival no cambia de ritmo con la distancia al jugador', () => {
+      const circuit = CIRCUITS[0];
+      const level = withDynamicDifficulty(AI_LEVELS.medium, false);
+      const profile = buildSpeedProfile(circuit, DEFAULT_DRIVING_CONFIG, level);
+      const run = (playerDistance: number) => {
+        let rival = startRivals(circuit, 5, level, 1)[0];
+        const rules = { totalLaps: LAPS, finishBrake: 0.5 };
+        for (let tick = 0; tick < 900; tick += 1) {
+          rival = stepRival(
+            rival,
+            circuit,
+            profile,
+            DEFAULT_DRIVING_CONFIG,
+            COAST_CONFIG,
+            rules,
+            DT,
+            playerDistance,
+          );
+        }
+        return rival.sim.car;
+      };
+      expect(run(1e9)).toEqual(run(-1e9));
+    });
+  });
 
   it('es determinista: la misma semilla da la misma carrera', () => {
     const circuit = CIRCUITS[0];
