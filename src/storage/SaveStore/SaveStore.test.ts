@@ -58,7 +58,10 @@ describe('SaveStore', () => {
       version: SAVE_VERSION,
       controlMode: 'buttons',
       soundEnabled: false,
-      ghostSource: 'mine',
+      ghostSource: 'none',
+      rivalCount: 3,
+      aiLevel: 'easy',
+      dynamicDifficulty: true,
     });
     // Primero los perfiles, después las preferencias.
     expect(storage.setItemSync.mock.calls.map(([key]) => key)).toEqual([

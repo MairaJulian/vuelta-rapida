@@ -3,8 +3,8 @@ import type { DrivingSimState } from '@/core/DrivingSim';
 import type { CarColorId } from '@/core/CarPalette';
 import type { RandomState } from '@/core/SeededRandom';
 
-/** Niveles de dificultad de la IA. Por ahora solo "fácil"; el resto se suma como entrada de `AI_LEVELS`. */
-export type AiLevelId = 'easy';
+/** Niveles de dificultad de la IA, cada uno con su entrada en `AI_LEVELS`. */
+export type AiLevelId = 'easy' | 'medium' | 'hard';
 
 /** Parámetros de un nivel de dificultad. Se pueden afinar sin tocar el código de la IA. */
 export interface AiLevel {

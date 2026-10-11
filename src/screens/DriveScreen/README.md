@@ -5,8 +5,9 @@ Pantalla de carrera: el auto espera en la grilla con el semáforo, larga al apag
 ## Props
 
 Ninguna.
+
 - El modo de control, la calibración, la sensibilidad y los interruptores de sonido y vibración salen de las preferencias del celular (`usePlayerPreferences`). Sin modo elegido, usa botones.
-- Corre contra `RIVAL_COUNT` (3) rivales con IA en dificultad fácil (`core/RivalAI`), con nombres inventados y colores de la paleta distintos al del jugador. Salen en los primeros puestos de la grilla y el jugador en el último; el HUD muestra su puesto ("2/4"). Los autos no chocan entre sí.
+- Corre contra los rivales con IA que se eligieron en la selección de pista (`rivalCount`, `aiLevel` y `dynamicDifficulty` de las preferencias; `core/RivalAI`), con nombres inventados y colores de la paleta distintos al del jugador. Sin rivales (0), el jugador corre solo, como en la contrarreloj. Los rivales salen en los primeros puestos de la grilla y el jugador en el último; el HUD muestra la tabla de posiciones y los resultados, la clasificación de todos los autos. Los autos no chocan entre sí. El panel de desarrollo ajusta los parámetros de la IA desde la carrera siguiente.
 - El color y el número del auto, el récord y el nombre de los resultados son del perfil activo (`useProfiles`). Sin perfil activo (una ruta directa de desarrollo), el auto es azul y sin número.
 
 Corre en la pista que llega en la ruta (`/pista?circuito=…`, que busca `getCircuit` de `core/Circuits`; sin parámetro o con uno que no existe, la primera), con `DEFAULT_RACE_CONFIG`, `DEFAULT_DRIVING_CONFIG`, `DEFAULT_CAMERA_CONFIG`, `DEFAULT_TILT_CONFIG` y `DEFAULT_SCENERY_DISPLAY`, y toma el tamaño de `useWindowDimensions`. La escenografía del circuito se genera al montar la pantalla (`withCircuitScenery`).
@@ -22,30 +23,30 @@ export default DriveScreen;
 
 ## Composición
 
-| Pieza | Rol |
-|---|---|
-| `useDrivingInput` | Crea la entrada compartida. |
-| `ButtonControls` o `TiltControls` | Escriben la entrada: botones multitáctiles, o inclinación con frenos laterales. |
-| `useTiltOutput` | Crea el resultado de la inclinación, para que lo lean el modo de control y el panel. |
-| `useProfiles` | El perfil activo: color y número del auto, y "NOMBRE · #NN" en los resultados. |
-| `useBestLapRecord` | Lee el récord del perfil activo en el circuito y guarda las vueltas que lo mejoran (evento `newRecord`). |
-| `useGhostRecording` | Guarda como fantasma del perfil activo la vuelta que mejora su récord (evento `recordTrace`). |
-| `useRaceGhost` | Elige el fantasma según las preferencias, lo reproduce en el hilo de UI y calcula la diferencia con el jugador. |
-| `useRaceRanking` | Al llegar guarda el total de la carrera y compara el ranking de la pista en las dos tablas (mejor vuelta y carrera completa). |
-| `createEventBus` | El bus de la carrera: el loop publica los eventos y las demás piezas los escuchan. |
-| `useRaceLoop` | Avanza la carrera (`core/RaceFlow`) en el hilo de UI, produce las transformaciones y recibe las órdenes (semáforo, pausa, reinicio). |
-| `useRaceAudio` | Motor y efectos (`audio/RaceAudio`): sigue los eventos y la velocidad (`onEngine`), se congela en la pausa y obedece la preferencia de sonido. |
-| `useRaceHaptics` | Vibraciones de piano, borde, largada y llegada (`haptics/RaceHaptics`), con la preferencia de vibración. |
-| `useRaceStatus` | Sigue los eventos: estado de la carrera, vuelta al pausar y resultados 1,5 s después de la llegada. |
-| `useSceneryAtlas` | Dibuja una vez la textura de árboles, sombras y partículas. |
-| `useSceneryView` | Elige los árboles que ve la cámara (por celdas) y da la transformación de cada capa con paralaje. |
-| `useParticles` | Mueve el polvo (al rozar el borde) y el humo (al derrapar o frenar fuerte) en el hilo de UI. |
-| `DriveCanvas` | Dibuja con Skia el pasto, la pista, la escenografía, las partículas, el auto fantasma y el auto del jugador. |
-| `LapHud` | Vuelta, tiempo de la vuelta, mejor vuelta, diferencia con el fantasma y botón de pausa. |
-| `StartLights` | Semáforo de largada; sigue los eventos del bus. |
-| `PauseMenu` | Pausa: Continuar, Reiniciar, Salir al menú, y los interruptores de sonido y vibración. |
-| `RaceResults` | Resultados, con papelitos si hubo récord: "Otra vez" y "Salir". |
-| `DevPanel` | Solo en desarrollo: ajusta configuración en caliente y muestra lecturas. |
+| Pieza                             | Rol                                                                                                                                            |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useDrivingInput`                 | Crea la entrada compartida.                                                                                                                    |
+| `ButtonControls` o `TiltControls` | Escriben la entrada: botones multitáctiles, o inclinación con frenos laterales.                                                                |
+| `useTiltOutput`                   | Crea el resultado de la inclinación, para que lo lean el modo de control y el panel.                                                           |
+| `useProfiles`                     | El perfil activo: color y número del auto, y "NOMBRE · #NN" en los resultados.                                                                 |
+| `useBestLapRecord`                | Lee el récord del perfil activo en el circuito y guarda las vueltas que lo mejoran (evento `newRecord`).                                       |
+| `useGhostRecording`               | Guarda como fantasma del perfil activo la vuelta que mejora su récord (evento `recordTrace`).                                                  |
+| `useRaceGhost`                    | Elige el fantasma según las preferencias, lo reproduce en el hilo de UI y calcula la diferencia con el jugador.                                |
+| `useRaceRanking`                  | Al llegar guarda el total de la carrera y compara el ranking de la pista en las dos tablas (mejor vuelta y carrera completa).                  |
+| `createEventBus`                  | El bus de la carrera: el loop publica los eventos y las demás piezas los escuchan.                                                             |
+| `useRaceLoop`                     | Avanza la carrera (`core/RaceFlow`) en el hilo de UI, produce las transformaciones y recibe las órdenes (semáforo, pausa, reinicio).           |
+| `useRaceAudio`                    | Motor y efectos (`audio/RaceAudio`): sigue los eventos y la velocidad (`onEngine`), se congela en la pausa y obedece la preferencia de sonido. |
+| `useRaceHaptics`                  | Vibraciones de piano, borde, largada y llegada (`haptics/RaceHaptics`), con la preferencia de vibración.                                       |
+| `useRaceStatus`                   | Sigue los eventos: estado de la carrera, vuelta al pausar y resultados 1,5 s después de la llegada.                                            |
+| `useSceneryAtlas`                 | Dibuja una vez la textura de árboles, sombras y partículas.                                                                                    |
+| `useSceneryView`                  | Elige los árboles que ve la cámara (por celdas) y da la transformación de cada capa con paralaje.                                              |
+| `useParticles`                    | Mueve el polvo (al rozar el borde) y el humo (al derrapar o frenar fuerte) en el hilo de UI.                                                   |
+| `DriveCanvas`                     | Dibuja con Skia el pasto, la pista, la escenografía, las partículas, el auto fantasma y el auto del jugador.                                   |
+| `LapHud`                          | Vuelta, tiempo de la vuelta, mejor vuelta, diferencia con el fantasma y botón de pausa.                                                        |
+| `StartLights`                     | Semáforo de largada; sigue los eventos del bus.                                                                                                |
+| `PauseMenu`                       | Pausa: Continuar, Reiniciar, Salir al menú, y los interruptores de sonido y vibración.                                                         |
+| `RaceResults`                     | Resultados, con papelitos si hubo récord: "Otra vez" y "Salir".                                                                                |
+| `DevPanel`                        | Solo en desarrollo: ajusta configuración en caliente y muestra lecturas.                                                                       |
 
 ## Flujo de la carrera
 

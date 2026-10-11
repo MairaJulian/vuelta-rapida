@@ -6,6 +6,7 @@ import {
   advanceRace,
   createRace,
   DEFAULT_RACE_CONFIG,
+  getRaceClassification,
   getRacePlace,
   getRaceStandings,
   PLAYER_ID,
@@ -142,6 +143,43 @@ describe('puestos en la carrera', () => {
       PLAYER_ID,
     ]);
     expect(getRaceStandings(race).map(({ place }) => place)).toEqual([1, 2, 3, 4]);
+  });
+
+  it('la clasificación va del primero al último, con la vuelta y la llegada de cada auto', () => {
+    const race = startRace();
+    // Un rival llegó y otro va en la tercera vuelta (el jugador y los demás, sin cruzar la meta).
+    const rivals = race.rivals.map((rival, i) =>
+      i === 1
+        ? { ...rival, finishTick: 500, sim: { ...rival.sim, laps: lapsAt(3, 10) } }
+        : i === 2
+          ? { ...rival, sim: { ...rival.sim, laps: lapsAt(2, 10) } }
+          : rival,
+    );
+    const classification = getRaceClassification({ ...race, rivals, lapLength: circuit.length });
+    expect(classification.map(({ id }) => id)).toEqual([
+      'rival-2',
+      'rival-3',
+      'rival-1',
+      PLAYER_ID,
+    ]);
+    expect(classification.map(({ place }) => place)).toEqual([1, 2, 3, 4]);
+    expect(classification.map(({ finishTick }) => finishTick)).toEqual([500, null, null, null]);
+    // La vuelta en curso nunca pasa del total: el que llegó muestra la última.
+    expect(classification[0].lap).toBe(DEFAULT_RACE_CONFIG.totalLaps);
+    expect(classification[1].lap).toBe(3);
+  });
+
+  it('la clasificación sin rivales es solo el jugador', () => {
+    const race = createRace({
+      car: createCarState(0, 0, 0),
+      seed: 1,
+      recordTicks: null,
+      stepHz: 60,
+      config: DEFAULT_RACE_CONFIG,
+    });
+    expect(getRaceClassification(race)).toEqual([
+      { id: PLAYER_ID, place: 1, lap: 1, finishTick: null },
+    ]);
   });
 
   it('sin rivales, el jugador es el 1 de 1', () => {

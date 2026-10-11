@@ -4,28 +4,40 @@ Resultados de la carrera (pantalla 09 del handoff). A la izquierda, la tarjeta c
 
 ## Props
 
-| Prop | Tipo | Descripción |
-|---|---|---|
-| `results` | `RaceResults` (de `core/RaceFlow`) | Total, vueltas, mejor vuelta y récord, en pasos. |
-| `stepHz` | `number` | Pasos por segundo, para pasarlos a tiempo. |
-| `circuitName` | `string` | Nombre del circuito. |
-| `driver` | `{ name, number } \| null` (opcional) | Quién corrió: encabeza la columna de vueltas ("MALE · #27"). Sin piloto, "Tus vueltas". |
-| `ranking` | `RaceRanking \| null` (opcional) | Cómo le fue en el ranking de la pista (`useRaceRanking`): puesto en las dos tablas y celebración. Decide el título, la tarjeta lima y los papelitos. |
-| `onRetry` | `() => void` | "Otra vez": carrera nueva. |
-| `onExit` | `() => void` | "Salir": vuelve a Inicio. |
+| Prop          | Tipo                                             | Descripción                                                                                                                                          |
+| ------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `results`     | `RaceResults` (de `core/RaceFlow`)               | Total, vueltas, mejor vuelta y récord, en pasos.                                                                                                     |
+| `stepHz`      | `number`                                         | Pasos por segundo, para pasarlos a tiempo.                                                                                                           |
+| `circuitName` | `string`                                         | Nombre del circuito.                                                                                                                                 |
+| `driver`      | `{ name, number } \| null` (opcional)            | Quién corrió: encabeza la columna de vueltas ("MALE · #27"). Sin piloto, "Tus vueltas".                                                              |
+| `ranking`     | `RaceRanking \| null` (opcional)                 | Cómo le fue en el ranking de la pista (`useRaceRanking`): puesto en las dos tablas y celebración. Decide el título, la tarjeta lima y los papelitos. |
+| `standings`   | `DerivedValue<ClassificationEntry[]>` (opcional) | Clasificación de todos los autos (`useRaceLoop`). Con rivales se muestra encima de las vueltas y se actualiza hasta que llegan todos.                |
+| `racers`      | `Racer[]` (opcional)                             | Nombre y color de cada auto, el jugador incluido (con `PLAYER_ID`). Estable.                                                                         |
+| `onRetry`     | `() => void`                                     | "Otra vez": carrera nueva.                                                                                                                           |
+| `onExit`      | `() => void`                                     | "Salir": vuelve a Inicio.                                                                                                                            |
 
-También exporta `getRaceResultsTexts(results, stepHz, circuitName)`, que arma todos los textos.
+También exporta `getRaceResultsTexts(results, stepHz, circuitName)`, que arma todos los textos, y `getClassificationTexts(entries, racers, stepHz, totalLaps)`, que arma las filas de la clasificación.
 
 ## Ejemplo
 
 ```tsx
 const results = getRaceResults(loop.race.get());
-{results ? (
-  <RaceResults results={results} stepHz={60} circuitName={track.name} onRetry={restart} onExit={exit} />
-) : null}
+{
+  results ? (
+    <RaceResults
+      results={results}
+      stepHz={60}
+      circuitName={track.name}
+      onRetry={restart}
+      onExit={exit}
+    />
+  ) : null;
+}
 ```
 
 ## Diseño (handoff, pantalla 09)
+
+- **Clasificación de todos los autos** (hito 9a-2; el handoff no la trae): con rivales, en la columna derecha, encima de las vueltas y dentro del mismo desplazamiento. Una fila blanca de 40 dp por auto (radio 16): el puesto, un punto del color del auto, el nombre y, a la derecha, el tiempo del líder, la diferencia con el líder (`+0.345`) para los que ya llegaron, o "Vuelta 2/3" para los que todavía corren. La fila del jugador va en `blue-soft` con borde `blue`. El título dice "Clasificación · en carrera" y pasa a "Clasificación final" cuando llegaron todos. Sin rivales no se muestra.
 
 - **Tarjeta** a la izquierda: margen 14, 390 de ancho, radio 24, padding 26/28.
   - Con récord nuevo: fondo `lime`, trofeo, "¡Nuevo récord!" y un recorte a cuadros tinta y lima en la esquina superior derecha.
@@ -43,14 +55,15 @@ const results = getRaceResults(loop.race.get());
 - **Celebración:** con récord nuevo, además de la tarjeta lima, caen papelitos (`Confetti`) y suena el jingle de llegada.
 - **Ranking y celebraciones diferenciadas** (hito 6b): con `ranking`, la tarjeta celebra según lo más grande que pasó.
 
-  | Logro | Título | Tarjeta | Papelitos |
-  |---|---|---|---|
-  | Récord de la pista | "¡Récord de la pista!" | lima y trofeo | sí |
-  | Superó a otro jugador | "¡Pasaste a TOMI!" (o "a TOMI y a LULI", o "a 3 pilotos") | lima y trofeo | no |
-  | Mejor tiempo personal | "¡Nuevo récord personal!" | lima y trofeo | no |
-  | Nada | "Tu tiempo" | blanca | no |
+  | Logro                 | Título                                                    | Tarjeta       | Papelitos |
+  | --------------------- | --------------------------------------------------------- | ------------- | --------- |
+  | Récord de la pista    | "¡Récord de la pista!"                                    | lima y trofeo | sí        |
+  | Superó a otro jugador | "¡Pasaste a TOMI!" (o "a TOMI y a LULI", o "a 3 pilotos") | lima y trofeo | no        |
+  | Mejor tiempo personal | "¡Nuevo récord personal!"                                 | lima y trofeo | no        |
+  | Nada                  | "Tu tiempo"                                               | blanca        | no        |
 
   Encima de las vueltas, dos fichas con el puesto en cada tabla ("Mejor vuelta · 2.º de 4" y "Carrera · 3 vueltas · 1.º de 4"), y si no es primero, "Te faltan 0.42 s para alcanzar a TOMI" (la diferencia con el de arriba, redondeada para arriba). Sin `ranking` (sin perfil), la tarjeta celebra solo el récord de vuelta, como antes.
+
 - **El delta de la píldora sigue siendo contra el récord personal de vuelta,** aunque el título dependa del ranking: son dos datos distintos.
 - **"NOMBRE · #NN" del perfil activo** encabeza la columna de vueltas (hito 6a), en mayúsculas como el resto de los rótulos. Sin perfil (una ruta directa de desarrollo), dice "Tus vueltas".
 - **Tiempo grande en 76 con la fuente del sistema** (el handoff usa 96 con Archivo angosta), con `adjustsFontSizeToFit` por si no entra.

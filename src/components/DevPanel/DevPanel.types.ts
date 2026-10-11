@@ -4,6 +4,7 @@ import type { RaceAudioMix } from '@/audio/RaceAudio';
 import type { CameraConfig } from '@/core/Camera';
 import type { CarState, DrivingConfig } from '@/core/DrivingModel';
 import type { ControlMode } from '@/core/PlayerPreferences';
+import type { AiLevel } from '@/core/RivalAI';
 import type { RaceConfig } from '@/core/RaceFlow';
 import type { SceneryDisplayConfig } from '@/core/SceneryView';
 import type { RaceHapticsConfig } from '@/haptics/RaceHaptics';
@@ -46,6 +47,11 @@ export interface DevPanelProps {
   /** Reglas de la carrera; el panel solo cambia las vueltas, que valen desde la próxima carrera. */
   raceConfig: RaceConfig;
   onRaceConfigChange: (config: RaceConfig) => void;
+  /** Parámetros de la IA de los rivales en uso (el nivel elegido, con o sin dificultad dinámica). Valen desde la próxima carrera. */
+  aiLevel: AiLevel;
+  onAiLevelChange: (level: AiLevel) => void;
+  /** Los parámetros del nivel elegido sin tocar: a ellos vuelve "Restablecer". */
+  defaultAiLevel: AiLevel;
   /** Volúmenes y tono del motor (solo la sesión). */
   audioMix: RaceAudioMix;
   onAudioMixChange: (mix: RaceAudioMix) => void;
@@ -94,6 +100,9 @@ export type SceneryDisplaySwitchKey = 'visible' | 'particles';
 
 /** Reglas de la carrera que se ajustan en el panel. */
 export type RaceSliderKey = 'totalLaps';
+
+/** Parámetros de la IA de los rivales con slider (el id del nivel no se ajusta). */
+export type AiSliderKey = Exclude<keyof AiLevel, 'id'>;
 
 /** Parámetros de la inclinación con slider. La calibración va con su propio botón. */
 export type TiltSliderKey = Exclude<keyof TiltConfig, 'neutralAngle'>;

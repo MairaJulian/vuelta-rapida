@@ -14,7 +14,7 @@ import {
   advanceRace,
   createRace,
   getRaceLapView,
-  getRacePlace,
+  getRaceClassification,
   getRenderRivals,
   pauseRace,
   restartRace,
@@ -24,7 +24,7 @@ import {
 } from '@/core/RaceFlow';
 import type { RaceConfig, RaceSetup, RaceState } from '@/core/RaceFlow';
 import { AI_LEVELS, buildSpeedProfile, DEFAULT_AI_LEVEL_ID } from '@/core/RivalAI';
-import type { AiLevelId } from '@/core/RivalAI';
+import type { AiLevel } from '@/core/RivalAI';
 import { getGridPose, getGridProgress, getStartPose } from '@/core/Track';
 import type { Circuit } from '@/core/Track';
 
@@ -52,14 +52,13 @@ function createSetup(
   seed: number,
   drivingConfig: DrivingConfig,
   rivalCount: number,
-  aiLevel: AiLevelId,
+  level: AiLevel,
 ): RaceSetup {
   const base = { seed, recordTicks, stepHz: DEFAULT_FIXED_STEP_CONFIG.stepHz, config };
   if (rivalCount <= 0) {
     const start = getStartPose(track);
     return { ...base, car: createCarState(start.x, start.z, start.heading) };
   }
-  const level = AI_LEVELS[aiLevel];
   return {
     ...base,
     car: createGridCar(track, rivalCount),
@@ -96,7 +95,7 @@ export function useRaceLoop({
   onEvents,
   onEngine,
   rivalCount = 0,
-  aiLevel = DEFAULT_AI_LEVEL_ID,
+  aiLevel = AI_LEVELS[DEFAULT_AI_LEVEL_ID],
   createSeed = defaultSeed,
 }: UseRaceLoopParams): UseRaceLoopResult {
   // La primera carrera se arma una sola vez; las siguientes, con `restart`.
@@ -190,7 +189,7 @@ export function useRaceLoop({
   });
 
   const lapView = useDerivedValue(() => getRaceLapView(race.get()));
-  const placeView = useDerivedValue(() => getRacePlace(race.get()));
+  const standings = useDerivedValue(() => getRaceClassification(race.get()));
 
   const carTransform = useDerivedValue<Transforms3d>(() => {
     const current = car.get();
@@ -259,7 +258,7 @@ export function useRaceLoop({
     cameraTransform,
     carTransform,
     lapView,
-    placeView,
+    standings,
     startLights,
     pause,
     resume,

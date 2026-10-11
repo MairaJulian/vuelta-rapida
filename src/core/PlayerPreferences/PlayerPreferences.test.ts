@@ -1,3 +1,4 @@
+import { MAX_RIVALS } from '@/core/RivalAI';
 import { SAVE_VERSION } from '@/core/SaveData';
 import { DEFAULT_TILT_CONFIG, MAX_DEAD_ZONE, MIN_DEAD_ZONE } from '@/core/TiltSteering';
 
@@ -24,6 +25,9 @@ const saved: PlayerPreferences = {
   soundEnabled: false,
   ghostSource: 'record',
   vibrationEnabled: false,
+  rivalCount: 2,
+  aiLevel: 'hard',
+  dynamicDifficulty: false,
 };
 
 describe('parsePlayerPreferences', () => {
@@ -59,9 +63,37 @@ describe('parsePlayerPreferences', () => {
       tiltSensitivity: 8,
       tiltDeadZone: DEFAULT_PLAYER_PREFERENCES.tiltDeadZone,
       soundEnabled: true,
-      ghostSource: 'mine',
+      ghostSource: 'none',
       vibrationEnabled: true,
+      rivalCount: 3,
+      aiLevel: 'easy',
+      dynamicDifficulty: true,
     });
+  });
+
+  it('los rivales por defecto son 3, fáciles, con dificultad dinámica y sin fantasma', () => {
+    const parsed = parsePlayerPreferences(JSON.stringify({ controlMode: 'buttons' }));
+    expect(parsed).toMatchObject({
+      rivalCount: 3,
+      aiLevel: 'easy',
+      dynamicDifficulty: true,
+      ghostSource: 'none',
+    });
+  });
+
+  it('limita los rivales a 0–5 y redondea', () => {
+    const rivals = (rivalCount: unknown) =>
+      parsePlayerPreferences(JSON.stringify({ rivalCount })).rivalCount;
+    expect(rivals(0)).toBe(0);
+    expect(rivals(99)).toBe(MAX_RIVALS);
+    expect(rivals(-2)).toBe(0);
+    expect(rivals(2.4)).toBe(2);
+    expect(rivals('tres')).toBe(DEFAULT_PLAYER_PREFERENCES.rivalCount);
+  });
+
+  it('descarta una dificultad inexistente', () => {
+    expect(parsePlayerPreferences(JSON.stringify({ aiLevel: 'medium' })).aiLevel).toBe('medium');
+    expect(parsePlayerPreferences(JSON.stringify({ aiLevel: 'experto' })).aiLevel).toBe('easy');
   });
 
   it('las preferencias de antes del sonido y la vibración arrancan con los dos prendidos', () => {

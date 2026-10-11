@@ -34,7 +34,7 @@ describe('TrackSelectScreen', () => {
   it('muestra el título del handoff, las vueltas y una tarjeta por pista', async () => {
     await render(<TrackSelectScreen />);
     expect(screen.getByRole('header')).toHaveTextContent('Elegí la pista');
-    expect(screen.getByText('Contrarreloj · 3 vueltas')).toBeTruthy();
+    expect(screen.getByText('Carrera · 3 vueltas')).toBeTruthy();
     CIRCUITS.forEach((circuit) => {
       expect(screen.getByText(circuit.name)).toBeTruthy();
       expect(screen.getByText(getCircuitSummary(circuit))).toBeTruthy();

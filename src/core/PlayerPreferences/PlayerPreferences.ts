@@ -2,6 +2,8 @@ import { DEFAULT_GHOST_SOURCE, GHOST_SOURCES } from '@/core/Ghost';
 import type { GhostSource } from '@/core/Ghost';
 import { clamp } from '@/core/MathUtils';
 import type { Radians } from '@/core/MathUtils';
+import { AI_LEVEL_IDS, DEFAULT_AI_LEVEL_ID, MAX_RIVALS, RIVAL_COUNT } from '@/core/RivalAI';
+import type { AiLevelId } from '@/core/RivalAI';
 import { serializeSaveDocument } from '@/core/SaveData';
 import { DEFAULT_TILT_CONFIG, MAX_DEAD_ZONE, MIN_DEAD_ZONE } from '@/core/TiltSteering';
 import type { TiltConfig } from '@/core/TiltSteering';
@@ -22,6 +24,9 @@ export const DEFAULT_PLAYER_PREFERENCES: PlayerPreferences = Object.freeze({
   soundEnabled: true,
   ghostSource: DEFAULT_GHOST_SOURCE,
   vibrationEnabled: true,
+  rivalCount: RIVAL_COUNT,
+  aiLevel: DEFAULT_AI_LEVEL_ID,
+  dynamicDifficulty: true,
 });
 
 const MIN_SENSITIVITY = 1;
@@ -51,6 +56,10 @@ function isControlMode(value: unknown): value is ControlMode {
 
 function isGhostSource(value: unknown): value is GhostSource {
   return GHOST_SOURCES.includes(value as GhostSource);
+}
+
+function isAiLevel(value: unknown): value is AiLevelId {
+  return AI_LEVEL_IDS.includes(value as AiLevelId);
 }
 
 const isFiniteNumber = (value: unknown): value is number =>
@@ -92,6 +101,14 @@ export function parsePlayerPreferences(raw: string | null): PlayerPreferences {
       typeof fields.vibrationEnabled === 'boolean'
         ? fields.vibrationEnabled
         : DEFAULT_PLAYER_PREFERENCES.vibrationEnabled,
+    rivalCount: isFiniteNumber(fields.rivalCount)
+      ? Math.round(clamp(fields.rivalCount, 0, MAX_RIVALS))
+      : DEFAULT_PLAYER_PREFERENCES.rivalCount,
+    aiLevel: isAiLevel(fields.aiLevel) ? fields.aiLevel : DEFAULT_PLAYER_PREFERENCES.aiLevel,
+    dynamicDifficulty:
+      typeof fields.dynamicDifficulty === 'boolean'
+        ? fields.dynamicDifficulty
+        : DEFAULT_PLAYER_PREFERENCES.dynamicDifficulty,
   };
 }
 
@@ -108,6 +125,9 @@ export function serializePlayerPreferences(preferences: PlayerPreferences): stri
     soundEnabled: preferences.soundEnabled,
     ghostSource: preferences.ghostSource,
     vibrationEnabled: preferences.vibrationEnabled,
+    rivalCount: preferences.rivalCount,
+    aiLevel: preferences.aiLevel,
+    dynamicDifficulty: preferences.dynamicDifficulty,
   });
 }
 

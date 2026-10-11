@@ -37,15 +37,15 @@ export const styles = StyleSheet.create({
     paddingVertical: 4,
     alignItems: 'flex-start',
   },
-  // Fantasma: rótulo y las tres opciones.
-  ghost: {
+  // Una elección (rivales, dificultad, fantasma): rótulo y opciones.
+  option: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
     gap: 12,
     paddingHorizontal: PADDING.horizontal,
   },
-  ghostLabel: {
+  optionLabel: {
     color: COLORS.muted,
     fontSize: 13,
     fontWeight: '700',

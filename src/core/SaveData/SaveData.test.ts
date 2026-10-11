@@ -24,6 +24,9 @@ const LEGACY_PREFERENCES = JSON.stringify({
 
 const read = (json: string | null) => (json === null ? null : JSON.parse(json));
 
+/** Migra hasta la versión 4, el destino del hito 8. */
+const migrateToV4 = (raw: RawSave) => migrateSave(raw, SAVE_MIGRATIONS, 4);
+
 describe('parseSaveDocument', () => {
   it('lee un objeto JSON', () => {
     expect(parseSaveDocument('{"a":1}')).toEqual({ a: 1 });
@@ -231,7 +234,7 @@ describe('migrateSave: de la versión 3 (ranking) a la 4 (fantasma)', () => {
   const V3_PREFERENCES = JSON.stringify({ version: 3, controlMode: 'buttons', soundEnabled: true });
 
   it('los perfiles suman la lista de fantasmas, vacía, y conservan todo lo demás', () => {
-    const result = migrateSave({ profiles: V3_PROFILES, preferences: V3_PREFERENCES });
+    const result = migrateToV4({ profiles: V3_PROFILES, preferences: V3_PREFERENCES });
     expect(result.fromVersion).toBe(3);
     expect(read(result.documents.profiles)).toEqual({
       ...read(V3_PROFILES),
@@ -241,7 +244,7 @@ describe('migrateSave: de la versión 3 (ranking) a la 4 (fantasma)', () => {
   });
 
   it('las preferencias suman el fantasma de la mejor vuelta del jugador', () => {
-    const result = migrateSave({ profiles: V3_PROFILES, preferences: V3_PREFERENCES });
+    const result = migrateToV4({ profiles: V3_PROFILES, preferences: V3_PREFERENCES });
     expect(read(result.documents.preferences)).toEqual({
       version: 4,
       controlMode: 'buttons',
@@ -255,15 +258,75 @@ describe('migrateSave: de la versión 3 (ranking) a la 4 (fantasma)', () => {
     const ghosts = [{ profileId: 'p1', circuitId: LAGO, setAt: 5, recording: { v: 1 } }];
     const half = JSON.stringify({ ...read(V3_PROFILES), ghosts });
     const chosen = JSON.stringify({ version: 3, ghostSource: 'record' });
-    const result = migrateSave({ profiles: half, preferences: chosen });
+    const result = migrateToV4({ profiles: half, preferences: chosen });
     expect(read(result.documents.profiles).ghosts).toEqual(ghosts);
     expect(read(result.documents.preferences).ghostSource).toBe('record');
   });
 
   it('sin perfiles guardados migra solo las preferencias', () => {
-    const result = migrateSave({ profiles: null, preferences: V3_PREFERENCES });
+    const result = migrateToV4({ profiles: null, preferences: V3_PREFERENCES });
     expect(result.documents.profiles).toBeNull();
     expect(read(result.documents.preferences)).toMatchObject({ version: 4, ghostSource: 'mine' });
+  });
+
+  it('migrar dos veces da lo mismo: la segunda no escribe nada', () => {
+    const { documents } = migrateToV4({ profiles: V3_PROFILES, preferences: V3_PREFERENCES });
+    expect(migrateToV4(documents).writes).toEqual([]);
+  });
+});
+
+describe('migrateSave: de la versión 4 (fantasma) a la 5 (rivales)', () => {
+  const V4_PROFILES = JSON.stringify({
+    version: 4,
+    profiles: [{ id: 'p1', name: 'Male', colorId: 'pink', number: 27, createdAt: 1 }],
+    activeProfileId: 'p1',
+    lapRecords: [],
+    raceRecords: [],
+    ghosts: [],
+    unassignedRecords: {},
+  });
+  const V4_PREFERENCES = JSON.stringify({
+    version: 4,
+    controlMode: 'buttons',
+    soundEnabled: true,
+    ghostSource: 'mine',
+  });
+
+  it('las preferencias suman los rivales y vuelven al fantasma por defecto', () => {
+    const result = migrateSave({ profiles: V4_PROFILES, preferences: V4_PREFERENCES });
+    expect(result.fromVersion).toBe(4);
+    expect(read(result.documents.preferences)).toEqual({
+      version: 5,
+      controlMode: 'buttons',
+      soundEnabled: true,
+      ghostSource: 'none',
+      rivalCount: 3,
+      aiLevel: 'easy',
+      dynamicDifficulty: true,
+    });
+  });
+
+  it('los perfiles quedan igual salvo la versión', () => {
+    const result = migrateSave({ profiles: V4_PROFILES, preferences: V4_PREFERENCES });
+    expect(read(result.documents.profiles)).toEqual({ ...read(V4_PROFILES), version: 5 });
+  });
+
+  it('no pisa lo ya elegido si el campo estaba (migración cortada a mitad)', () => {
+    const chosen = JSON.stringify({
+      version: 4,
+      ghostSource: 'record',
+      rivalCount: 1,
+      aiLevel: 'hard',
+      dynamicDifficulty: false,
+    });
+    const result = migrateSave({ profiles: V4_PROFILES, preferences: chosen });
+    expect(read(result.documents.preferences)).toEqual({ ...read(chosen), version: 5 });
+  });
+
+  it('sin preferencias guardadas migra solo los perfiles', () => {
+    const result = migrateSave({ profiles: V4_PROFILES, preferences: null });
+    expect(result.documents.preferences).toBeNull();
+    expect(read(result.documents.profiles)).toMatchObject({ version: 5 });
   });
 
   it('desde la versión 1 llega hasta la actual con todo en su lugar', () => {
@@ -277,13 +340,16 @@ describe('migrateSave: de la versión 3 (ranking) a la 4 (fantasma)', () => {
     });
     expect(read(result.documents.preferences)).toMatchObject({
       version: SAVE_VERSION,
-      ghostSource: 'mine',
+      ghostSource: 'none',
+      rivalCount: 3,
+      aiLevel: 'easy',
+      dynamicDifficulty: true,
       controlMode: 'buttons',
     });
   });
 
   it('migrar dos veces da lo mismo: la segunda no escribe nada', () => {
-    const { documents } = migrateSave({ profiles: V3_PROFILES, preferences: V3_PREFERENCES });
+    const { documents } = migrateSave({ profiles: V4_PROFILES, preferences: V4_PREFERENCES });
     expect(migrateSave(documents).writes).toEqual([]);
   });
 });
@@ -342,7 +408,8 @@ describe('migrateSave: otros casos', () => {
     const preferences = JSON.stringify({
       version: SAVE_VERSION,
       controlMode: 'buttons',
-      ghostSource: 'mine',
+      ghostSource: 'none',
+      rivalCount: 3,
     });
     const profiles = JSON.stringify({ version: SAVE_VERSION - 1, profiles: [] });
     const result = migrateSave({ preferences, profiles });

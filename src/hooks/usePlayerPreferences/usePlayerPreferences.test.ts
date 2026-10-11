@@ -46,8 +46,11 @@ describe('usePlayerPreferences', () => {
       tiltSensitivity: 6,
       tiltDeadZone: 0.05,
       soundEnabled: true,
-      ghostSource: 'mine',
+      ghostSource: 'none',
       vibrationEnabled: true,
+      rivalCount: 3,
+      aiLevel: 'easy',
+      dynamicDifficulty: true,
     });
   });
 
@@ -62,7 +65,10 @@ describe('usePlayerPreferences', () => {
       version: SAVE_VERSION,
       controlMode: 'buttons',
       soundEnabled: false,
-      ghostSource: 'mine',
+      ghostSource: 'none',
+      rivalCount: 3,
+      aiLevel: 'easy',
+      dynamicDifficulty: true,
     });
   });
 

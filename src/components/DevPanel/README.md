@@ -1,30 +1,32 @@
 # DevPanel
 
-Panel desplegable **solo para desarrollo**. Permite ajustar en caliente el modo de control, la inclinación, las vueltas, el sonido, la vibración, el modelo de manejo, el ancho de la pista, la escenografía y la cámara. Muestra lecturas en vivo de velocidad, rumbo, deriva y fps y, con inclinación, del ángulo leído y la dirección resultante.
+Panel desplegable **solo para desarrollo**. Permite ajustar en caliente el modo de control, la inclinación, las vueltas, la IA de los rivales, el sonido, la vibración, el modelo de manejo, el ancho de la pista, la escenografía y la cámara. Muestra lecturas en vivo de velocidad, rumbo, deriva y fps y, con inclinación, del ángulo leído y la dirección resultante.
 
 ## Props
 
-| Prop | Tipo | Descripción |
-|---|---|---|
-| `drivingConfig` / `onDrivingConfigChange` | `DrivingConfig` | Parámetros del manejo (controlados por la pantalla). |
-| `cameraConfig` / `onCameraConfigChange` | `CameraConfig` | Parámetros de la cámara, incluido `rotateWithCar`. |
-| `track` / `onTrackChange` | `TrackData` | Pista en uso. El panel solo cambia su ancho; el trazado queda igual. |
-| `sceneryDisplay` / `onSceneryDisplayChange` | `SceneryDisplayConfig` | Cómo se ve la escenografía: si se dibuja, partículas, paralaje y contraste de las franjas. |
-| `treeDensity` / `onTreeDensityChange` | `number` | Densidad de árboles y arbustos (×0 a ×2). La pantalla regenera la escenografía con la misma semilla. |
-| `controlMode` / `onControlModeChange` | `ControlMode` | Modo de control; se cambia en caliente. |
-| `tiltConfig` / `onTiltConfigChange` | `TiltConfig` | Inclinación efectiva. La pantalla decide qué se guarda como preferencia (la sensibilidad). |
-| `tiltOutput` | `SharedValue<TiltSteeringResult>` | Resultado de la inclinación, para las lecturas. |
-| `onRecalibrate` | `() => void` | Toma la posición actual del celular como "derecho". |
-| `onOpenCalibration` | `() => void` | Abre la pantalla de calibración completa. |
-| `car` | `SharedValue<CarState>` | Estado del auto, para las lecturas. |
-| `fps` | `SharedValue<number>` | fps suavizados. |
-| `onResetCar` | `() => void` | Reinicia la carrera: el auto vuelve a la largada. |
-| `raceConfig` / `onRaceConfigChange` | `RaceConfig` | Reglas de la carrera. El panel solo cambia las vueltas. |
-| `audioMix` / `onAudioMixChange` | `RaceAudioMix` | Volúmenes del motor y de los efectos, y tono del motor. |
-| `hapticsConfig` / `onHapticsConfigChange` | `RaceHapticsConfig` | Intensidad de vibración de cada momento. |
+| Prop                                             | Tipo                              | Descripción                                                                                                                                                                                           |
+| ------------------------------------------------ | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `drivingConfig` / `onDrivingConfigChange`        | `DrivingConfig`                   | Parámetros del manejo (controlados por la pantalla).                                                                                                                                                  |
+| `cameraConfig` / `onCameraConfigChange`          | `CameraConfig`                    | Parámetros de la cámara, incluido `rotateWithCar`.                                                                                                                                                    |
+| `track` / `onTrackChange`                        | `TrackData`                       | Pista en uso. El panel solo cambia su ancho; el trazado queda igual.                                                                                                                                  |
+| `sceneryDisplay` / `onSceneryDisplayChange`      | `SceneryDisplayConfig`            | Cómo se ve la escenografía: si se dibuja, partículas, paralaje y contraste de las franjas.                                                                                                            |
+| `treeDensity` / `onTreeDensityChange`            | `number`                          | Densidad de árboles y arbustos (×0 a ×2). La pantalla regenera la escenografía con la misma semilla.                                                                                                  |
+| `controlMode` / `onControlModeChange`            | `ControlMode`                     | Modo de control; se cambia en caliente.                                                                                                                                                               |
+| `tiltConfig` / `onTiltConfigChange`              | `TiltConfig`                      | Inclinación efectiva. La pantalla decide qué se guarda como preferencia (la sensibilidad).                                                                                                            |
+| `tiltOutput`                                     | `SharedValue<TiltSteeringResult>` | Resultado de la inclinación, para las lecturas.                                                                                                                                                       |
+| `onRecalibrate`                                  | `() => void`                      | Toma la posición actual del celular como "derecho".                                                                                                                                                   |
+| `onOpenCalibration`                              | `() => void`                      | Abre la pantalla de calibración completa.                                                                                                                                                             |
+| `car`                                            | `SharedValue<CarState>`           | Estado del auto, para las lecturas.                                                                                                                                                                   |
+| `fps`                                            | `SharedValue<number>`             | fps suavizados.                                                                                                                                                                                       |
+| `onResetCar`                                     | `() => void`                      | Reinicia la carrera: el auto vuelve a la largada.                                                                                                                                                     |
+| `raceConfig` / `onRaceConfigChange`              | `RaceConfig`                      | Reglas de la carrera. El panel solo cambia las vueltas.                                                                                                                                               |
+| `aiLevel` / `onAiLevelChange` / `defaultAiLevel` | `AiLevel`                         | Parámetros de la IA de los rivales: los que están en uso (el nivel elegido, con o sin dificultad dinámica) y los del nivel sin tocar, a los que vuelve "Restablecer". Valen desde la próxima carrera. |
+| `audioMix` / `onAudioMixChange`                  | `RaceAudioMix`                    | Volúmenes del motor y de los efectos, y tono del motor.                                                                                                                                               |
+| `hapticsConfig` / `onHapticsConfigChange`        | `RaceHapticsConfig`               | Intensidad de vibración de cada momento.                                                                                                                                                              |
 
 También exporta:
-- `DRIVING_SLIDERS`, `TILT_SLIDERS`, `RACE_SLIDERS`, `AUDIO_SLIDERS`, `TRACK_SLIDERS`, `SCENERY_SLIDERS`, `TREE_DENSITY_SLIDER` y `CAMERA_SLIDERS`: el rango de cada slider.
+
+- `DRIVING_SLIDERS`, `TILT_SLIDERS`, `RACE_SLIDERS`, `AI_SLIDERS`, `AUDIO_SLIDERS`, `TRACK_SLIDERS`, `SCENERY_SLIDERS`, `TREE_DENSITY_SLIDER` y `CAMERA_SLIDERS`: el rango de cada slider.
 - `SCENERY_SWITCHES`: los interruptores de la escenografía.
 - `HAPTIC_MOMENTS`: los momentos que vibran, con su nombre.
 - `FIXED_DRIVING_KEYS`: los parámetros sin slider.
@@ -36,36 +38,38 @@ También exporta:
 // Solo en desarrollo: en producción Metro reemplaza __DEV__ por false y elimina el require.
 const DevPanel = __DEV__ ? require('@/components/DevPanel').DevPanel : null;
 
-{DevPanel ? (
-  <DevPanel
-    drivingConfig={drivingConfig}
-    onDrivingConfigChange={setDrivingConfig}
-    cameraConfig={cameraConfig}
-    onCameraConfigChange={setCameraConfig}
-    track={track}
-    onTrackChange={(next) => changeTrackWidth(next.width)}
-    sceneryDisplay={sceneryDisplay}
-    onSceneryDisplayChange={setSceneryDisplay}
-    treeDensity={track.scenery?.spec.treeDensity ?? 1}
-    onTreeDensityChange={changeTreeDensity}
-    controlMode={controlMode}
-    onControlModeChange={(mode) => updatePreferences({ controlMode: mode })}
-    tiltConfig={tiltConfig}
-    onTiltConfigChange={changeTiltConfig}
-    tiltOutput={tiltOutput}
-    onRecalibrate={recalibrate}
-    onOpenCalibration={() => router.push('/calibracion')}
-    car={loop.car}
-    fps={loop.fps}
-    onResetCar={restartRace}
-    raceConfig={raceConfig}
-    onRaceConfigChange={setRaceConfig}
-    audioMix={audioMix}
-    onAudioMixChange={setAudioMix}
-    hapticsConfig={hapticsConfig}
-    onHapticsConfigChange={setHapticsConfig}
-  />
-) : null}
+{
+  DevPanel ? (
+    <DevPanel
+      drivingConfig={drivingConfig}
+      onDrivingConfigChange={setDrivingConfig}
+      cameraConfig={cameraConfig}
+      onCameraConfigChange={setCameraConfig}
+      track={track}
+      onTrackChange={(next) => changeTrackWidth(next.width)}
+      sceneryDisplay={sceneryDisplay}
+      onSceneryDisplayChange={setSceneryDisplay}
+      treeDensity={track.scenery?.spec.treeDensity ?? 1}
+      onTreeDensityChange={changeTreeDensity}
+      controlMode={controlMode}
+      onControlModeChange={(mode) => updatePreferences({ controlMode: mode })}
+      tiltConfig={tiltConfig}
+      onTiltConfigChange={changeTiltConfig}
+      tiltOutput={tiltOutput}
+      onRecalibrate={recalibrate}
+      onOpenCalibration={() => router.push('/calibracion')}
+      car={loop.car}
+      fps={loop.fps}
+      onResetCar={restartRace}
+      raceConfig={raceConfig}
+      onRaceConfigChange={setRaceConfig}
+      audioMix={audioMix}
+      onAudioMixChange={setAudioMix}
+      hapticsConfig={hapticsConfig}
+      onHapticsConfigChange={setHapticsConfig}
+    />
+  ) : null;
+}
 ```
 
 ## Contenido
@@ -122,12 +126,12 @@ const DevPanel = __DEV__ ? require('@/components/DevPanel').DevPanel : null;
 
 Selector de una opción entre varias, en una píldora. Lo usan el selector de control y las intensidades de vibración. Es un componente chico de interfaz: no tiene README ni test propios (no tiene lógica); se documenta acá y se prueba a través del panel.
 
-| Prop | Tipo | Descripción |
-|---|---|---|
-| `options` | `{ value, label }[]` | Opciones, en orden. |
-| `value` / `onChange` | `string` | Opción elegida. |
-| `label` | `string` (opcional) | Nombre del grupo para el lector de pantalla. |
-| `compact` | `boolean` (opcional) | Texto de 11 en lugar de 14, para que entren cinco opciones en los 340 dp del panel. |
-| `testID` | `string` (opcional) | Para los tests. |
+| Prop                 | Tipo                 | Descripción                                                                         |
+| -------------------- | -------------------- | ----------------------------------------------------------------------------------- |
+| `options`            | `{ value, label }[]` | Opciones, en orden.                                                                 |
+| `value` / `onChange` | `string`             | Opción elegida.                                                                     |
+| `label`              | `string` (opcional)  | Nombre del grupo para el lector de pantalla.                                        |
+| `compact`            | `boolean` (opcional) | Texto de 11 en lugar de 14, para que entren cinco opciones en los 340 dp del panel. |
+| `testID`             | `string` (opcional)  | Para los tests.                                                                     |
 
 Se anuncia como un `radiogroup` con un `radio` por opción (`checked` en la elegida). Antes, los estilos del selector estaban en el panel; ahora viven en `DevSegmented.styles.ts`.

@@ -6,48 +6,56 @@ Antes se llamaba `useDrivingLoop`: corría solo la simulación de manejo.
 
 ## Parámetros
 
-| Parámetro | Tipo | Descripción |
-|---|---|---|
-| `input` | `SharedValue<DrivingInput>` | Entrada que escribe el modo de control. |
-| `track` | `Circuit` | Circuito: la largada, los límites, los pianos y las vueltas. El ancho se puede cambiar en caliente. |
-| `viewport` | `{ width, height }` | Área de dibujo en dp. |
-| `drivingConfig` | `DrivingConfig` | Parámetros del modelo; en caliente. |
-| `cameraConfig` | `CameraConfig` | Parámetros de la cámara; en caliente. |
-| `raceConfig` | `RaceConfig` | Reglas de la carrera. Valen desde la próxima carrera. |
-| `recordTicks` | `number \| null` | Récord del circuito, en pasos. Vale desde la próxima carrera. |
-| `onEvents` | `(events) => void` (opcional) | Eventos de la carrera, en orden, en el hilo de JS. Estable. |
-| `onEngine` | `(speedRatio) => void` (opcional) | Velocidad de 0 a 1 para el motor, cada `ENGINE_SAMPLE_MS` (50 ms). Estable. |
-| `rivalCount` | `number` (opcional) | Rivales con IA; por defecto 0 (el jugador corre solo y larga 15 m antes de la meta). Con rivales, ellos ocupan los primeros puestos de la grilla y el jugador el último. Vale desde la próxima carrera. |
-| `aiLevel` | `AiLevelId` (opcional) | Dificultad de los rivales; por defecto `easy`. Vale desde la próxima carrera. |
-| `createSeed` | `() => number` (opcional) | Semilla de cada carrera. Por defecto, la hora. |
+| Parámetro       | Tipo                              | Descripción                                                                                                                                                                                             |
+| --------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `input`         | `SharedValue<DrivingInput>`       | Entrada que escribe el modo de control.                                                                                                                                                                 |
+| `track`         | `Circuit`                         | Circuito: la largada, los límites, los pianos y las vueltas. El ancho se puede cambiar en caliente.                                                                                                     |
+| `viewport`      | `{ width, height }`               | Área de dibujo en dp.                                                                                                                                                                                   |
+| `drivingConfig` | `DrivingConfig`                   | Parámetros del modelo; en caliente.                                                                                                                                                                     |
+| `cameraConfig`  | `CameraConfig`                    | Parámetros de la cámara; en caliente.                                                                                                                                                                   |
+| `raceConfig`    | `RaceConfig`                      | Reglas de la carrera. Valen desde la próxima carrera.                                                                                                                                                   |
+| `recordTicks`   | `number \| null`                  | Récord del circuito, en pasos. Vale desde la próxima carrera.                                                                                                                                           |
+| `onEvents`      | `(events) => void` (opcional)     | Eventos de la carrera, en orden, en el hilo de JS. Estable.                                                                                                                                             |
+| `onEngine`      | `(speedRatio) => void` (opcional) | Velocidad de 0 a 1 para el motor, cada `ENGINE_SAMPLE_MS` (50 ms). Estable.                                                                                                                             |
+| `rivalCount`    | `number` (opcional)               | Rivales con IA; por defecto 0 (el jugador corre solo y larga 15 m antes de la meta). Con rivales, ellos ocupan los primeros puestos de la grilla y el jugador el último. Vale desde la próxima carrera. |
+| `aiLevel`       | `AiLevel` (opcional)              | Parámetros de la dificultad de los rivales (`AI_LEVELS`, con o sin dificultad dinámica: `withDynamicDifficulty`); por defecto el nivel `easy`. Vale desde la próxima carrera.                           |
+| `createSeed`    | `() => number` (opcional)         | Semilla de cada carrera. Por defecto, la hora.                                                                                                                                                          |
 
 ## Devuelve
 
-| Valor | Descripción |
-|---|---|
-| `race` | `SharedValue<RaceState>`: la carrera completa. |
-| `car` | `SharedValue<CarState>` interpolado, para dibujar y para las lecturas del panel. |
-| `rivalCars` | `SharedValue<CarState[]>`: los rivales interpolados, en el orden de la grilla; vacío sin rivales. |
-| `placeView` | `DerivedValue<RacePlaceView>`: puesto del jugador y autos en carrera, para el HUD ("2/4"). |
-| `fps` | fps suavizados. |
-| `cameraView` | `DerivedValue<CameraView>`: punto del mundo en el centro de la pantalla, zoom y giro. Lo usan el paralaje y la escenografía visible (`useSceneryView`). |
-| `cameraTransform` / `carTransform` | Transformaciones del mundo y del auto para Skia. |
-| `lapView` | `DerivedValue<RaceLapView>`: vuelta en curso, total de vueltas y tiempo de la vuelta. |
-| `startLights()` / `pause()` / `resume()` / `restart()` | Órdenes de la pantalla. |
+| Valor                                                  | Descripción                                                                                                                                             |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `race`                                                 | `SharedValue<RaceState>`: la carrera completa.                                                                                                          |
+| `car`                                                  | `SharedValue<CarState>` interpolado, para dibujar y para las lecturas del panel.                                                                        |
+| `rivalCars`                                            | `SharedValue<CarState[]>`: los rivales interpolados, en el orden de la grilla; vacío sin rivales.                                                       |
+| `standings`                                            | `DerivedValue<ClassificationEntry[]>`: la clasificación de todos los autos, del primero al último, para la tabla del HUD y los resultados.              |
+| `fps`                                                  | fps suavizados.                                                                                                                                         |
+| `cameraView`                                           | `DerivedValue<CameraView>`: punto del mundo en el centro de la pantalla, zoom y giro. Lo usan el paralaje y la escenografía visible (`useSceneryView`). |
+| `cameraTransform` / `carTransform`                     | Transformaciones del mundo y del auto para Skia.                                                                                                        |
+| `lapView`                                              | `DerivedValue<RaceLapView>`: vuelta en curso, total de vueltas y tiempo de la vuelta.                                                                   |
+| `startLights()` / `pause()` / `resume()` / `restart()` | Órdenes de la pantalla.                                                                                                                                 |
 
 ## Ejemplo
 
 ```tsx
 const bus = useMemo(() => createEventBus<RaceEvent>(), []);
 const loop = useRaceLoop({
-  input, track, viewport, drivingConfig, cameraConfig,
+  input,
+  track,
+  viewport,
+  drivingConfig,
+  cameraConfig,
   raceConfig: DEFAULT_RACE_CONFIG,
   recordTicks,
   onEvents: bus.emitAll,
 });
 
 useEffect(() => loop.startLights(), [loop.startLights]);
-<DriveCanvas track={track} cameraTransform={loop.cameraTransform} carTransform={loop.carTransform} />
+<DriveCanvas
+  track={track}
+  cameraTransform={loop.cameraTransform}
+  carTransform={loop.carTransform}
+/>;
 ```
 
 ## Decisiones de diseño

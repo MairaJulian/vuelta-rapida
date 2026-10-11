@@ -9,7 +9,7 @@ import type {
 } from './SaveData.types';
 
 /** Versión actual de los datos guardados. Subirla exige sumar un paso a `SAVE_MIGRATIONS`. */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 /** Versión de los datos guardados antes de que existiera el número de versión (hito 6a). */
 export const LEGACY_SAVE_VERSION = 1;
@@ -125,11 +125,37 @@ function addGhosts({ profiles, preferences }: SaveDocuments): SaveDocuments {
   };
 }
 
+/**
+ * v4 → v5 (hito 9a-2, pantallas de los rivales): las preferencias suman cuántos rivales
+ * corren (`rivalCount`, 3, como hasta ahora), su dificultad (`aiLevel`, fácil) y la
+ * dificultad dinámica (`dynamicDifficulty`, activada). Además el fantasma pasa a ser
+ * `'none'` por defecto: la versión 4 guardaba `'mine'` sin que nadie lo hubiera
+ * elegido, así que se vuelve a `'none'` una sola vez. Si el documento ya tiene
+ * `rivalCount`, una migración anterior se cortó después de escribirlo: se deja como
+ * está. Los perfiles no cambian.
+ */
+function addRivalPreferences({ profiles, preferences }: SaveDocuments): SaveDocuments {
+  if (preferences === null || preferences.rivalCount !== undefined) {
+    return { profiles, preferences };
+  }
+  return {
+    profiles,
+    preferences: {
+      ...preferences,
+      ghostSource: 'none',
+      rivalCount: 3,
+      aiLevel: 'easy',
+      dynamicDifficulty: true,
+    },
+  };
+}
+
 /** Pasos de migración, uno por versión. */
 export const SAVE_MIGRATIONS: readonly SaveMigration[] = Object.freeze([
   { from: 1, to: 2, migrate: moveRecordsToProfiles },
   { from: 2, to: 3, migrate: addRaceRecords },
   { from: 3, to: 4, migrate: addGhosts },
+  { from: 4, to: 5, migrate: addRivalPreferences },
 ]);
 
 /**

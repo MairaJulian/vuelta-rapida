@@ -1,8 +1,8 @@
 import type { StyleProp, ViewStyle } from 'react-native';
 import type { DerivedValue } from 'react-native-reanimated';
 
-import type { RaceLapView } from '@/core/RaceFlow';
-import type { RacePlaceView } from '@/core/RacePositions';
+import type { Racer } from '@/components/PositionTable';
+import type { ClassificationEntry, RaceLapView } from '@/core/RaceFlow';
 
 export interface LapHudProps {
   /** Vuelta en curso, total de vueltas y tiempo de la vuelta (de `useRaceLoop`). */
@@ -18,10 +18,12 @@ export interface LapHudProps {
    */
   ghostDelta?: DerivedValue<number | null>;
   /**
-   * Puesto del jugador y autos en carrera (de `useRaceLoop`). Con rivales (más de un auto)
-   * se muestra el puesto ("2/4") bajo la vuelta; con un solo auto, o sin esta prop, no.
+   * Clasificación de todos los autos (de `useRaceLoop`). Con rivales (más de un auto) se
+   * muestra la tabla de posiciones bajo la vuelta; con un solo auto, o sin esta prop, no.
    */
-  placeView?: DerivedValue<RacePlaceView>;
+  standings?: DerivedValue<ClassificationEntry[]>;
+  /** Nombre y color de cada auto de la tabla, el jugador incluido (con `PLAYER_ID`). Tiene que ser estable. */
+  racers?: readonly Racer[];
   /** Abre la pausa. Sin esta prop no hay botón de pausa. */
   onPause?: () => void;
   /** Estilo extra del contenedor (ocupa todo el ancho, arriba). */
@@ -35,13 +37,6 @@ export interface LapHudTexts {
   totalLaps: string;
   time: string;
   best: string;
-}
-
-/** Puesto del jugador, ya formateado: "2" y "/4". */
-export interface PlaceHudTexts {
-  place: string;
-  /** Autos en carrera con la barra: "/4". */
-  total: string;
 }
 
 /** Chip de diferencia con el fantasma, ya formateado. */

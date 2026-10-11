@@ -4,17 +4,18 @@ HUD de la carrera (pantalla 07 del handoff): "Vuelta 2/3" arriba a la izquierda,
 
 ## Props
 
-| Prop | Tipo | Descripción |
-|---|---|---|
-| `lapView` | `DerivedValue<RaceLapView>` | Vuelta en curso, total de vueltas y tiempo de la vuelta (de `useRaceLoop`). |
-| `recordMs` | `number \| null` | Récord guardado del circuito, en ms (de `useBestLapRecord`). |
-| `stepHz` | `number` | Pasos de simulación por segundo, para pasar los pasos a tiempo. |
-| `ghostDelta` | `DerivedValue<number | null>` (opcional) | Diferencia con el fantasma en segundos, positiva si el jugador va atrás (de `useRaceGhost`). Con un número se muestra el chip; con `null` o sin la prop, no. |
-| `placeView` | `DerivedValue<RacePlaceView>` (opcional) | Puesto del jugador y autos en carrera (`useRaceLoop`). Con rivales muestra "2/4" bajo la píldora de la vuelta; con un solo auto, o sin la prop, nada. |
-| `onPause` | `() => void` (opcional) | Abre la pausa. Sin esta prop no hay botón. |
-| `style` | `StyleProp<ViewStyle>` | Estilo extra del contenedor. |
+| Prop         | Tipo                                             | Descripción                                                                                                                                                                              |
+| ------------ | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lapView`    | `DerivedValue<RaceLapView>`                      | Vuelta en curso, total de vueltas y tiempo de la vuelta (de `useRaceLoop`).                                                                                                              |
+| `recordMs`   | `number \| null`                                 | Récord guardado del circuito, en ms (de `useBestLapRecord`).                                                                                                                             |
+| `stepHz`     | `number`                                         | Pasos de simulación por segundo, para pasar los pasos a tiempo.                                                                                                                          |
+| `ghostDelta` | `DerivedValue<number                             | null>` (opcional)                                                                                                                                                                        | Diferencia con el fantasma en segundos, positiva si el jugador va atrás (de `useRaceGhost`). Con un número se muestra el chip; con `null` o sin la prop, no. |
+| `standings`  | `DerivedValue<ClassificationEntry[]>` (opcional) | Clasificación de todos los autos (`useRaceLoop`). Con rivales muestra la mini tabla de posiciones (`PositionTable`) bajo la píldora de la vuelta; con un solo auto, o sin la prop, nada. |
+| `racers`     | `Racer[]` (opcional)                             | Nombre y color de cada auto de la tabla, el jugador incluido (con `PLAYER_ID`). Tiene que ser estable (por ejemplo, de un `useMemo`).                                                    |
+| `onPause`    | `() => void` (opcional)                          | Abre la pausa. Sin esta prop no hay botón.                                                                                                                                               |
+| `style`      | `StyleProp<ViewStyle>`                           | Estilo extra del contenedor.                                                                                                                                                             |
 
-También exporta `getLapHudTexts(view, recordMs, stepHz)`, que arma los textos, y `getGhostDeltaChip(deltaSeconds)`, que arma el chip.
+También exporta `getLapHudTexts(view, recordMs, stepHz)`, que arma los textos, `getGhostDeltaChip(deltaSeconds)`, que arma el chip, y `getPositionRows(entries, racers)`, que arma las filas de la tabla.
 
 ## Ejemplo
 
@@ -29,6 +30,7 @@ También exporta `getLapHudTexts(view, recordMs, stepHz)`, que arma los textos, 
 - **Tiempo:** píldora redonda, padding 4/22. 800/32, cifras tabulares, formato `m:ss.mmm`. El handoff usa 36 con Archivo Narrow; con la fuente del sistema, que es más ancha, baja a 32.
 - **"Mejor":** como "Vuelta", con el valor en 800/20. Sin récord muestra `–:––.–––`.
 - **Chip de diferencia con el fantasma:** debajo del cronómetro, píldora con padding 3/12, texto blanco 800 de 16 (el handoff, 19 con Archivo) y el ícono del fantasma de 16. Verde `delta-faster` (`#2E9A55`) si el jugador va más rápido, rojo `delta-slower` (`#D83B3B`) si va más lento. **Siempre con signo** (`−0.412` / `+0.236`, con el menos tipográfico) para que no dependa del color. Aparece solo en carrera.
+- **Tabla de posiciones** (hito 9a-2; el handoff no la trae): bajo la píldora de la vuelta, a 64 dp del borde de arriba. Tarjeta blanca de radio 16 con la misma sombra, y una fila de 22 dp por auto: el puesto, un punto del color del auto y el nombre en mayúsculas. La fila del jugador va en `blue-soft`. Con 6 autos ocupa unos 140 dp y queda por encima de los botones de manejo. Solo con rivales.
 - **Pausa:** botón blanco Ø 48 con el ícono de Phosphor y la misma sombra, a la derecha de "Mejor"; presionado, `soft`.
 
 ## Decisiones de diseño

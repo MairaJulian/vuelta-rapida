@@ -20,12 +20,16 @@ import type {
   RivalState,
 } from './RivalAI.types';
 
-/** Rivales por carrera. */
+/** Rivales por carrera por defecto. */
 export const RIVAL_COUNT = 3;
 
+/** Tope de rivales que se pueden elegir. */
+export const MAX_RIVALS = 5;
+
 /**
- * Niveles de dificultad. Hoy solo existe el fácil (rivales a un 88–95 % de lo que
- * aguantan las curvas, con trazada y frenada imprecisas); medio y difícil se suman acá.
+ * Niveles de dificultad. El fácil corre a un 88–95 % de lo que aguantan las curvas, con
+ * trazada y frenada imprecisas; el medio, a 92–98 %, y el difícil, a 97–102 % con poco
+ * error. Todos topean el ritmo (`maxPace`) para no pasarse del límite de cada tramo.
  */
 export const AI_LEVELS: Readonly<Record<AiLevelId, AiLevel>> = Object.freeze({
   easy: Object.freeze({
@@ -48,9 +52,60 @@ export const AI_LEVELS: Readonly<Record<AiLevelId, AiLevel>> = Object.freeze({
     maxPace: 0.97,
     speedError: 0.06,
   }),
+  medium: Object.freeze({
+    id: 'medium',
+    lookAheadMin: 9,
+    lookAheadTime: 0.35,
+    lookAheadCurveTime: 0.45,
+    paceMin: 0.92,
+    paceMax: 0.98,
+    lateralAccel: 30,
+    steerReserve: 0.7,
+    brakeDecelFactor: 0.7,
+    brakeGain: 0.4,
+    lineError: 0.7,
+    lineChangeSeconds: 1.5,
+    lineRate: 0.8,
+    catchUpRange: 150,
+    catchUpBoost: 0.12,
+    catchUpEase: 0.1,
+    maxPace: 1,
+    speedError: 0.04,
+  }),
+  hard: Object.freeze({
+    id: 'hard',
+    lookAheadMin: 9,
+    lookAheadTime: 0.35,
+    lookAheadCurveTime: 0.45,
+    paceMin: 0.97,
+    paceMax: 1.02,
+    lateralAccel: 30,
+    steerReserve: 0.75,
+    brakeDecelFactor: 0.8,
+    brakeGain: 0.5,
+    lineError: 0.4,
+    lineChangeSeconds: 2,
+    lineRate: 0.8,
+    catchUpRange: 150,
+    catchUpBoost: 0.1,
+    catchUpEase: 0.08,
+    maxPace: 1.03,
+    speedError: 0.02,
+  }),
 });
 
+/** Niveles en orden de menor a mayor dificultad. */
+export const AI_LEVEL_IDS: readonly AiLevelId[] = Object.freeze(['easy', 'medium', 'hard']);
+
 export const DEFAULT_AI_LEVEL_ID: AiLevelId = 'easy';
+
+/**
+ * El nivel con o sin dificultad dinámica. Sin ella los rivales no se ajustan a la
+ * distancia al jugador (ni aprietan ni aflojan): corren a su ritmo sorteado.
+ */
+export function withDynamicDifficulty(level: AiLevel, enabled: boolean): AiLevel {
+  return enabled ? level : { ...level, catchUpBoost: 0, catchUpEase: 0 };
+}
 
 /** Nombres inventados de los rivales, en orden. */
 export const RIVAL_NAMES: readonly string[] = Object.freeze([

@@ -12,6 +12,7 @@ import { createRandomState, nextRandomBetween } from '@/core/SeededRandom';
 import type { Circuit } from '@/core/Track';
 
 import type {
+  ClassificationEntry,
   RaceConfig,
   RaceEvent,
   RaceLapView,
@@ -497,6 +498,36 @@ export function getRacePlace(race: RaceState): RacePlaceView {
   const standings = getRaceStandings(race);
   const player = standings[standings.length - 1];
   return { place: player.place, total: standings.length };
+}
+
+/**
+ * Clasificación de todos los autos, del primero al último: el puesto, la vuelta en curso
+ * (de 1 a `totalLaps`) y el paso de la llegada (`null` si todavía corre). Para la tabla
+ * del HUD y los resultados. Sin rivales, solo el jugador.
+ */
+export function getRaceClassification(race: RaceState): ClassificationEntry[] {
+  'worklet';
+  const laps = new Map<string, number>();
+  const finishes = new Map<string, number | null>();
+  laps.set(PLAYER_ID, race.sim.laps.lapTicks.length + 1);
+  finishes.set(PLAYER_ID, race.finishTick);
+  for (let i = 0; i < race.rivals.length; i += 1) {
+    const rival = race.rivals[i];
+    laps.set(rival.id, rival.sim.laps.lapTicks.length + 1);
+    finishes.set(rival.id, rival.finishTick);
+  }
+  const standings = getRaceStandings(race);
+  const rows: ClassificationEntry[] = [];
+  for (let i = 0; i < standings.length; i += 1) {
+    const { id, place } = standings[i];
+    rows[place - 1] = {
+      id,
+      place,
+      lap: Math.min(laps.get(id) ?? 1, race.config.totalLaps),
+      finishTick: finishes.get(id) ?? null,
+    };
+  }
+  return rows;
 }
 
 /** Resultados de la carrera terminada; `null` si todavía no llegó. */

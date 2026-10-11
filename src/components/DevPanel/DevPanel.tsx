@@ -30,6 +30,7 @@ import { formatSignedDegrees } from '@/render/CalibrationGauge';
 
 import { COLORS, OFFSETS, READING_FLEX, READINGS_INTERVAL_MS, styles } from './DevPanel.styles';
 import type {
+  AiSliderKey,
   DevPanelProps,
   DevReadings,
   NumericCameraKey,
@@ -276,6 +277,103 @@ export const RACE_SLIDERS: SliderSpec<RaceSliderKey>[] = [
   { key: 'totalLaps', label: 'Vueltas', min: 1, max: 5, step: 1, format: String },
 ];
 
+const fixed2 = (value: number) => value.toFixed(2);
+const meters = (value: number) => `${value.toFixed(1)} m`;
+
+/**
+ * Sliders de la IA de los rivales. Los rangos contienen los tres niveles (`AI_LEVELS`).
+ * Valen desde la próxima carrera: el perfil de velocidad se calcula al largar.
+ */
+export const AI_SLIDERS: SliderSpec<AiSliderKey>[] = [
+  { key: 'paceMin', label: 'Ritmo mínimo', min: 0.7, max: 1.1, step: 0.01, format: percent },
+  { key: 'paceMax', label: 'Ritmo máximo', min: 0.7, max: 1.1, step: 0.01, format: percent },
+  { key: 'maxPace', label: 'Tope del ritmo', min: 0.8, max: 1.2, step: 0.01, format: percent },
+  {
+    key: 'lateralAccel',
+    label: 'Aceleración lateral',
+    min: 15,
+    max: 45,
+    step: 1,
+    format: (value) => `${value} m/s²`,
+  },
+  { key: 'steerReserve', label: 'Giro usado', min: 0.3, max: 1, step: 0.05, format: percent },
+  {
+    key: 'brakeDecelFactor',
+    label: 'Freno al planear',
+    min: 0.3,
+    max: 1.2,
+    step: 0.05,
+    format: percent,
+  },
+  { key: 'brakeGain', label: 'Fuerza del freno', min: 0.1, max: 1, step: 0.05, format: fixed2 },
+  { key: 'lineError', label: 'Error de trazada', min: 0, max: 3, step: 0.1, format: meters },
+  { key: 'speedError', label: 'Error de frenada', min: 0, max: 0.15, step: 0.01, format: percent },
+  {
+    key: 'lookAheadMin',
+    label: 'Mirada mínima',
+    min: 3,
+    max: 20,
+    step: 1,
+    format: (value) => `${value} m`,
+  },
+  {
+    key: 'lookAheadTime',
+    label: 'Mirada por velocidad',
+    min: 0.1,
+    max: 1,
+    step: 0.05,
+    format: seconds,
+  },
+  {
+    key: 'lookAheadCurveTime',
+    label: 'Mirada en curvas',
+    min: 0.1,
+    max: 1,
+    step: 0.05,
+    format: seconds,
+  },
+  {
+    key: 'lineChangeSeconds',
+    label: 'Cambio de trazada cada',
+    min: 0.5,
+    max: 5,
+    step: 0.1,
+    format: (value) => `${value.toFixed(1)} s`,
+  },
+  {
+    key: 'lineRate',
+    label: 'Velocidad del cambio',
+    min: 0.2,
+    max: 3,
+    step: 0.1,
+    format: (value) => `${value.toFixed(1)} m/s`,
+  },
+  {
+    key: 'catchUpRange',
+    label: 'Distancia del ajuste',
+    min: 50,
+    max: 400,
+    step: 10,
+    format: (value) => `${value} m`,
+  },
+  {
+    key: 'catchUpBoost',
+    label: 'Aprieta (jugador adelante)',
+    min: 0,
+    max: 0.4,
+    step: 0.01,
+    format: percent,
+  },
+  {
+    key: 'catchUpEase',
+    label: 'Afloja (jugador atrás)',
+    min: 0,
+    max: 0.4,
+    step: 0.01,
+    format: percent,
+  },
+];
+
 const pitch = (value: number) => `×${value.toFixed(2)}`;
 
 /** Sliders del sonido: volúmenes de 0 a 100 % y tono del motor como velocidad del loop. */
@@ -400,6 +498,9 @@ export function DevPanel({
   onResetCar,
   raceConfig,
   onRaceConfigChange,
+  aiLevel,
+  onAiLevelChange,
+  defaultAiLevel,
   audioMix,
   onAudioMixChange,
   hapticsConfig,
@@ -435,6 +536,7 @@ export function DevPanel({
     onTrackChange({ ...track, width: DEFAULT_CIRCUIT.width });
     onTiltConfigChange({ ...DEFAULT_TILT_CONFIG, neutralAngle: tiltConfig.neutralAngle });
     onRaceConfigChange({ ...raceConfig, totalLaps: DEFAULT_RACE_CONFIG.totalLaps });
+    onAiLevelChange(defaultAiLevel);
     onAudioMixChange(DEFAULT_RACE_AUDIO_MIX);
     onHapticsConfigChange(DEFAULT_RACE_HAPTICS);
     onSceneryDisplayChange(DEFAULT_SCENERY_DISPLAY);
@@ -552,6 +654,24 @@ export function DevPanel({
               />
             ))}
             <Text style={styles.note}>Las vueltas valen desde la próxima carrera.</Text>
+
+            <Text style={styles.sectionTitle}>IA de los rivales</Text>
+            {AI_SLIDERS.map((spec) => (
+              <DevSlider
+                key={spec.key}
+                testID={`slider-${spec.key}`}
+                label={spec.label}
+                value={aiLevel[spec.key]}
+                min={spec.min}
+                max={spec.max}
+                step={spec.step}
+                formatValue={spec.format}
+                onChange={(value) => onAiLevelChange({ ...aiLevel, [spec.key]: value })}
+              />
+            ))}
+            <Text style={styles.note}>
+              Parten del nivel elegido en la selección de pista y valen desde la próxima carrera.
+            </Text>
 
             <Text style={styles.sectionTitle}>Sonido</Text>
             <View style={styles.switchRow}>
