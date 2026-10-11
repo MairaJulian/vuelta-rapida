@@ -1,6 +1,9 @@
+import { DEFAULT_COLLISION_CONFIG, resolveCarCollisions } from '@/core/CarCollisions';
+import type { CollisionConfig } from '@/core/CarCollisions';
 import { getSpeed } from '@/core/DrivingModel';
 import type { CarState, DrivingConfig, DrivingInput } from '@/core/DrivingModel';
 import { createDrivingSim, interpolateCar, stepDrivingSim } from '@/core/DrivingSim';
+import type { DrivingSimState } from '@/core/DrivingSim';
 import { consumeFrameTime, getStepAlpha } from '@/core/FixedStep';
 import type { FixedStepConfig } from '@/core/FixedStep';
 import { getGhostSampleGap } from '@/core/Ghost';
@@ -9,7 +12,9 @@ import type { PositionEntry, RacePlaceView, Standing } from '@/core/RacePosition
 import { createRival, stepRival } from '@/core/RivalAI';
 import type { RivalState } from '@/core/RivalAI';
 import { createRandomState, nextRandomBetween } from '@/core/SeededRandom';
+import { getKerbFactor, getNearestOnCenterline, getProgressAt } from '@/core/Track';
 import type { Circuit } from '@/core/Track';
+import { resolveTrackContact } from '@/core/TrackBounds';
 
 import type {
   ClassificationEntry,
@@ -33,6 +38,7 @@ export const DEFAULT_RACE_CONFIG: RaceConfig = Object.freeze({
   lightsOutDelayMax: 1.5,
   borderHitInterval: 0.5,
   kerbInterval: 0.3,
+  carHitInterval: 0.4,
   finishBrake: 0.5,
 });
 
@@ -79,6 +85,8 @@ export function createRace(setup: RaceSetup): RaceState {
     newRecord: false,
     lastBorderHitTick: null,
     lastKerbTick: null,
+    carContact: false,
+    lastCarHitTick: null,
     lapTrace: [],
     lapLength: field ? field.lapLength : 0,
     rivals: field ? field.rivals.map((rival) => createRival(rival)) : [],
@@ -199,6 +207,85 @@ function stepRivals(
   return next;
 }
 
+/** Pasadas de separación y vuelta al asfalto por paso: resuelven los choques en cadena. */
+const COLLISION_PASSES = 3;
+
+/** Devuelve un auto movido por un choque al asfalto (o a los pianos de las curvas). */
+function keepOnTrack(
+  car: CarState,
+  segment: number,
+  drivingConfig: DrivingConfig,
+  circuit: Circuit,
+  dt: number,
+): CarState {
+  'worklet';
+  const hit = getNearestOnCenterline(circuit, car.x, car.z, segment);
+  const kerbFactor = getKerbFactor(circuit.kerbs, circuit.length, getProgressAt(circuit, hit));
+  return resolveTrackContact(car, hit, circuit, drivingConfig, dt, kerbFactor).car;
+}
+
+/**
+ * Choques entre el jugador y los rivales de un paso (`core/CarCollisions`). Tras cada
+ * separación, los autos movidos vuelven a la pista: un empujón nunca saca a nadie. Si eso
+ * los deja solapados otra vez, se repite hasta `COLLISION_PASSES` veces; lo que quede se
+ * resuelve en el paso siguiente. `touching` e `impactSpeed` son del jugador, en la primera
+ * pasada (la velocidad con que se acercaba al chocar, antes del empujón).
+ */
+function resolveRaceCollisions(
+  sim: DrivingSimState,
+  rivals: RivalState[],
+  collision: CollisionConfig,
+  drivingConfig: DrivingConfig,
+  circuit: Circuit,
+  dt: number,
+): { sim: DrivingSimState; rivals: RivalState[]; touching: boolean; impactSpeed: number } {
+  'worklet';
+  const unchanged = { sim, rivals, touching: false, impactSpeed: 0 };
+  if (!collision.enabled || rivals.length === 0) {
+    return unchanged;
+  }
+  const segments = [sim.trackSegment];
+  let cars = [sim.car];
+  for (let i = 0; i < rivals.length; i += 1) {
+    cars.push(rivals[i].sim.car);
+    segments.push(rivals[i].sim.trackSegment);
+  }
+  let touching = false;
+  let impactSpeed = 0;
+  let changed = false;
+  for (let pass = 0; pass < COLLISION_PASSES; pass += 1) {
+    const resolved = resolveCarCollisions(cars, collision, dt);
+    if (pass === 0) {
+      touching = resolved.touching[0];
+      impactSpeed = resolved.impactSpeeds[0];
+    }
+    const next: CarState[] = [];
+    let moved = false;
+    for (let k = 0; k < cars.length; k += 1) {
+      if (resolved.cars[k] === cars[k]) {
+        next.push(cars[k]);
+      } else {
+        moved = true;
+        next.push(keepOnTrack(resolved.cars[k], segments[k], drivingConfig, circuit, dt));
+      }
+    }
+    if (!moved) {
+      break;
+    }
+    changed = true;
+    cars = next;
+  }
+  if (!changed) {
+    return unchanged;
+  }
+  return {
+    sim: { ...sim, car: cars[0] },
+    rivals: rivals.map((rival, i) => ({ ...rival, sim: { ...rival.sim, car: cars[i + 1] } })),
+    touching,
+    impactSpeed,
+  };
+}
+
 /**
  * En carrera: un paso del auto, los avisos de bordes y pianos, las vueltas y la llegada,
  * y un paso de cada rival.
@@ -210,31 +297,62 @@ function stepRacing(
   drivingConfig: DrivingConfig,
   coastConfig: DrivingConfig,
   circuit: Circuit,
+  collisionConfig: CollisionConfig,
   dt: number,
 ): RaceState {
   'worklet';
   const { config, stepHz } = race;
   const before = race.sim.contact;
-  const sim = stepDrivingSim(race.sim, input, drivingConfig, circuit, dt);
-  const clock = sim.tick;
+  const driven = stepDrivingSim(race.sim, input, drivingConfig, circuit, dt);
+  const clock = driven.tick;
   let events = race.events;
   let { lastBorderHitTick, lastKerbTick } = race;
 
   const borderGap = secondsToTicks(config.borderHitInterval, stepHz);
   if (
-    shouldNotifyContact(before.touching, sim.contact.touching, lastBorderHitTick, clock, borderGap)
+    shouldNotifyContact(
+      before.touching,
+      driven.contact.touching,
+      lastBorderHitTick,
+      clock,
+      borderGap,
+    )
   ) {
-    events = [...events, { type: 'borderHit', tick, impactSpeed: sim.contact.impactSpeed }];
+    events = [...events, { type: 'borderHit', tick, impactSpeed: driven.contact.impactSpeed }];
     lastBorderHitTick = clock;
   }
   const kerbGap = secondsToTicks(config.kerbInterval, stepHz);
-  if (shouldNotifyContact(before.onKerb, sim.contact.onKerb, lastKerbTick, clock, kerbGap)) {
-    events = [...events, { type: 'kerbEnter', tick, speed: getSpeed(sim.car) }];
+  if (shouldNotifyContact(before.onKerb, driven.contact.onKerb, lastKerbTick, clock, kerbGap)) {
+    events = [...events, { type: 'kerbEnter', tick, speed: getSpeed(driven.car) }];
     lastKerbTick = clock;
   }
 
-  const rivals = stepRivals(race, drivingConfig, coastConfig, circuit, dt);
-  const stepped = { ...race, tick, sim, rivals, events, lastBorderHitTick, lastKerbTick };
+  const crash = resolveRaceCollisions(
+    driven,
+    stepRivals(race, drivingConfig, coastConfig, circuit, dt),
+    collisionConfig,
+    drivingConfig,
+    circuit,
+    dt,
+  );
+  const { sim, rivals } = crash;
+  const carGap = secondsToTicks(config.carHitInterval, stepHz);
+  let { lastCarHitTick } = race;
+  if (shouldNotifyContact(race.carContact, crash.touching, lastCarHitTick, clock, carGap)) {
+    events = [...events, { type: 'carHit', tick, impactSpeed: crash.impactSpeed }];
+    lastCarHitTick = clock;
+  }
+  const stepped = {
+    ...race,
+    tick,
+    sim,
+    rivals,
+    events,
+    lastBorderHitTick,
+    lastKerbTick,
+    carContact: crash.touching,
+    lastCarHitTick,
+  };
   const lapStart = race.lapEndTicks.length > 0 ? race.lapEndTicks[race.lapEndTicks.length - 1] : 0;
   const pose = [sim.car.x, sim.car.z, sim.car.heading];
   // Las puertas del circuito validan cada vuelta (`LapTimer`). Una vuelta deshecha
@@ -301,23 +419,33 @@ function stepFinished(
   drivingConfig: DrivingConfig,
   coastConfig: DrivingConfig,
   circuit: Circuit,
+  collisionConfig: CollisionConfig,
   dt: number,
 ): RaceState {
   'worklet';
-  const sim = stepDrivingSim(
+  const driven = stepDrivingSim(
     race.sim,
     { steer: input.steer, brake: race.config.finishBrake },
     coastConfig,
     circuit,
     dt,
   );
-  return { ...race, tick, sim, rivals: stepRivals(race, drivingConfig, coastConfig, circuit, dt) };
+  const { sim, rivals } = resolveRaceCollisions(
+    driven,
+    stepRivals(race, drivingConfig, coastConfig, circuit, dt),
+    collisionConfig,
+    drivingConfig,
+    circuit,
+    dt,
+  );
+  return { ...race, tick, sim, rivals };
 }
 
 /**
  * Avanza la carrera con el tiempo de un cuadro, en pasos fijos. En la grilla y
  * durante el semáforo el auto no se simula (no se mueve y el cronómetro no corre);
- * en pausa no pasa nada. Los eventos de los pasos se suman a `events`.
+ * en pausa no pasa nada. Los eventos de los pasos se suman a `events`. Los autos chocan
+ * entre sí con `collisionConfig` (por defecto, `DEFAULT_COLLISION_CONFIG`).
  */
 export function advanceRace(
   race: RaceState,
@@ -326,11 +454,13 @@ export function advanceRace(
   drivingConfig: DrivingConfig,
   circuit: Circuit,
   stepConfig: FixedStepConfig,
+  collisionConfig?: CollisionConfig,
 ): RaceState {
   'worklet';
   if (race.phase === 'paused') {
     return race;
   }
+  const collision = collisionConfig ?? DEFAULT_COLLISION_CONFIG;
   const { steps, accumulatorMs } = consumeFrameTime(race.sim.accumulatorMs, frameMs, stepConfig);
   const dt = 1 / stepConfig.stepHz;
   // Sin acelerador tras la llegada: con el freno, el auto se detiene y no da marcha atrás.
@@ -341,9 +471,9 @@ export function advanceRace(
     if (next.phase === 'lights') {
       next = stepLights(next, tick);
     } else if (next.phase === 'racing') {
-      next = stepRacing(next, tick, input, drivingConfig, coastConfig, circuit, dt);
+      next = stepRacing(next, tick, input, drivingConfig, coastConfig, circuit, collision, dt);
     } else if (next.phase === 'finished') {
-      next = stepFinished(next, tick, input, drivingConfig, coastConfig, circuit, dt);
+      next = stepFinished(next, tick, input, drivingConfig, coastConfig, circuit, collision, dt);
     } else {
       next = { ...next, tick };
     }
