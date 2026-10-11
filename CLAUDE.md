@@ -1,225 +1,50 @@
 # Vuelta Rápida — contexto del proyecto
 
-Referencia para todas las sesiones de Claude Code en este repositorio. Ver también [AGENTS.md](AGENTS.md) (reglas generales de Expo).
+Ver también [AGENTS.md](AGENTS.md) (reglas genéricas de Expo). Si se contradicen, manda este archivo: el alcance es solo Android, Skia y react-native-filament son decisiones deliberadas, y antes de dar algo por hecho corren `npm run lint`, `npm run typecheck` y `npm test`.
 
-**Precedencia:** AGENTS.md son reglas genéricas de Expo; este archivo recoge las decisiones de este proyecto. Si se contradicen, manda CLAUDE.md. Diferencias conocidas:
+## Objetivo y stack
 
-- AGENTS.md pide priorizar compatibilidad multiplataforma; aquí el alcance es **solo Android**.
-- AGENTS.md pide lint y tipos antes de dar una tarea por hecha; este proyecto añade además los tests: `npm run lint`, `npm run typecheck` y `npm test`.
-- AGENTS.md prefiere módulos oficiales de Expo; aquí Skia (2D) y react-native-filament (3D futuro) son decisiones deliberadas.
+- Carreras de monoplazas con vista cenital para Android: juego para mi hijo (10-12 años, fan de la F1) y pieza de portfolio. Futuro: versión 3D (react-native-filament), rivales con IA, multijugador local. Sin online.
+- Expo con dev builds, TypeScript estricto, Skia (2D), Reanimated (loop de juego), solo Android, horizontal bloqueada (`sensorLandscape`).
+- Control: botones en pantalla. La inclinación está desactivada (`FEATURE_FLAGS.tiltControl`), solo accesible desde el panel de desarrollo; su código, pantallas y tests se conservan.
+- Rendimiento: piso de gama media Android, 60 fps. Lo repetido (árboles, sombras, partículas) va con `Atlas` y solo lo que ve la cámara; lo estático, en pocos `Path`.
 
-## Objetivo
+## Arquitectura
 
-Juego de carreras de monoplazas con vista cenital para Android. Dos fines:
+- `src/core/` es TypeScript puro: sin React, React Native ni Skia, y sin importar `audio/`, `haptics/` ni `storage/` (lo hace cumplir ESLint).
+- La simulación corre en el hilo de UI. Las funciones de `core` llamadas desde el loop llevan `'worklet'`. En un worklet, nunca usar una constante del módulo como valor por defecto de un parámetro (la app se cae; ESLint lo detecta, Jest no): el valor va en el cuerpo.
+- El modelo de manejo trabaja en un plano x/z. El render solo lee estado, sin lógica. El estado de la carrera es serializable.
+- Datos guardados: `src/storage/SaveStore` es lo único que toca el disco. Cambiar un formato exige subir `SAVE_VERSION`, sumar un paso a `SAVE_MIGRATIONS` y un test con datos de la versión anterior. Nunca cambiar el formato sin migración.
+- Pistas: son datos en `CIRCUIT_DEFINITIONS` (`core/Circuits`); el test parametrizado las valida.
+- El color del auto se guarda como id de la paleta, nunca como hex.
 
-- Juego para mi hijo (10-12 años, fan de la F1).
-- Pieza de portfolio. A futuro, público fan de la F1 de todas las edades.
+## Estructura y convención de archivos
 
-## Stack
+Alias `@/` = `src/`. Carpetas: `app/` (rutas finas), `core/`, `input/`, `audio/`, `haptics/`, `render/`, `components/`, `hooks/`, `screens/`, `storage/`. Se crean cuando hacen falta.
 
-- Expo con dev builds (`expo prebuild`), TypeScript estricto.
-- React Native Skia para el renderizado 2D.
-- Reanimated para el loop de juego.
-- Sensor de gravedad de Reanimated (`useAnimatedSensor`) para la inclinación: escribe en el hilo de UI. expo-sensors (acelerómetro) solo como respaldo en celulares sin sensor de gravedad.
-- Solo Android. Orientación horizontal bloqueada, en las dos orientaciones horizontales (`sensorLandscape`, con expo-screen-orientation).
-
-## Futuro
-
-- Versión 3D con react-native-filament y cámara detrás del auto. Ahí se reevalúa el control por inclinación (hoy desactivado, ver Controles).
-- Más adelante: rivales con IA y multijugador local.
-- El online está fuera del alcance por ahora.
-
-## Arquitectura (regla principal)
-
-- La lógica del juego (modelo de manejo, reglas de carrera, vueltas, tiempos, fantasma) vive en **TypeScript puro**: sin importar nada de React, React Native ni Skia. Una regla `no-restricted-imports` en `eslint.config.js` lo hace cumplir en `src/core/`.
-- La simulación corre en el hilo de UI (worklets de Reanimated). Las funciones de `core` que se llaman desde el loop llevan la directiva `'worklet'`, que es un texto y no un import.
-- En un worklet, nunca usar una variable (una constante del módulo) como valor por defecto de un parámetro: el plugin no la lleva al hilo de UI y la app se cae ("Property 'X' doesn't exist"). Jest no lo detecta; una regla de ESLint (`no-restricted-syntax` en `eslint.config.js`) sí. El valor por defecto va en el cuerpo: `const config = settings ?? DEFAULT_CONFIG`.
-- El modelo de manejo trabaja en un plano (coordenadas x/z) para poder reutilizarse en 3D.
-- El renderizado solo lee el estado; nunca contiene lógica.
-- El estado de la carrera es serializable (posición, velocidad, ángulo por cuadro), pensado para el auto fantasma y un eventual online.
-- La escenografía es un dato del circuito (`Circuit.scenery`): la genera `core/Scenery` con la semilla de la definición. Se genera al abrir la carrera (`withCircuitScenery`), no al iniciar la app: tarda unos cientos de milisegundos en el celular.
-
-## Perfiles y datos guardados
-
-El celular lo comparten varios chicos: al abrir el juego se elige quién juega (`/jugadores`), y cada perfil tiene su nombre, su auto (color y número) y sus récords.
-
-- **Dos documentos** en `expo-sqlite/kv-store`, cada uno con su campo `version`:
-  - `player-profiles`: perfiles, perfil activo y récords (`core/Profiles`).
-  - `player-preferences`: lo del celular, compartido por todos los perfiles: control, calibración, sonido y vibración (`core/PlayerPreferences`).
-- **Versionado y migraciones** en `core/SaveData` (puro). Para cambiar el formato de lo guardado:
-  1. Subir `SAVE_VERSION`.
-  2. Sumar un paso `{ from, to, migrate }` a `SAVE_MIGRATIONS`, con un test que parta de datos reales de la versión anterior.
-  - Nunca cambiar el formato sin migración.
-  - v1 = hasta el hito 5b (sin versión, con los récords en las preferencias). v2 = perfiles. v3 = ranking (`lapRecords` y `raceRecords`). v4 = fantasma (`ghosts` en los perfiles y `ghostSource` en las preferencias).
-- **`src/storage/SaveStore`** es el único que toca el disco: migra antes del primer acceso y escribe en el orden de `SAVE_DOCUMENTS`. Los hooks (`usePlayerPreferences`, `useProfiles`) guardan a través de él. `core` no lo importa (regla de ESLint).
-- **Récords por perfil y tabla,** unidos por `profileId` (no por nombre), con la fecha para desempatar: la mejor vuelta por pista (`lapRecords`) y la mejor carrera por pista y cantidad de vueltas (`raceRecords`).
-- **El ranking no se guarda:** `core/Ranking` lo calcula con esos récords (orden, diferencias y celebraciones). Editar o borrar un perfil se refleja solo.
-- **Flujo de una carrera con ranking:** Inicio → `/pistas` (selección) → `/pista?circuito=…`. `useRaceRanking` toma la foto de los récords al largar, guarda el total al llegar y compara; la pantalla emite el evento `celebration` cuando aparecen los resultados (es el único evento del bus que no sale de la simulación).
-- **El color del auto se guarda como id de la paleta** (`core/CarPalette`), nunca como hex.
-- **Un solo asset del auto** (`CarShape`): la "pintura" toma el color del perfil y el número va en el disco.
-
-## Fantasma
-
-- **Grabación (`core/Ghost`, `core/RaceFlow`):** durante cada vuelta la carrera acumula la pose del auto (x, z, rumbo) a 30 muestras por segundo (`RaceState.lapTrace`), con el tiempo relativo al inicio de la vuelta. Solo la vuelta que mejora el récord del perfil sale en un evento (`recordTrace`, junto a `newRecord`); `useGhostRecording` la codifica y la guarda.
-- **Guardado:** un fantasma por perfil y pista, en `ProfilesState.ghosts` (mismo documento que los perfiles, así borrar un perfil se lleva sus fantasmas). Formato compacto y versionado (`GhostRecording`, `v: 1`): enteros en cm y mrad, delta-codificados, unos 10 bytes por muestra (~20 KB una vuelta de 70 s). Cambiarlo exige subir `GHOST_FORMAT_VERSION` o `SAVE_VERSION` con migración. Al leer, `parseGhostRecording` descarta lo que no valida.
-- **Reproducción:** por interpolación entre muestras (`getGhostPose`), con el reloj de la vuelta en curso (`getRaceLapClockMs`): independiente de los fps y reinicia en cada cruce de meta. Se calcula en el hilo de UI (`useRaceGhost`); la preparación (decodificar y medir el progreso sobre la pista) corre una vez en JS.
-- **Diferencia en vivo:** `getGhostGap` busca el instante en que el fantasma estaba donde está el auto y lo resta del tiempo de la vuelta (segundos; positiva = el jugador va atrás). El progreso de la vuelta 1 empieza en negativo (la grilla está 15 m antes de la meta), igual para el auto y para el fantasma.
-- **Elección:** `PlayerPreferences.ghostSource` (`mine` por defecto, `record`, `none`), se elige en la selección de pista; `core/GhostChoice` lo resuelve y dice qué opciones existen (las que no, se muestran desactivadas). El fantasma se elige al abrir la carrera y al volver a la grilla, no a mitad de carrera.
-- **Render y HUD:** `render/GhostCar` (auto translúcido con el color de su dueño y su nombre encima; sin colisión) y chip de diferencia en `LapHud` (verde si va más rápido, rojo si más lento, siempre con signo). El ícono del fantasma es propio, no de Phosphor.
-- **Decisiones del hito 8 que se apartan del handoff:** el fantasma se dibuja relleno y translúcido (el handoff lo dibuja sin relleno, con contorno punteado), y la selección de fantasma no está en el handoff. La grabación es solo de vueltas récord: un fantasma grabado en una vuelta lanzada va "por delante" de la vuelta 1 de una carrera (que sale de la grilla); la diferencia es real.
-
-## Pistas
-
-- Cuatro circuitos como datos (`CIRCUIT_DEFINITIONS` en `core/Circuits`), de la más fácil a la más difícil: Autódromo del Lago (rápida, fácil), Gran Meseta (rápida, media), Las Sierras (técnica, difícil) y Puerto Viejo (urbana y angosta, difícil). Cada definición lleva su `difficulty`.
-- **Para sumar una pista:** agregar su definición a `CIRCUIT_DEFINITIONS`. Los pianos, los puntos de control, la escenografía, la selección, la carrera y el ranking la recogen solos, y el test parametrizado de `Circuits.test.ts` la valida (cerrada, sin cruces, curvas posibles, largada sobre el asfalto, escenografía fuera de la pista). No hace falta tocar esos sistemas.
-- Los trazados se diseñaron con esquinas redondeadas (vértice y radio) y se guardan como los puntos que resultan. El ancho de pista cambia el radio mínimo que acepta la validación.
-- **La pista elegida** vive en memoria (`useSelectedTrack`): la fija la selección de pista y la carrera, y el ranking abre en ella. No se guarda: no es un dato del jugador.
-- Los récords ya son por `circuitId`, así que las pistas nuevas no necesitan migración de datos guardados.
-- Inicio y la lista de jugadores siguen mostrando el récord del primer circuito (`DEFAULT_CIRCUIT`).
-
-## Controles
-
-Capa de entrada abstraída con dos implementaciones intercambiables. Aceleración automática en ambos.
-
-**Los botones son el único control visible.** En dos pruebas con usuarios los testers prefirieron los botones; la segunda se hizo con la inclinación ya corregida (zona muerta y sensibilidad independientes, hito 3).
-
-- La inclinación queda **desactivada** con el interruptor `FEATURE_FLAGS.tiltControl` (`src/core/FeatureFlags`). El juego arranca directo con botones, sin elección de control ni calibración. Si había inclinación guardada, la entrada la pasa a botones.
-- Sigue accesible **solo desde el panel de desarrollo**. Su código, sus pantallas y sus tests quedan en el proyecto: no borrarlos.
-- Se reevalúa en la **fase 3D**, con la cámara detrás del auto. Para activarla, `tiltControl: true`: vuelven la elección de control (sin modo por defecto) y la calibración.
-- **Rampa de los botones, sin cambios:** en la segunda prueba se subió "Rampa de dirección (inclinación)" a 0,33 s y la conducción pareció mejorar. Pero ese parámetro solo se aplica en modo inclinación. Los botones usan "Tiempo de giro" (`steerInTime`, 0,25 s) y "Tiempo de vuelta al centro" (`steerReturnTime`, 0,15 s), del modelo de manejo. Probar los 0,33 s en botones queda pendiente.
-
-- **Inclinación** (desactivada): control por posición. El ángulo del celular respecto de la gravedad es el ángulo de dirección. Incluye calibración, zona muerta, suavizado, sensibilidad ajustable y corrección según la orientación horizontal.
-  - La zona muerta es un valor fijo en grados (el jugador elige de 1° a 9°) e independiente de la sensibilidad. La sensibilidad define el rango útil a partir del borde de la zona muerta. Subirla siempre reduce el ángulo necesario y la dirección crece desde 0, sin saltos.
-  - Los indicadores (medidor de calibración y HUD) usan una escala fija en grados. Nunca escalarlos con la sensibilidad: la zona muerta parecería crecer.
-  - La corrección por orientación se hace una sola vez, en `core/TiltSteering`: el sensor se registra con `adjustToInterfaceOrientation: false`.
-  - En el menú de pausa del juego final, "Recalibrar" tiene que abrir la pantalla de calibración completa. El botón "Recalibrar" del panel de desarrollo solo toma la posición del momento.
-- **Botones en pantalla** (el control por defecto y el único visible).
-
-## Marcas
-
-No usar "F1", "Formula 1", logos, equipos, pilotos ni decoraciones reales. Monoplazas genéricos y nombres inventados.
-
-## Rendimiento
-
-El piso es un celular Android de gama media. Objetivo: 60 fps.
-
-- Lo que se repite cientos de veces (árboles, sombras, neumáticos, partículas) se dibuja con `Atlas` de Skia, y solo lo de las celdas que ve la cámara (`useSceneryView`).
-- El paralaje es una transformación por capa de altura, no un cálculo por objeto.
-- Lo estático va en pocos trazos (todos los parches del asfalto en un `Path`). Evitar `Points` con miles de puntos redondos: en la GPU, Skia dibuja cada uno como un óvalo aparte.
-
-## Diseño
-
-El handoff está en [docs/design](docs/design). Es la referencia visual para todas las pantallas.
-
-## Assets
-
-Packs CC0 de estilo plano/low-poly. Registrar la fuente y licencia de cada asset en [CREDITOS.md](CREDITOS.md).
-
-- **Sonidos en WAV mono** (`assets/sounds/`): sin FFmpeg ni las bibliotecas externas de react-native-audio-api (`app.json`), el decodificador solo lee WAV, MP3 y FLAC. OGG no sirve.
-- Los efectos se sintetizan con `node scripts/generate-sounds.mjs`; el motor se pasa a mono con `--engine <ruta>` (ver CREDITOS.md).
-- **Escenografía dibujada en código** con la paleta del handoff, sin pack externo (ver CREDITOS.md). La textura de árboles y partículas se rasteriza una vez por sesión (`useSceneryAtlas`).
-- **Ícono de la app** en `assets/icono/`, tal cual lo entrega el handoff (`docs/design/.../icono/`). Si cambia, hay que regenerar `android/` (`npx expo prebuild --platform android`) y recompilar.
-
-## Estructura de carpetas
-
-Alias `@/` apunta a `src/` (en `tsconfig.json` y en `jest.config.js`).
-
-```
-src/
-  app/        rutas de Expo Router; archivos finos que solo renderizan screens/
-  core/       TS puro (sin React/RN/Skia): manejo, carrera, vueltas, fantasma
-  input/      capa de entrada abstraída (inclinación, botones)
-  audio/      sonido sobre react-native-audio-api (motor y efectos)
-  haptics/    vibraciones sobre expo-haptics
-  render/     componentes Skia; solo leen estado
-  components/ UI genérica (HUD, botones)
-  hooks/      conectan core con Reanimated/React
-  screens/    pantallas completas
-  storage/    acceso al disco (expo-sqlite/kv-store) y migración de los datos guardados
-assets/icono/  ícono de la app (capas del ícono adaptativo de Android)
-assets/sounds/ sonidos WAV (ver CREDITOS.md)
-scripts/      herramientas de Node sin dependencias (generar sonidos)
-test/setup/   mocks y setup global de Jest (Skia, Reanimated, audio, almacenamiento)
-```
-
-- La carrera avisa lo que pasa por un bus de eventos (`core/EventBus`): el semáforo, la pausa, los resultados, el sonido y la vibración lo escuchan. `core` no importa `audio/`, `haptics/` ni `storage/` (regla de ESLint).
-
-Las carpetas se crean cuando hacen falta, no antes.
+- Cada componente, pantalla, hook o módulo vive en su carpeta.
+- Completa (módulos de `core`, pantallas, componentes reutilizables): `Nombre.tsx|ts`, `.styles.ts`, `.types.ts`, `.test.tsx|ts`, `README.md` (propósito, props, ejemplo, decisiones) e `index.ts`.
+- Componentes chicos de UI: solo `.tsx`, `.styles.ts`, `.types.ts` e `index.ts`; sin test ni README propio.
+- Hooks y módulos sin interfaz: completa, sin estilos. Las rutas de `src/app/` quedan exentas.
+- Nunca crear un módulo de `core`, un hook ni un componente principal sin su README.
+- Assets: packs CC0, registrar fuente y licencia en [CREDITOS.md](CREDITOS.md). Sonidos en WAV mono, nunca OGG.
 
 ## Tests
 
-- **Qué se testea (regla desde el hito 7):** tests solo para lógica de `core` con riesgo real: simulación, vueltas, ranking, migraciones de datos guardados y validación de pistas. No se escriben tests para pantallas, componentes de interfaz ni render. Los tests existentes se mantienen (y se actualizan si el código que cubren cambia), pero no se agregan más de ese tipo.
-- `npm test` corre Jest (preset `jest-expo`, React Native Testing Library 14, que es asíncrona: usar `await render(...)` y `await renderHook(...)`).
-- Skia se sustituye por un mock propio (`test/setup/skia.ts`; incluye `Atlas`, `Points`, los buffers, `drawAsImage` y `mixColors`); Reanimated usa su mock oficial ampliado con `useFrameCallback`, `modify` y valores compartidos que duran toda la vida del componente (`test/setup/reanimated.ts`); react-native-audio-api usa su mock oficial (`test/setup/audio-api.ts`).
-- El almacenamiento es un mapa en memoria (`test/setup/kv-store.ts`). Los tests que guardan datos lo vacían (`__reset()`) y llaman a `reloadPlayerPreferences()` y `reloadProfiles()`: olvidan la copia en memoria y vuelven a migrar.
-- `npm run typecheck` corre `tsc --noEmit`.
-- `npm run lint` corre `expo lint` (ESLint 9 con `eslint-config-expo` y `eslint-plugin-prettier`, config en `eslint.config.js`; ignora `docs/`, `android/`, `.expo/` y `dist/`). Las diferencias de formato cuentan como errores de lint. `npm run lint:fix` corrige lo automático.
-- `npm run format` aplica Prettier (`.prettierrc`); `npm run format:check` solo verifica.
-- VS Code: `.vscode/settings.json` del proyecto formatea al guardar con Prettier y aplica las correcciones de ESLint. Extensiones recomendadas en `.vscode/extensions.json`.
+- Solo lógica de `core` con riesgo real: simulación, vueltas, ranking, migraciones y validación de pistas. No se testean pantallas, componentes ni render. Los tests existentes se mantienen.
+- `npm test` (jest-expo, RNTL 14 asíncrona: `await render(...)`). Mocks propios en `test/setup/`.
+- `npm run lint` (Prettier cuenta como error; `lint:fix` corrige), `npm run typecheck`, `npm run format`.
 
-## Estructura por componente
+## Git
 
-Cada componente, pantalla, hook o módulo vive en su propia carpeta. Hay dos niveles.
+- Una rama por hito (`hito-N-descripcion`), nunca en `main`; los PR salen contra `main`. Un commit por paso, descriptivo y en español.
+- Los commits requieren mi confirmación (hook global, `autoCommit: false`): no modificar ese hook ni ese ajuste. Nunca push, merge ni `gh`: los hago yo.
+- Trabajar el hito completo sin frenar. Frenar solo ante pausas pedidas, decisiones de arquitectura o dependencias nuevas.
+- Al cerrar: lint, tests y typecheck sin errores; entregar un bloque de commit por paso (PowerShell, rutas explícitas) y el comando `git push -u origin <rama>`. Sin archivos de descripción de PR.
+- Sin permiso previo (informando al cerrar): cambiar config nativa (avisar de recompilar), borrar o renombrar archivos, ajustar valores de manejo (indicando antes y después), reorganizar carpetas. Con confirmación: `npm install` (aclarar si es nativo).
+- Nunca modificar configuración global (git, Claude Code, VS Code): hay una cuenta laboral en esta computadora.
 
-**Convención completa (seis archivos):** módulos de `core` y componentes principales, es decir, pantallas y componentes reutilizables.
+## Marca y diseño
 
-- `NombreComponente.tsx` (o `.ts`)
-- `NombreComponente.styles.ts`
-- `NombreComponente.types.ts`
-- `NombreComponente.test.tsx` (o `.ts`)
-- `README.md` con la documentación: propósito, props o parámetros, ejemplo de uso y decisiones de diseño
-- `index.ts` que exporta el componente y sus tipos
-
-**Componentes chicos de interfaz:** solo `NombreComponente.tsx`, `NombreComponente.styles.ts`, `NombreComponente.types.ts` e `index.ts`.
-
-- No llevan test nuevo (ver Tests: la interfaz no se testea).
-- No llevan README propio: se documentan en el README de la pantalla o del módulo que los usa.
-
-Reglas:
-
-- **Excepción:** las rutas de `src/app/` no siguen esta convención, porque no contienen lógica (solo reexportan o renderizan una pantalla de `screens/`). Si una ruta necesita lógica, esa lógica va a una pantalla, hook o módulo que sí cumpla la convención.
-- Los hooks y los módulos sin interfaz (`core`, `input`, etc.) siguen la convención completa, sin archivo de estilos.
-- En componentes de Skia, el archivo de estilos contiene las constantes visuales (colores, tamaños, grosores).
-- Nunca crear un módulo de `core`, un hook ni un componente principal sin su README. Los tests siguen la regla de la sección Tests: solo lógica de `core` con riesgo real.
-- Los componentes creados antes de esta regla (hito 5) quedan como están: no se adaptan a la convención nueva.
-
-## Flujo de git
-
-- Cada hito se trabaja en una rama propia (`hito-N-descripcion`), nunca directamente en `main`. La rama base de los PR es `main`.
-- Un commit por paso del hito, no uno por cada cambio. Descriptivos y en español.
-- Los commits requieren mi confirmación: el hook global (`~/.claude/custom-hooks`, `autoCommit: false`) los bloquea hasta que yo los apruebo o los ejecuto. No modificar ese hook ni ese ajuste.
-- **Claude trabaja el hito completo sin frenarse** y yo reviso al final. No pide commits entre pasos ni espera a que commitee. Solo frena en estos casos:
-  - Las pausas que yo pida en el enunciado (por ejemplo "Esperá mi confirmación").
-  - Decisiones de arquitectura (estructura de capas, módulos nuevos que cambian cómo se conectan las partes, cambios a la regla de `core` puro, etc.).
-  - Dependencias nuevas.
-
-  Para el resto, avanza **sin pedir confirmaciones** y documenta las decisiones en comentarios de código o en este archivo. Al terminar entrega:
-  - Un bloque de commit por paso, para PowerShell, con rutas explícitas. Si un archivo cambió en más de un paso, va en el commit del último paso que lo tocó, y se aclara.
-  - El comando de push de la rama.
-- Al cerrar cada hito, **antes del push**: correr `npm run lint`, `npm test` y `npm run typecheck`, y que los tres terminen **sin errores**. Si alguno falla, se corrige antes de dar el comando de push.
-- Claude **no hace push ni abre el PR**, y **no genera archivos de descripción de PR** (no existe `docs/pr/`). Al terminar solo da el comando exacto de push, por ejemplo `git push -u origin hito-N-descripcion`. Yo hago el push, creo el PR desde la web de GitHub (cuenta `MairaJulian`) y lo reviso.
-- GitHub CLI (`gh`) no se usa en este proyecto.
-- Nunca fusionar el PR: lo fusiono yo.
-
-## Autorizaciones permanentes
-
-Claude puede hacer lo siguiente sin pedirme permiso. Cada uso se informa al cerrar el trabajo: qué cambió y por qué.
-
-- **Cambiar la configuración nativa** (`app.json`, plugins, prebuild). Avisa que hay que recompilar el dev build (`npm run android`, con el celular conectado; lo hago yo).
-- **Borrar o renombrar archivos o módulos.** Se sigue respetando lo que pedí conservar explícitamente, por ejemplo el código, las pantallas y los tests de la inclinación.
-- **Cambiar valores del manejo** (rampa, velocidad, agarre, etc.). Solo lo indispensable para que algo se pueda jugar, con los valores de antes y de después.
-- **Crear o reorganizar carpetas**, siguiendo la estructura por componente.
-
-Esto requiere mi confirmación antes de hacerlo:
-
-- **Agregar dependencias** (`npm install`). Al pedirla, aclarar si tiene código nativo (hay que recompilar el dev build).
-- **Decisiones de arquitectura** (ver Flujo de git).
-
-Esto no se habilita nunca, ni con permiso:
-
-- Commits, push y merge: los hago yo, y el hook los bloquea.
-- Modificar la configuración global o el hook (ver Configuración).
-
-## Configuración
-
-Todo lo que se configure vive dentro del proyecto. Nunca modificar configuración global (git, Claude Code, GitHub CLI, VS Code). Hay una cuenta laboral en esta computadora que no puede verse afectada.
+- No usar "F1", "Formula 1", logos, equipos, pilotos ni decoraciones reales: monoplazas genéricos, nombres inventados.
+- Diseño: consultar [docs/design/RESUMEN.md](docs/design/RESUMEN.md) (tokens y pantallas); el handoff completo en `docs/design/` solo ante una duda puntual.
