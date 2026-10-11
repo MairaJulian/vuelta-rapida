@@ -46,6 +46,7 @@ describe('usePlayerPreferences', () => {
       tiltSensitivity: 6,
       tiltDeadZone: 0.05,
       soundEnabled: true,
+      ghostSource: 'mine',
       vibrationEnabled: true,
     });
   });
@@ -61,6 +62,7 @@ describe('usePlayerPreferences', () => {
       version: SAVE_VERSION,
       controlMode: 'buttons',
       soundEnabled: false,
+      ghostSource: 'mine',
     });
   });
 

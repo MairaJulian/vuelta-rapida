@@ -22,6 +22,7 @@ const saved: PlayerPreferences = {
   tiltSensitivity: 7,
   tiltDeadZone: 3 * DEG,
   soundEnabled: false,
+  ghostSource: 'record',
   vibrationEnabled: false,
 };
 
@@ -58,6 +59,7 @@ describe('parsePlayerPreferences', () => {
       tiltSensitivity: 8,
       tiltDeadZone: DEFAULT_PLAYER_PREFERENCES.tiltDeadZone,
       soundEnabled: true,
+      ghostSource: 'mine',
       vibrationEnabled: true,
     });
   });

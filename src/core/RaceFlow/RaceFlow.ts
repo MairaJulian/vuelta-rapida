@@ -3,6 +3,7 @@ import type { DrivingConfig, DrivingInput } from '@/core/DrivingModel';
 import { createDrivingSim, stepDrivingSim } from '@/core/DrivingSim';
 import { consumeFrameTime } from '@/core/FixedStep';
 import type { FixedStepConfig } from '@/core/FixedStep';
+import { getGhostSampleGap } from '@/core/Ghost';
 import { createRandomState, nextRandomBetween } from '@/core/SeededRandom';
 import type { Circuit } from '@/core/Track';
 
@@ -67,6 +68,7 @@ export function createRace(setup: RaceSetup): RaceState {
     newRecord: false,
     lastBorderHitTick: null,
     lastKerbTick: null,
+    lapTrace: [],
     events: [],
   };
 }
@@ -140,6 +142,8 @@ function stepLights(race: RaceState, tick: number): RaceState {
     phase: 'racing',
     phaseTick: tick,
     lightsOn: 0,
+    // La grabación de la vuelta 1 empieza en la grilla, al apagarse las luces.
+    lapTrace: [race.sim.car.x, race.sim.car.z, race.sim.car.heading],
     events: [
       ...events,
       { type: 'lightsOut', tick },
@@ -179,25 +183,41 @@ function stepRacing(
   }
 
   const stepped = { ...race, tick, sim, events, lastBorderHitTick, lastKerbTick };
+  const lapStart = race.lapEndTicks.length > 0 ? race.lapEndTicks[race.lapEndTicks.length - 1] : 0;
+  const pose = [sim.car.x, sim.car.z, sim.car.heading];
   // Las puertas del circuito validan cada vuelta (`LapTimer`). Una vuelta deshecha
   // (volver marcha atrás sobre la meta) no se cuenta dos veces: la carrera solo
   // suma vueltas cuando el contador supera las que ya terminó.
   if (sim.laps.lapTicks.length <= race.lapEndTicks.length) {
-    return stepped;
+    // Una muestra del fantasma cada pocos pasos, contados desde el inicio de la vuelta.
+    return (clock - lapStart) % getGhostSampleGap(stepHz) === 0
+      ? { ...stepped, lapTrace: [...race.lapTrace, ...pose] }
+      : stepped;
   }
-  const lapStart = race.lapEndTicks.length > 0 ? race.lapEndTicks[race.lapEndTicks.length - 1] : 0;
   const lapTicks = clock - lapStart;
   const lapEndTicks = [...race.lapEndTicks, clock];
   const lap = lapEndTicks.length;
   events = [...events, { type: 'lapCompleted', tick, lap, totalLaps: config.totalLaps, lapTicks }];
   let { recordTicks, newRecord } = race;
   if (recordTicks === null || lapTicks < recordTicks) {
-    events = [...events, { type: 'newRecord', tick, lapTicks, previousTicks: recordTicks }];
+    events = [
+      ...events,
+      { type: 'newRecord', tick, lapTicks, previousTicks: recordTicks },
+      // La última muestra cae en la meta: con ella la grabación dura justo lo que la vuelta.
+      {
+        type: 'recordTrace',
+        tick,
+        lapTicks,
+        sampleHz: stepHz / getGhostSampleGap(stepHz),
+        samples: [...race.lapTrace, ...pose],
+      },
+    ];
     recordTicks = lapTicks;
     newRecord = true;
   }
   if (lap < config.totalLaps) {
-    return { ...stepped, events, lapEndTicks, recordTicks, newRecord };
+    // La vuelta siguiente empieza en la meta, con la pose de este paso.
+    return { ...stepped, events, lapEndTicks, recordTicks, newRecord, lapTrace: pose };
   }
   // La llegada lleva los resultados completos: la pantalla no tiene que leer la carrera.
   const results = buildResults(lapEndTicks, clock, newRecord, race.previousRecordTicks);
@@ -205,6 +225,7 @@ function stepRacing(
     ...stepped,
     phase: 'finished',
     phaseTick: tick,
+    lapTrace: [],
     lapEndTicks,
     finishTick: clock,
     recordTicks,
@@ -360,6 +381,19 @@ export function getRaceLapView(race: RaceState): RaceLapView {
     totalLaps,
     lapTicks: race.sim.tick - (done > 0 ? ends[done - 1] : 0),
   };
+}
+
+/**
+ * Tiempo de la vuelta en curso, en milisegundos, con la fracción del paso que se está
+ * acumulando (la misma con que se interpola el auto dibujado). Es el reloj con que se
+ * reproduce el fantasma. Antes de largar es 0; tras la llegada, la última vuelta.
+ */
+export function getRaceLapClockMs(race: RaceState): number {
+  'worklet';
+  const racing =
+    race.phase === 'racing' || (race.phase === 'paused' && race.pausedPhase === 'racing');
+  const fraction = racing ? race.sim.accumulatorMs : 0;
+  return (getRaceLapView(race).lapTicks * 1000) / race.stepHz + fraction;
 }
 
 /** Resultados de la carrera terminada; `null` si todavía no llegó. */

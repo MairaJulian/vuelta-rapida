@@ -52,6 +52,9 @@ export interface RaceSetup {
  * Lo que pasa en la carrera. `tick` es el paso de la carrera en que pasó (cuenta
  * todos los pasos menos los de la pausa). Serializable.
  *
+ * `recordTrace` acompaña a `newRecord`: trae las muestras de esa vuelta (la que mejora el
+ * récord) para guardarla como fantasma. `sampleHz` son las muestras por segundo.
+ *
  * `celebration` es la excepción: no sale de la simulación sino de la pantalla, cuando
  * aparecen los resultados y el ranking dice que hubo algo que festejar (hito 6b). Por
  * eso no tiene `tick`. El sonido y la vibración lo escuchan como a los demás.
@@ -64,6 +67,7 @@ export type RaceEvent =
   | { type: 'borderHit'; tick: number; impactSpeed: number }
   | { type: 'kerbEnter'; tick: number; speed: number }
   | { type: 'newRecord'; tick: number; lapTicks: number; previousTicks: number | null }
+  | { type: 'recordTrace'; tick: number; lapTicks: number; sampleHz: number; samples: number[] }
   | ({ type: 'finish'; tick: number } & RaceResults)
   | { type: 'celebration'; kind: CelebrationKind };
 
@@ -111,6 +115,12 @@ export interface RaceState {
   lastBorderHitTick: number | null;
   /** Paso del cronómetro de la última entrada a un piano avisada. */
   lastKerbTick: number | null;
+  /**
+   * Grabación de la vuelta en curso para el fantasma: lista plana `[x, z, rumbo, ...]`,
+   * una muestra cada `getGhostSampleGap(stepHz)` pasos desde el inicio de la vuelta.
+   * Vacía antes de largar y tras la llegada.
+   */
+  lapTrace: number[];
   /** Eventos todavía no entregados, en orden. `takeRaceEvents` los retira. */
   events: RaceEvent[];
 }

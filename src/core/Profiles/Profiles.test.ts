@@ -460,6 +460,7 @@ describe('parseProfilesState y serializeProfilesState', () => {
       'activeProfileId',
       'lapRecords',
       'raceRecords',
+      'ghosts',
       'unassignedRecords',
     ]);
   });

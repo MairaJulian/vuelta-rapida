@@ -1,3 +1,4 @@
+import type { GhostSource } from '@/core/Ghost';
 import type { Radians } from '@/core/MathUtils';
 
 /** Modos de control que puede elegir el jugador. */
@@ -22,6 +23,8 @@ export interface PlayerPreferences {
   tiltDeadZone: Radians;
   /** Si suenan el motor y los efectos. */
   soundEnabled: boolean;
+  /** Qué fantasma corre al lado del jugador: su mejor vuelta, el récord de la pista o ninguno. */
+  ghostSource: GhostSource;
   /** Si el celular vibra con los pianos, los bordes, la largada, la llegada y el freno. */
   vibrationEnabled: boolean;
 }

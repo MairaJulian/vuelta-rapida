@@ -8,7 +8,7 @@ Perfiles de los jugadores que comparten el celular: nombre, color y número del 
 - `ProfileDraft`: `{ name, colorId, number }`, lo que elige el jugador.
 - `LapRecord`: `{ profileId, circuitId, lapMs, setAt }`. Uno por perfil y circuito: la mejor vuelta.
 - `RaceRecord`: `{ profileId, circuitId, laps, totalMs, setAt }`. Uno por perfil, circuito y cantidad de vueltas: la mejor carrera completa.
-- `ProfilesState`: `{ profiles, activeProfileId, lapRecords, raceRecords, unassignedRecords }`. Es el documento `profiles` de los datos guardados.
+- `ProfilesState`: `{ profiles, activeProfileId, lapRecords, raceRecords, ghosts, unassignedRecords }`. Es el documento `profiles` de los datos guardados.
 - `ProfileError`: `'name-empty' | 'name-too-long' | 'name-taken' | 'number-out-of-range' | 'color-unknown' | 'profile-missing'`.
 - `ProfileResult`: `{ ok: true, state, profile }` o `{ ok: false, errors }`.
 
@@ -19,12 +19,14 @@ Perfiles de los jugadores que comparten el celular: nombre, color y número del 
 | `validateProfile(draft, profiles, editingId?)` | Errores de un perfil; vacío si está bien. |
 | `createProfile(state, draft, { id, now })` | Crea el perfil y lo deja activo. Le pasa los récords sin dueño. |
 | `updateProfile(state, id, draft)` | Cambia nombre, color y número. |
-| `deleteProfile(state, id)` | Borra el perfil y sus récords. |
+| `deleteProfile(state, id)` | Borra el perfil, sus récords y sus fantasmas. |
 | `selectProfile(state, id)`, `getActiveProfile(state)`, `getProfile(state, id)` | Quién juega. |
 | `getBestLap(state, profileId, circuitId)` | Mejor vuelta en ms, o `null`. Con `profileId` `null`, la sin dueño. |
 | `withLapRecord(state, profileId, circuitId, lapMs, now)` | Estado con la vuelta si mejora el récord; si no, `null`. |
 | `getBestRace(state, profileId, circuitId, laps)` | Mejor carrera completa en ms, o `null`. |
 | `withRaceRecord(state, profileId, circuitId, laps, totalMs, now)` | Estado con la carrera si mejora el récord; si no (o sin perfil), `null`. |
+| `getGhost(state, profileId, circuitId)` | El fantasma (`GhostEntry`: grabación de la mejor vuelta) del perfil en la pista, o `null`. |
+| `withGhost(state, profileId, circuitId, recording, now)` | Estado con la grabación como fantasma si es la primera de la pista o más rápida que la que había; si no (o sin perfil), `null`. |
 | `suggestProfileDraft(profiles)` | Valores iniciales de un perfil nuevo. |
 | `stepCarNumber(number, delta)` | Número siguiente o anterior, de 1 a 99, dando la vuelta. |
 | `createProfileId(now, random, takenIds)` | Id nuevo, distinto de los existentes. |
@@ -45,6 +47,7 @@ if (result.ok) {
 
 ## Decisiones de diseño
 
+- **Fantasmas en el mismo documento que los perfiles (hito 8):** `ghosts` guarda una grabación (`core/Ghost`, unos 20 KB una vuelta de 70 s) por perfil y pista. Van en este documento y no en uno aparte para que borrar un perfil se lleve sus fantasmas en la misma escritura. Al leer, se descartan los fantasmas de perfiles que no existen y las grabaciones que no validan (`parseGhostRecording`).
 - **Récords aparte, unidos por `profileId`:** el ranking por pista (`core/Ranking`, hito 6b) se calcula con `lapRecords` y `raceRecords` y los cruza con `profiles`. Si un jugador cambia de nombre o de color, el ranking lo muestra sin tocar los récords.
 - **Un récord por perfil y tabla:** la mejor vuelta por circuito, y la mejor carrera por circuito y cantidad de vueltas. Alcanza para un ranking con una fila por jugador. El fantasma, cuando exista, irá en su propia clave: es demasiado grande para este documento.
 - **Solo se reemplaza si mejora:** con el mismo tiempo queda el anterior, así el desempate por `setAt` premia a quien lo logró primero.

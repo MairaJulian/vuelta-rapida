@@ -1,3 +1,5 @@
+import { DEFAULT_GHOST_SOURCE, GHOST_SOURCES } from '@/core/Ghost';
+import type { GhostSource } from '@/core/Ghost';
 import { clamp } from '@/core/MathUtils';
 import type { Radians } from '@/core/MathUtils';
 import { serializeSaveDocument } from '@/core/SaveData';
@@ -18,6 +20,7 @@ export const DEFAULT_PLAYER_PREFERENCES: PlayerPreferences = Object.freeze({
   tiltSensitivity: 5,
   tiltDeadZone: DEFAULT_TILT_CONFIG.deadZone,
   soundEnabled: true,
+  ghostSource: DEFAULT_GHOST_SOURCE,
   vibrationEnabled: true,
 });
 
@@ -44,6 +47,10 @@ export function deadZoneToLevel(deadZone: Radians): number {
 
 function isControlMode(value: unknown): value is ControlMode {
   return CONTROL_MODES.includes(value as ControlMode);
+}
+
+function isGhostSource(value: unknown): value is GhostSource {
+  return GHOST_SOURCES.includes(value as GhostSource);
 }
 
 const isFiniteNumber = (value: unknown): value is number =>
@@ -78,6 +85,9 @@ export function parsePlayerPreferences(raw: string | null): PlayerPreferences {
       typeof fields.soundEnabled === 'boolean'
         ? fields.soundEnabled
         : DEFAULT_PLAYER_PREFERENCES.soundEnabled,
+    ghostSource: isGhostSource(fields.ghostSource)
+      ? fields.ghostSource
+      : DEFAULT_PLAYER_PREFERENCES.ghostSource,
     vibrationEnabled:
       typeof fields.vibrationEnabled === 'boolean'
         ? fields.vibrationEnabled
@@ -96,6 +106,7 @@ export function serializePlayerPreferences(preferences: PlayerPreferences): stri
     tiltSensitivity: preferences.tiltSensitivity,
     tiltDeadZone: preferences.tiltDeadZone,
     soundEnabled: preferences.soundEnabled,
+    ghostSource: preferences.ghostSource,
     vibrationEnabled: preferences.vibrationEnabled,
   });
 }

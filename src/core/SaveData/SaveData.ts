@@ -9,7 +9,7 @@ import type {
 } from './SaveData.types';
 
 /** Versión actual de los datos guardados. Subirla exige sumar un paso a `SAVE_MIGRATIONS`. */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /** Versión de los datos guardados antes de que existiera el número de versión (hito 6a). */
 export const LEGACY_SAVE_VERSION = 1;
@@ -109,10 +109,27 @@ function addRaceRecords({ profiles, preferences }: SaveDocuments): SaveDocuments
   };
 }
 
+/**
+ * v3 → v4 (hito 8, fantasma): los perfiles suman la lista de fantasmas (`ghosts`, vacía:
+ * hasta ahora no se grababa nada) y las preferencias, qué fantasma corre (`ghostSource`,
+ * el de la mejor vuelta del jugador). Si el documento ya tiene el campo, una migración
+ * anterior se cortó después de escribirlo: se deja como está.
+ */
+function addGhosts({ profiles, preferences }: SaveDocuments): SaveDocuments {
+  return {
+    profiles: profiles === null ? null : { ...profiles, ghosts: profiles.ghosts ?? [] },
+    preferences:
+      preferences === null
+        ? null
+        : { ...preferences, ghostSource: preferences.ghostSource ?? 'mine' },
+  };
+}
+
 /** Pasos de migración, uno por versión. */
 export const SAVE_MIGRATIONS: readonly SaveMigration[] = Object.freeze([
   { from: 1, to: 2, migrate: moveRecordsToProfiles },
   { from: 2, to: 3, migrate: addRaceRecords },
+  { from: 3, to: 4, migrate: addGhosts },
 ]);
 
 /**

@@ -1,4 +1,5 @@
 import type { CarColorId } from '@/core/CarPalette';
+import type { GhostRecording } from '@/core/Ghost';
 
 /** Un jugador del celular compartido, con su auto. Serializable. */
 export interface Profile {
@@ -46,6 +47,18 @@ export interface RaceRecord {
   setAt: number;
 }
 
+/**
+ * Fantasma de un perfil en un circuito: la grabación de su mejor vuelta. Hay uno por perfil
+ * y circuito, el de la vuelta más rápida que se grabó.
+ */
+export interface GhostEntry {
+  profileId: string;
+  circuitId: string;
+  /** Cuándo se grabó, en milisegundos desde 1970. */
+  setAt: number;
+  recording: GhostRecording;
+}
+
 /** Perfiles, perfil activo y récords: el documento `profiles` de los datos guardados. */
 export interface ProfilesState {
   profiles: Profile[];
@@ -55,6 +68,8 @@ export interface ProfilesState {
   lapRecords: LapRecord[];
   /** Mejores carreras completas: las tablas "Carrera" del ranking, por cantidad de vueltas. */
   raceRecords: RaceRecord[];
+  /** Fantasmas: la grabación de la mejor vuelta de cada perfil en cada circuito. */
+  ghosts: GhostEntry[];
   /**
    * Récords sin dueño por `id` de circuito: los de antes de los perfiles (y los que se
    * marquen sin perfil activo). Pasan al primer perfil que se cree.

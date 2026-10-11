@@ -6,6 +6,7 @@ export {
   getFinishResults,
   getLightsOutTick,
   getRaceClockTicks,
+  getRaceLapClockMs,
   getRaceLapView,
   getRaceResults,
   pauseRace,

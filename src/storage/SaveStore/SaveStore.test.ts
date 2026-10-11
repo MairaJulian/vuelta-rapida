@@ -58,6 +58,7 @@ describe('SaveStore', () => {
       version: SAVE_VERSION,
       controlMode: 'buttons',
       soundEnabled: false,
+      ghostSource: 'mine',
     });
     // Primero los perfiles, después las preferencias.
     expect(storage.setItemSync.mock.calls.map(([key]) => key)).toEqual([
