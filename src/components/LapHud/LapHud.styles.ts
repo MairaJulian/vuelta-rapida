@@ -34,8 +34,8 @@ export const NO_RECORD = '–:––.–––';
 /** Tamaño del ícono del fantasma en el chip de diferencia. */
 export const DELTA_ICON_SIZE = 16;
 
-/** Distancia del puesto al borde de arriba del HUD: justo debajo de la píldora de la vuelta. */
-const PLACE_TOP = 64;
+/** Distancia de la tabla de posiciones al borde de arriba del HUD: justo debajo de la píldora de la vuelta. */
+const TABLE_TOP = 64;
 
 const SHADOW = '0 2px 6px rgba(20, 23, 31, 0.14)';
 
@@ -92,30 +92,11 @@ export const styles = StyleSheet.create({
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
   },
-  // Puesto: píldora chica bajo "Vuelta" (pantalla 07 no lo trae; mismo estilo que las otras).
-  placePill: {
+  // Tabla de posiciones bajo "Vuelta" (la pantalla 07 no la trae; mismo estilo que las píldoras).
+  positions: {
     position: 'absolute',
     pointerEvents: 'none',
-    top: PLACE_TOP,
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 6,
-    borderRadius: 16,
-    paddingVertical: 2,
-    paddingHorizontal: 14,
-    backgroundColor: COLORS.pill,
-    boxShadow: SHADOW,
-  },
-  placeValue: {
-    color: COLORS.value,
-    fontSize: 24,
-    fontWeight: '900',
-    fontVariant: ['tabular-nums'],
-  },
-  placeTotal: {
-    color: COLORS.faint,
-    fontSize: 16,
-    fontWeight: '800',
+    top: TABLE_TOP,
   },
   // Chip de diferencia con el fantasma (handoff): píldora de 3/12, texto blanco 800 de 15 y
   // el ícono del fantasma de 16. Va debajo del cronómetro.

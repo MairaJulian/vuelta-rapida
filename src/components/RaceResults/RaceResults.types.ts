@@ -1,4 +1,7 @@
-import type { RaceResults } from '@/core/RaceFlow';
+import type { DerivedValue } from 'react-native-reanimated';
+
+import type { Racer } from '@/components/PositionTable';
+import type { ClassificationEntry, RaceResults } from '@/core/RaceFlow';
 import type { RaceRanking } from '@/core/Ranking';
 
 export interface RaceResultsProps {
@@ -16,6 +19,13 @@ export interface RaceResultsProps {
    * tarjeta celebra solo el récord personal de vuelta.
    */
   ranking?: RaceRanking | null;
+  /**
+   * Clasificación de todos los autos (de `useRaceLoop`). Con rivales se muestra, en vivo
+   * hasta que llegan todos, encima de las vueltas; con un solo auto, o sin esta prop, no.
+   */
+  standings?: DerivedValue<ClassificationEntry[]>;
+  /** Nombre y color de cada auto de la clasificación, el jugador incluido (con `PLAYER_ID`). Tiene que ser estable. */
+  racers?: readonly Racer[];
   /** "Otra vez": carrera nueva. */
   onRetry: () => void;
   /** "Salir": vuelve a Inicio. */
@@ -36,6 +46,20 @@ export interface RankingTexts {
     /** "¡Primero!" o "Te faltan 0.42 s para alcanzar a TOMI". */
     detail: string;
   }[];
+}
+
+/** Una fila de la clasificación, ya formateada. */
+export interface ClassificationRowTexts {
+  id: string;
+  place: number;
+  name: string;
+  /** Color del auto, en hex. */
+  color: string;
+  /** El auto del jugador: la fila va resaltada. */
+  player: boolean;
+  /** Tiempo del líder, diferencia con el líder ("+0.345") o "Vuelta 2/3" si todavía corre. */
+  detail: string;
+  finished: boolean;
 }
 
 /** Textos de la pantalla, ya formateados. */

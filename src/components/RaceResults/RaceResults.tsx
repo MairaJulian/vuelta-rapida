@@ -1,16 +1,24 @@
+import { useEffect, useState } from 'react';
 import { ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Confetti } from '@/components/Confetti';
 import { Icon } from '@/components/Icon';
 import { MenuButton } from '@/components/MenuButton';
+import type { Racer } from '@/components/PositionTable';
 import { formatGapSeconds, formatLapDelta, formatLapTime, ticksToMs } from '@/core/LapTimer';
-import type { RaceResults as RaceResultsData } from '@/core/RaceFlow';
+import { PLAYER_ID } from '@/core/RaceFlow';
+import type { ClassificationEntry, RaceResults as RaceResultsData } from '@/core/RaceFlow';
 import { getTableLabel } from '@/core/Ranking';
 import type { RaceRanking, RankingOutcome } from '@/core/Ranking';
 
 import { COLORS, LAYOUT, styles } from './RaceResults.styles';
-import type { RaceResultsProps, RaceResultsTexts, RankingTexts } from './RaceResults.types';
+import type {
+  ClassificationRowTexts,
+  RaceResultsProps,
+  RaceResultsTexts,
+  RankingTexts,
+} from './RaceResults.types';
 
 /** "¡Pasaste a TOMI!", "¡Pasaste a TOMI y a LULI!" o "¡Pasaste a 3 pilotos!". */
 function overtakeTitle(names: string[]): string {
@@ -105,6 +113,55 @@ export function getRaceResultsTexts(
   };
 }
 
+/**
+ * Filas de la clasificación, del primero al último: el líder con su tiempo completo, los
+ * que ya llegaron con la diferencia con el líder y los que todavía corren con su vuelta.
+ * Los autos que no estén en `racers` no se muestran.
+ */
+export function getClassificationTexts(
+  entries: readonly ClassificationEntry[],
+  racers: readonly Racer[],
+  stepHz: number,
+  totalLaps: number,
+): ClassificationRowTexts[] {
+  const leaderTick = entries.length > 0 ? entries[0].finishTick : null;
+  const rows: ClassificationRowTexts[] = [];
+  for (const entry of entries) {
+    const racer = racers.find((candidate) => candidate.id === entry.id);
+    if (racer) {
+      let detail = `Vuelta ${entry.lap}/${totalLaps}`;
+      if (entry.finishTick !== null && leaderTick !== null) {
+        detail =
+          entry.place === 1
+            ? formatLapTime(ticksToMs(entry.finishTick, stepHz))
+            : formatLapDelta(ticksToMs(entry.finishTick - leaderTick, stepHz));
+      }
+      rows.push({
+        id: entry.id,
+        place: entry.place,
+        name: racer.name,
+        color: racer.color,
+        player: entry.id === PLAYER_ID,
+        detail,
+        finished: entry.finishTick !== null,
+      });
+    }
+  }
+  return rows;
+}
+
+/** Cada cuánto se actualiza la clasificación mientras llegan los rivales, en ms. */
+const CLASSIFICATION_INTERVAL_MS = 150;
+
+function sameClassification(
+  a: readonly ClassificationRowTexts[],
+  b: readonly ClassificationRowTexts[],
+): boolean {
+  return (
+    a.length === b.length && a.every((row, i) => row.id === b[i].id && row.detail === b[i].detail)
+  );
+}
+
 /** Recorte a cuadros de la esquina de la tarjeta: tinta sobre el fondo, en escalera. */
 function Checker() {
   const squares: { left: number; top: number; key: string }[] = [];
@@ -141,12 +198,34 @@ export function RaceResults({
   circuitName,
   driver = null,
   ranking = null,
+  standings,
+  racers,
   onRetry,
   onExit,
 }: RaceResultsProps) {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const texts = getRaceResultsTexts(results, stepHz, circuitName);
+  const totalLaps = results.lapTicks.length;
+  const [classification, setClassification] = useState<ClassificationRowTexts[]>(() =>
+    standings && racers ? getClassificationTexts(standings.get(), racers, stepHz, totalLaps) : [],
+  );
+  // Los rivales siguen corriendo cuando el jugador llega: la tabla se actualiza hasta que todos terminan.
+  const classificationDone =
+    classification.length > 0 && classification.every((row) => row.finished);
+  useEffect(() => {
+    if (!standings || !racers || classificationDone) {
+      return undefined;
+    }
+    const refresh = () => {
+      const next = getClassificationTexts(standings.get(), racers, stepHz, totalLaps);
+      setClassification((current) => (sameClassification(current, next) ? current : next));
+    };
+    refresh();
+    const timer = setInterval(refresh, CLASSIFICATION_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [standings, racers, stepHz, totalLaps, classificationDone]);
+  const showClassification = classification.length > 1;
   const rankingTexts = ranking ? getRankingTexts(ranking) : null;
   // Con ranking, celebra lo que dice el ranking; sin perfil, solo el récord de vuelta.
   const celebrate = ranking ? ranking.celebration !== null : results.newRecord;
@@ -245,6 +324,40 @@ export function RaceResults({
           </View>
         ) : null}
         <ScrollView style={styles.laps} contentContainerStyle={styles.lapsContent}>
+          {showClassification ? (
+            <View style={styles.classification} testID="results-classification">
+              <Text style={styles.sectionLabel}>
+                {classificationDone ? 'Clasificación final' : 'Clasificación · en carrera'}
+              </Text>
+              {classification.map((row) => (
+                <View
+                  key={row.id}
+                  testID={`results-classification-${row.place}`}
+                  style={[
+                    styles.classificationRow,
+                    row.player && { backgroundColor: COLORS.blueSoft, borderColor: COLORS.blue },
+                  ]}
+                  accessible
+                  accessibilityLabel={`${row.place}.º ${row.player ? 'vos' : row.name}, ${row.detail}`}
+                >
+                  <Text style={styles.classificationPlace}>{row.place}</Text>
+                  <View style={[styles.classificationDot, { backgroundColor: row.color }]} />
+                  <Text style={styles.classificationName} numberOfLines={1}>
+                    {row.name}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.classificationDetail,
+                      !row.finished && styles.classificationPending,
+                    ]}
+                  >
+                    {row.detail}
+                  </Text>
+                </View>
+              ))}
+              <Text style={styles.sectionLabel}>Tus vueltas</Text>
+            </View>
+          ) : null}
           {texts.laps.map((lap) => (
             <View
               key={lap.label}

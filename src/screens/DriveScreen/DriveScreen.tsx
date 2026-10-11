@@ -7,6 +7,7 @@ import { DEFAULT_RACE_AUDIO_MIX } from '@/audio/RaceAudio';
 import type { DevPanel as DevPanelComponent } from '@/components/DevPanel';
 import { LapHud } from '@/components/LapHud';
 import { PauseMenu } from '@/components/PauseMenu';
+import type { Racer } from '@/components/PositionTable';
 import { RaceResults } from '@/components/RaceResults';
 import { StartLights } from '@/components/StartLights';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
@@ -19,9 +20,10 @@ import { formatLapTime, ticksToMs } from '@/core/LapTimer';
 import { DEFAULT_RACE_HAPTICS } from '@/haptics/RaceHaptics';
 import { withTiltPreferences } from '@/core/PlayerPreferences';
 import type { PlayerPreferences } from '@/core/PlayerPreferences';
-import { DEFAULT_RACE_CONFIG } from '@/core/RaceFlow';
+import { DEFAULT_RACE_CONFIG, PLAYER_ID } from '@/core/RaceFlow';
 import type { RaceEvent } from '@/core/RaceFlow';
-import { createRivalRoster, DEFAULT_AI_LEVEL_ID, RIVAL_COUNT } from '@/core/RivalAI';
+import { AI_LEVELS, createRivalRoster, withDynamicDifficulty } from '@/core/RivalAI';
+import type { AiLevel } from '@/core/RivalAI';
 import { withScenery } from '@/core/Scenery';
 import { DEFAULT_SCENERY_DISPLAY } from '@/core/SceneryView';
 import { calibrateTilt, DEFAULT_TILT_CONFIG, withTiltSteering } from '@/core/TiltSteering';
@@ -75,17 +77,38 @@ export function DriveScreen(_props: DriveScreenProps) {
   const { activeProfile } = useProfiles();
   const carColor = activeProfile ? getCarColor(activeProfile.colorId).hex : undefined;
   const carNumber = activeProfile?.number ?? null;
-  // Los rivales: nombres y colores inventados, siempre distintos al del jugador.
+  // Los rivales: cuántos y qué tan bien manejan salen de las preferencias (se eligen antes de largar).
+  const { rivalCount } = preferences;
+  const baseAiLevel = useMemo(
+    () => withDynamicDifficulty(AI_LEVELS[preferences.aiLevel], preferences.dynamicDifficulty),
+    [preferences.aiLevel, preferences.dynamicDifficulty],
+  );
+  // El panel de ajuste puede pisar los parámetros de la IA; valen desde la próxima carrera.
+  const [aiTuning, setAiTuning] = useState<AiLevel | null>(null);
+  const aiLevel = aiTuning ?? baseAiLevel;
+  // Nombres y colores inventados, siempre distintos al del jugador.
   const rivalDrivers = useMemo(
     () =>
-      createRivalRoster(activeProfile?.colorId ?? DEFAULT_CAR_COLOR_ID, RIVAL_COUNT).map(
+      createRivalRoster(activeProfile?.colorId ?? DEFAULT_CAR_COLOR_ID, rivalCount).map(
         (rival) => ({
           id: rival.id,
           name: rival.name.toUpperCase(),
           color: getCarColor(rival.colorId).hex,
         }),
       ),
-    [activeProfile?.colorId],
+    [activeProfile?.colorId, rivalCount],
+  );
+  // Todos los autos para la tabla del HUD y los resultados: el jugador y sus rivales.
+  const racers = useMemo<Racer[]>(
+    () => [
+      {
+        id: PLAYER_ID,
+        name: activeProfile?.name.toUpperCase() ?? 'VOS',
+        color: carColor ?? getCarColor(DEFAULT_CAR_COLOR_ID).hex,
+      },
+      ...rivalDrivers,
+    ],
+    [activeProfile?.name, carColor, rivalDrivers],
   );
   const [drivingConfig, setDrivingConfig] = useState(DEFAULT_DRIVING_CONFIG);
   const [cameraConfig, setCameraConfig] = useState(DEFAULT_CAMERA_CONFIG);
@@ -146,8 +169,8 @@ export function DriveScreen(_props: DriveScreenProps) {
     recordTicks,
     onEvents: bus.emitAll,
     onEngine,
-    rivalCount: RIVAL_COUNT,
-    aiLevel: DEFAULT_AI_LEVEL_ID,
+    rivalCount,
+    aiLevel,
   });
   const rivals = useMemo(
     () => ({ cars: loop.rivalCars, cameraView: loop.cameraView, drivers: rivalDrivers }),
@@ -292,7 +315,8 @@ export function DriveScreen(_props: DriveScreenProps) {
         recordMs={recordMs}
         stepHz={STEP_HZ}
         ghostDelta={delta}
-        placeView={loop.placeView}
+        standings={loop.standings}
+        racers={racers}
         onPause={pause}
       />
       <StartLights bus={bus} lightCount={raceConfig.lightCount} />
@@ -320,6 +344,8 @@ export function DriveScreen(_props: DriveScreenProps) {
           circuitName={track.name}
           driver={activeProfile}
           ranking={ranking}
+          standings={loop.standings}
+          racers={racers}
           onRetry={restartRace}
           onExit={exit}
         />
@@ -348,6 +374,9 @@ export function DriveScreen(_props: DriveScreenProps) {
           onResetCar={restartRace}
           raceConfig={raceConfig}
           onRaceConfigChange={setRaceConfig}
+          aiLevel={aiLevel}
+          onAiLevelChange={setAiTuning}
+          defaultAiLevel={baseAiLevel}
           audioMix={audioMix}
           onAudioMixChange={setAudioMix}
           hapticsConfig={hapticsConfig}

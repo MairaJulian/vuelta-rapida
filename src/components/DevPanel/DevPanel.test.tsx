@@ -9,6 +9,7 @@ import { createCarState, DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
 import type { CarState } from '@/core/DrivingModel';
 import type { ControlMode } from '@/core/PlayerPreferences';
 import { DEFAULT_RACE_CONFIG } from '@/core/RaceFlow';
+import { AI_LEVELS } from '@/core/RivalAI';
 import { DEFAULT_SCENERY_SPEC } from '@/core/Scenery';
 import { DEFAULT_SCENERY_DISPLAY } from '@/core/SceneryView';
 import { createTiltState, DEFAULT_TILT_CONFIG } from '@/core/TiltSteering';
@@ -17,6 +18,7 @@ import type { TrackData } from '@/core/Track';
 import { DEFAULT_RACE_HAPTICS } from '@/haptics/RaceHaptics';
 
 import {
+  AI_SLIDERS,
   AUDIO_SLIDERS,
   CAMERA_SLIDERS,
   DevPanel,
@@ -80,6 +82,9 @@ async function renderPanel({
     onResetCar: jest.fn(),
     raceConfig: DEFAULT_RACE_CONFIG,
     onRaceConfigChange: jest.fn(),
+    aiLevel: AI_LEVELS.medium,
+    onAiLevelChange: jest.fn(),
+    defaultAiLevel: AI_LEVELS.medium,
     audioMix: DEFAULT_RACE_AUDIO_MIX,
     onAudioMixChange: jest.fn(),
     hapticsConfig: DEFAULT_RACE_HAPTICS,
@@ -350,6 +355,31 @@ describe('DevPanel', () => {
       ...DEFAULT_RACE_CONFIG,
       totalLaps: 5,
     });
+  });
+
+  it('los rangos de la IA contienen los tres niveles y cubren todos sus parámetros', () => {
+    for (const level of Object.values(AI_LEVELS)) {
+      for (const spec of AI_SLIDERS) {
+        expect(level[spec.key]).toBeGreaterThanOrEqual(spec.min);
+        expect(level[spec.key]).toBeLessThanOrEqual(spec.max);
+      }
+    }
+    const adjustable = Object.keys(AI_LEVELS.easy).filter((key) => key !== 'id');
+    expect(AI_SLIDERS.map((spec) => spec.key).sort()).toEqual(adjustable.sort());
+  });
+
+  it('los sliders de la IA cambian el nivel de la próxima carrera', async () => {
+    const props = await renderPanel();
+    await openPanel();
+    await slide('maxPace', 1);
+    expect(props.onAiLevelChange).toHaveBeenLastCalledWith({ ...AI_LEVELS.medium, maxPace: 1.2 });
+  });
+
+  it('Restablecer devuelve la IA al nivel elegido', async () => {
+    const props = await renderPanel();
+    await openPanel();
+    await fireEvent.press(screen.getByText('Restablecer'));
+    expect(props.onAiLevelChange).toHaveBeenLastCalledWith(AI_LEVELS.medium);
   });
 
   it('los rangos del sonido contienen la mezcla por defecto', () => {

@@ -3,9 +3,14 @@ import type { DerivedValue, SharedValue } from 'react-native-reanimated';
 
 import type { CameraConfig, CameraView, Viewport } from '@/core/Camera';
 import type { CarState, DrivingConfig, DrivingInput } from '@/core/DrivingModel';
-import type { RaceConfig, RaceEvent, RaceLapView, RaceState } from '@/core/RaceFlow';
-import type { RacePlaceView } from '@/core/RacePositions';
-import type { AiLevelId } from '@/core/RivalAI';
+import type {
+  ClassificationEntry,
+  RaceConfig,
+  RaceEvent,
+  RaceLapView,
+  RaceState,
+} from '@/core/RaceFlow';
+import type { AiLevel } from '@/core/RivalAI';
 import type { Circuit } from '@/core/Track';
 
 export interface UseRaceLoopParams {
@@ -39,8 +44,11 @@ export interface UseRaceLoopParams {
    * Vale desde la próxima carrera.
    */
   rivalCount?: number;
-  /** Dificultad de los rivales. Por defecto, la fácil. Vale desde la próxima carrera. */
-  aiLevel?: AiLevelId;
+  /**
+   * Parámetros de la dificultad de los rivales (`AI_LEVELS`, con o sin dificultad dinámica,
+   * ver `withDynamicDifficulty`). Por defecto, el nivel fácil. Vale desde la próxima carrera.
+   */
+  aiLevel?: AiLevel;
   /** Semilla de cada carrera nueva. Por defecto, la hora; los tests pasan una fija. */
   createSeed?: () => number;
 }
@@ -62,8 +70,8 @@ export interface UseRaceLoopResult {
   carTransform: DerivedValue<Transforms3d>;
   /** Vuelta en curso, total de vueltas y tiempo de la vuelta, para el HUD. */
   lapView: DerivedValue<RaceLapView>;
-  /** Puesto del jugador y autos en carrera, para el HUD ("2/4"). */
-  placeView: DerivedValue<RacePlaceView>;
+  /** Clasificación de todos los autos, del primero al último, para la tabla del HUD y los resultados. */
+  standings: DerivedValue<ClassificationEntry[]>;
   /** Empieza el semáforo (solo desde la grilla). */
   startLights: () => void;
   /** Pausa la carrera (grilla, semáforo o carrera). */

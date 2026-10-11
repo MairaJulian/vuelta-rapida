@@ -210,6 +210,62 @@ export const styles = StyleSheet.create({
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
   },
+  // Clasificación de todos los autos, encima de las vueltas: filas más bajas que las de las vueltas.
+  classification: {
+    gap: 6,
+  },
+  sectionLabel: {
+    marginTop: 2,
+    color: COLORS.muted,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  classificationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    height: 40,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    backgroundColor: COLORS.card,
+    boxShadow: SHADOW_SM,
+  },
+  classificationPlace: {
+    width: 18,
+    color: COLORS.ink,
+    fontSize: 18,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+  },
+  classificationDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2,
+    borderColor: COLORS.ink,
+  },
+  classificationName: {
+    flex: 1,
+    color: COLORS.ink,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  classificationDetail: {
+    color: COLORS.ink,
+    fontSize: 16,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+  },
+  // Todavía corre: más apagado que un tiempo.
+  classificationPending: {
+    color: COLORS.muted,
+    fontSize: 13,
+    fontWeight: '600',
+  },
   buttons: {
     flexDirection: 'row',
     gap: 12,
