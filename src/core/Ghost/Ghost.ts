@@ -24,7 +24,7 @@ export const GHOST_FORMAT_VERSION = 1;
 export const GHOST_SOURCES: readonly GhostSource[] = ['mine', 'record', 'none'];
 
 /** El fantasma por defecto: la mejor vuelta del jugador. */
-export const DEFAULT_GHOST_SOURCE: GhostSource = 'mine';
+export const DEFAULT_GHOST_SOURCE: GhostSource = 'none';
 
 /** Posición: centímetros. Rumbo: milésimas de radián. */
 const POSITION_SCALE = 100;

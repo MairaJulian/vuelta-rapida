@@ -5,28 +5,29 @@ Preferencias que se guardan entre partidas: modo de control, calibración de la 
 ## Tipos
 
 - `ControlMode`: `'tilt' | 'buttons'`.
-- `PlayerPreferences`: `{ controlMode, tiltNeutralAngle, tiltSensitivity, tiltDeadZone, soundEnabled, ghostSource, vibrationEnabled }`.
+- `PlayerPreferences`: `{ controlMode, tiltNeutralAngle, tiltSensitivity, tiltDeadZone, soundEnabled, ghostSource, vibrationEnabled, rivalCount, aiLevel, dynamicDifficulty }`.
   - `controlMode`: `null` hasta que el jugador elige.
   - `tiltNeutralAngle`: en radianes; `null` sin calibrar.
   - `tiltSensitivity`: de 1 a 10.
   - `tiltDeadZone`: en radianes, de 1° a 9°. Inicial, 5°.
-  - `ghostSource`: qué fantasma corre al lado del jugador: `mine` (su mejor vuelta, por defecto), `record` (el récord de la pista) o `none`. Es del celular, no del perfil: se elige en la selección de pista y se resuelve con `core/GhostChoice`.
+  - `ghostSource`: qué fantasma corre al lado del jugador: `none` (sin fantasma, por defecto), `mine` (su mejor vuelta) o `record` (el récord de la pista). Es del celular, no del perfil: se elige en la selección de pista y se resuelve con `core/GhostChoice`.
+  - `rivalCount`, `aiLevel` y `dynamicDifficulty` (hito 9a-2): cuántos rivales corren (de 0, contrarreloj, a `MAX_RIVALS`; 3 por defecto), su dificultad (`easy`, `medium` o `hard`; fácil por defecto) y si la dificultad dinámica está activada (por defecto sí). Se eligen en la selección de pista. Un valor fuera de rango o desconocido vuelve al de por defecto.
   - `soundEnabled` y `vibrationEnabled`: si suenan el motor y los efectos, y si vibra el celular (también con el freno). Inicial, los dos prendidos. Se cambian desde la pausa.
 - `StartStep`: `'choose-control' | 'calibrate' | 'drive'`.
 
 ## API
 
-| Exporta | Qué hace |
-|---|---|
-| `parsePlayerPreferences(raw)` | Lee el texto guardado (ya migrado). Cada campo inválido vuelve a su valor por defecto. |
-| `serializePlayerPreferences(preferences)` | Texto para guardar, con el número de versión y solo los campos conocidos. |
-| `getStartStep(preferences, tiltEnabled = true)` | Primer paso al abrir el juego. Con la inclinación desactivada, siempre `'drive'`. |
-| `isControlModeAvailable(mode, tiltEnabled)` | Si un modo guardado se puede usar al abrir el juego: con la inclinación desactivada, `'tilt'` no. |
-| `withTiltPreferences(config, preferences)` | Aplica la calibración, la sensibilidad y la zona muerta guardadas a un `TiltConfig`. |
-| `deadZoneFromLevel(level)`, `deadZoneToLevel(deadZone)` | Escala del jugador para la zona muerta: niveles 1 a 5 ↔ 1°, 3°, 5°, 7° y 9°. |
-| `DEAD_ZONE_LEVELS` | Cantidad de niveles de la zona muerta (5). |
-| `DEFAULT_PLAYER_PREFERENCES` | Sin elegir ni calibrar, sensibilidad 5, zona muerta de 5° (nivel 3). |
-| `CONTROL_MODES` | Los modos válidos. |
+| Exporta                                                 | Qué hace                                                                                          |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `parsePlayerPreferences(raw)`                           | Lee el texto guardado (ya migrado). Cada campo inválido vuelve a su valor por defecto.            |
+| `serializePlayerPreferences(preferences)`               | Texto para guardar, con el número de versión y solo los campos conocidos.                         |
+| `getStartStep(preferences, tiltEnabled = true)`         | Primer paso al abrir el juego. Con la inclinación desactivada, siempre `'drive'`.                 |
+| `isControlModeAvailable(mode, tiltEnabled)`             | Si un modo guardado se puede usar al abrir el juego: con la inclinación desactivada, `'tilt'` no. |
+| `withTiltPreferences(config, preferences)`              | Aplica la calibración, la sensibilidad y la zona muerta guardadas a un `TiltConfig`.              |
+| `deadZoneFromLevel(level)`, `deadZoneToLevel(deadZone)` | Escala del jugador para la zona muerta: niveles 1 a 5 ↔ 1°, 3°, 5°, 7° y 9°.                      |
+| `DEAD_ZONE_LEVELS`                                      | Cantidad de niveles de la zona muerta (5).                                                        |
+| `DEFAULT_PLAYER_PREFERENCES`                            | Sin elegir ni calibrar, sensibilidad 5, zona muerta de 5° (nivel 3).                              |
+| `CONTROL_MODES`                                         | Los modos válidos.                                                                                |
 
 ## Ejemplo
 

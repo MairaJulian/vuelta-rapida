@@ -11,18 +11,18 @@ El auto fantasma como TypeScript puro: grabar una vuelta, guardarla en un format
 
 ## API
 
-| Exporta | Qué hace |
-|---|---|
-| `GHOST_SAMPLE_HZ` | Muestras por segundo de la grabación: 30. |
-| `getGhostSampleGap(stepHz)` | Pasos de simulación entre dos muestras. |
-| `encodeGhost(samples, hz, lapMs)` | De una lista plana `[x, z, rumbo, ...]` a `GhostRecording`; `null` si no alcanza o trae valores rotos. |
-| `parseGhostRecording(value)` | Valida una grabación guardada; `null` si no sirve. |
-| `decodeGhost(recording)` | Tiempos, posiciones y rumbos de cada muestra. |
-| `createGhostPlayback(recording, circuit)` | Lo anterior más el progreso de cada muestra sobre el circuito. Una vez por carrera, en el hilo de JS. |
-| `getGhostPose(playback, timeMs)` | Posición y rumbo del fantasma a `timeMs` del inicio de su vuelta. *worklet* |
-| `getLapProgress(laps, lapLength)` | Progreso del auto en su vuelta, en las mismas unidades que el del fantasma. *worklet* |
-| `getGhostGap(playback, lapMs, progress)` | Diferencia en segundos: positiva si el jugador va atrás. *worklet* |
-| `GHOST_SOURCES`, `DEFAULT_GHOST_SOURCE` | Las tres opciones (`mine`, `record`, `none`) y la de por defecto. |
+| Exporta                                   | Qué hace                                                                                                |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `GHOST_SAMPLE_HZ`                         | Muestras por segundo de la grabación: 30.                                                               |
+| `getGhostSampleGap(stepHz)`               | Pasos de simulación entre dos muestras.                                                                 |
+| `encodeGhost(samples, hz, lapMs)`         | De una lista plana `[x, z, rumbo, ...]` a `GhostRecording`; `null` si no alcanza o trae valores rotos.  |
+| `parseGhostRecording(value)`              | Valida una grabación guardada; `null` si no sirve.                                                      |
+| `decodeGhost(recording)`                  | Tiempos, posiciones y rumbos de cada muestra.                                                           |
+| `createGhostPlayback(recording, circuit)` | Lo anterior más el progreso de cada muestra sobre el circuito. Una vez por carrera, en el hilo de JS.   |
+| `getGhostPose(playback, timeMs)`          | Posición y rumbo del fantasma a `timeMs` del inicio de su vuelta. _worklet_                             |
+| `getLapProgress(laps, lapLength)`         | Progreso del auto en su vuelta, en las mismas unidades que el del fantasma. _worklet_                   |
+| `getGhostGap(playback, lapMs, progress)`  | Diferencia en segundos: positiva si el jugador va atrás. _worklet_                                      |
+| `GHOST_SOURCES`, `DEFAULT_GHOST_SOURCE`   | Las tres opciones (`mine`, `record`, `none`) y la de por defecto (`none`: el fantasma hay que pedirlo). |
 
 ## Formato guardado (`GhostRecording`)
 

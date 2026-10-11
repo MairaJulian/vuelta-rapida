@@ -4,33 +4,34 @@ Versión de los datos guardados y migraciones entre versiones. TypeScript puro: 
 
 ## Documentos
 
-| Documento | Clave (`SaveStore`) | Contenido |
-|---|---|---|
-| `profiles` | `player-profiles` | Perfiles, perfil activo y récords (`core/Profiles`). |
+| Documento     | Clave (`SaveStore`)  | Contenido                                                                                 |
+| ------------- | -------------------- | ----------------------------------------------------------------------------------------- |
+| `profiles`    | `player-profiles`    | Perfiles, perfil activo y récords (`core/Profiles`).                                      |
 | `preferences` | `player-preferences` | Ajustes del celular: control, calibración, sonido y vibración (`core/PlayerPreferences`). |
 
 Cada documento lleva su número de versión en el campo `version`.
 
 ## Versiones
 
-| Versión | Hito | Cambio |
-|---|---|---|
-| 1 | hasta 5b | Sin número de versión. Los récords están en las preferencias (`bestLapsMs`). |
-| 2 | 6a | Perfiles. Los récords pasan al documento `profiles`, sin dueño (`unassignedRecords`), hasta que se crea el primer perfil. |
-| 3 | 6b | Ranking. `records` pasa a llamarse `lapRecords` y se suma `raceRecords` (mejores carreras completas, vacío al migrar: antes no se guardaban). Las preferencias solo cambian el número. |
-| 4 | 8 | Fantasma. Los perfiles suman `ghosts` (la grabación de la mejor vuelta de cada perfil en cada pista; vacía al migrar: antes no se grababa) y las preferencias suman `ghostSource` (`mine`, `record` o `none`; por defecto `mine`). Si el documento ya tiene el campo, no lo pisa. |
+| Versión | Hito     | Cambio                                                                                                                                                                                                                                                                                |
+| ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1       | hasta 5b | Sin número de versión. Los récords están en las preferencias (`bestLapsMs`).                                                                                                                                                                                                          |
+| 2       | 6a       | Perfiles. Los récords pasan al documento `profiles`, sin dueño (`unassignedRecords`), hasta que se crea el primer perfil.                                                                                                                                                             |
+| 3       | 6b       | Ranking. `records` pasa a llamarse `lapRecords` y se suma `raceRecords` (mejores carreras completas, vacío al migrar: antes no se guardaban). Las preferencias solo cambian el número.                                                                                                |
+| 4       | 8        | Fantasma. Los perfiles suman `ghosts` (la grabación de la mejor vuelta de cada perfil en cada pista; vacía al migrar: antes no se grababa) y las preferencias suman `ghostSource` (`mine`, `record` o `none`; por defecto `mine`). Si el documento ya tiene el campo, no lo pisa.     |
+| 5       | 9a-2     | Rivales. Las preferencias suman `rivalCount` (3), `aiLevel` (`easy`) y `dynamicDifficulty` (`true`), y el fantasma vuelve a `none` una sola vez (la versión 4 guardaba `mine` sin que nadie lo eligiera). Si el documento ya tiene `rivalCount`, no lo pisa. Los perfiles no cambian. |
 
 ## API
 
-| Exporta | Qué hace |
-|---|---|
-| `migrateSave(raw, migrations?, targetVersion?)` | Lleva los documentos a la versión actual. Devuelve `{ fromVersion, documents, writes }`. |
-| `SAVE_VERSION` | Versión actual (4). |
-| `SAVE_MIGRATIONS` | Un paso `{ from, to, migrate }` por versión. |
-| `SAVE_DOCUMENTS` | Los documentos, en el orden en que se escriben: `profiles` y después `preferences`. |
-| `serializeSaveDocument(fields, version?)` | Texto de un documento con la versión primero. Lo usan los serializadores de cada módulo. |
-| `parseSaveDocument(raw)`, `getDocumentVersion(document)` | Leer un documento y su versión (sin número, es la 1). |
-| `LEGACY_SAVE_VERSION` | 1. |
+| Exporta                                                  | Qué hace                                                                                 |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `migrateSave(raw, migrations?, targetVersion?)`          | Lleva los documentos a la versión actual. Devuelve `{ fromVersion, documents, writes }`. |
+| `SAVE_VERSION`                                           | Versión actual (5).                                                                      |
+| `SAVE_MIGRATIONS`                                        | Un paso `{ from, to, migrate }` por versión.                                             |
+| `SAVE_DOCUMENTS`                                         | Los documentos, en el orden en que se escriben: `profiles` y después `preferences`.      |
+| `serializeSaveDocument(fields, version?)`                | Texto de un documento con la versión primero. Lo usan los serializadores de cada módulo. |
+| `parseSaveDocument(raw)`, `getDocumentVersion(document)` | Leer un documento y su versión (sin número, es la 1).                                    |
+| `LEGACY_SAVE_VERSION`                                    | 1.                                                                                       |
 
 ## Ejemplo
 

@@ -1,5 +1,6 @@
 import type { GhostSource } from '@/core/Ghost';
 import type { Radians } from '@/core/MathUtils';
+import type { AiLevelId } from '@/core/RivalAI';
 
 /** Modos de control que puede elegir el jugador. */
 export type ControlMode = 'tilt' | 'buttons';
@@ -27,6 +28,12 @@ export interface PlayerPreferences {
   ghostSource: GhostSource;
   /** Si el celular vibra con los pianos, los bordes, la largada, la llegada y el freno. */
   vibrationEnabled: boolean;
+  /** Rivales con IA en la carrera, de 0 (sin rivales, contrarreloj) a `MAX_RIVALS`. */
+  rivalCount: number;
+  /** Dificultad de los rivales. */
+  aiLevel: AiLevelId;
+  /** Si los rivales aprietan cuando el jugador va muy adelante y aflojan cuando va muy atrás. */
+  dynamicDifficulty: boolean;
 }
 
 /** Primer paso al abrir el juego, según lo que ya está guardado. */
