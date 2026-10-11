@@ -4,6 +4,7 @@ import { getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 
 import { DEFAULT_RACE_AUDIO_MIX } from '@/audio/RaceAudio';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
+import { DEFAULT_COLLISION_CONFIG } from '@/core/CarCollisions';
 import { DEFAULT_CIRCUIT } from '@/core/Circuits';
 import { createCarState, DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
 import type { CarState } from '@/core/DrivingModel';
@@ -85,6 +86,8 @@ async function renderPanel({
     aiLevel: AI_LEVELS.medium,
     onAiLevelChange: jest.fn(),
     defaultAiLevel: AI_LEVELS.medium,
+    collisionConfig: DEFAULT_COLLISION_CONFIG,
+    onCollisionConfigChange: jest.fn(),
     audioMix: DEFAULT_RACE_AUDIO_MIX,
     onAudioMixChange: jest.fn(),
     hapticsConfig: DEFAULT_RACE_HAPTICS,
@@ -431,6 +434,7 @@ describe('DevPanel', () => {
     expect(HAPTIC_MOMENTS.map(([, label]) => label)).toEqual([
       'Piano',
       'Borde',
+      'Choque con otro auto',
       'Largada',
       'Llegada',
       'Récord de la pista',

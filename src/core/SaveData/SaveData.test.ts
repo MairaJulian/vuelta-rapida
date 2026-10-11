@@ -26,6 +26,7 @@ const read = (json: string | null) => (json === null ? null : JSON.parse(json));
 
 /** Migra hasta la versión 4, el destino del hito 8. */
 const migrateToV4 = (raw: RawSave) => migrateSave(raw, SAVE_MIGRATIONS, 4);
+const migrateToV5 = (raw: RawSave) => migrateSave(raw, SAVE_MIGRATIONS, 5);
 
 describe('parseSaveDocument', () => {
   it('lee un objeto JSON', () => {
@@ -293,7 +294,7 @@ describe('migrateSave: de la versión 4 (fantasma) a la 5 (rivales)', () => {
   });
 
   it('las preferencias suman los rivales y vuelven al fantasma por defecto', () => {
-    const result = migrateSave({ profiles: V4_PROFILES, preferences: V4_PREFERENCES });
+    const result = migrateToV5({ profiles: V4_PROFILES, preferences: V4_PREFERENCES });
     expect(result.fromVersion).toBe(4);
     expect(read(result.documents.preferences)).toEqual({
       version: 5,
@@ -307,7 +308,7 @@ describe('migrateSave: de la versión 4 (fantasma) a la 5 (rivales)', () => {
   });
 
   it('los perfiles quedan igual salvo la versión', () => {
-    const result = migrateSave({ profiles: V4_PROFILES, preferences: V4_PREFERENCES });
+    const result = migrateToV5({ profiles: V4_PROFILES, preferences: V4_PREFERENCES });
     expect(read(result.documents.profiles)).toEqual({ ...read(V4_PROFILES), version: 5 });
   });
 
@@ -319,12 +320,12 @@ describe('migrateSave: de la versión 4 (fantasma) a la 5 (rivales)', () => {
       aiLevel: 'hard',
       dynamicDifficulty: false,
     });
-    const result = migrateSave({ profiles: V4_PROFILES, preferences: chosen });
+    const result = migrateToV5({ profiles: V4_PROFILES, preferences: chosen });
     expect(read(result.documents.preferences)).toEqual({ ...read(chosen), version: 5 });
   });
 
   it('sin preferencias guardadas migra solo los perfiles', () => {
-    const result = migrateSave({ profiles: V4_PROFILES, preferences: null });
+    const result = migrateToV5({ profiles: V4_PROFILES, preferences: null });
     expect(result.documents.preferences).toBeNull();
     expect(read(result.documents.profiles)).toMatchObject({ version: 5 });
   });
@@ -344,12 +345,60 @@ describe('migrateSave: de la versión 4 (fantasma) a la 5 (rivales)', () => {
       rivalCount: 3,
       aiLevel: 'easy',
       dynamicDifficulty: true,
+      collisionsEnabled: true,
       controlMode: 'buttons',
     });
   });
 
   it('migrar dos veces da lo mismo: la segunda no escribe nada', () => {
-    const { documents } = migrateSave({ profiles: V4_PROFILES, preferences: V4_PREFERENCES });
+    const { documents } = migrateToV5({ profiles: V4_PROFILES, preferences: V4_PREFERENCES });
+    expect(migrateToV5(documents).writes).toEqual([]);
+  });
+});
+
+describe('migrateSave: de la versión 5 (rivales) a la 6 (colisiones)', () => {
+  const V5_PROFILES = JSON.stringify({
+    version: 5,
+    profiles: [{ id: 'p1', name: 'Male', colorId: 'pink', number: 27, createdAt: 1 }],
+    activeProfileId: 'p1',
+    lapRecords: [],
+    raceRecords: [],
+    ghosts: [],
+    unassignedRecords: {},
+  });
+  const V5_PREFERENCES = JSON.stringify({
+    version: 5,
+    controlMode: 'buttons',
+    soundEnabled: true,
+    ghostSource: 'none',
+    rivalCount: 2,
+    aiLevel: 'medium',
+    dynamicDifficulty: false,
+  });
+
+  it('las preferencias suman los choques activados y conservan lo demás', () => {
+    const result = migrateSave({ profiles: V5_PROFILES, preferences: V5_PREFERENCES });
+    expect(result.fromVersion).toBe(5);
+    expect(read(result.documents.preferences)).toEqual({
+      ...read(V5_PREFERENCES),
+      version: 6,
+      collisionsEnabled: true,
+    });
+  });
+
+  it('los perfiles quedan igual salvo la versión', () => {
+    const result = migrateSave({ profiles: V5_PROFILES, preferences: V5_PREFERENCES });
+    expect(read(result.documents.profiles)).toEqual({ ...read(V5_PROFILES), version: 6 });
+  });
+
+  it('no pisa lo ya elegido si el campo estaba (migración cortada a mitad)', () => {
+    const chosen = JSON.stringify({ version: 5, rivalCount: 1, collisionsEnabled: false });
+    const result = migrateSave({ profiles: V5_PROFILES, preferences: chosen });
+    expect(read(result.documents.preferences)).toEqual({ ...read(chosen), version: 6 });
+  });
+
+  it('migrar dos veces da lo mismo: la segunda no escribe nada', () => {
+    const { documents } = migrateSave({ profiles: V5_PROFILES, preferences: V5_PREFERENCES });
     expect(migrateSave(documents).writes).toEqual([]);
   });
 });
@@ -410,6 +459,7 @@ describe('migrateSave: otros casos', () => {
       controlMode: 'buttons',
       ghostSource: 'none',
       rivalCount: 3,
+      collisionsEnabled: true,
     });
     const profiles = JSON.stringify({ version: SAVE_VERSION - 1, profiles: [] });
     const result = migrateSave({ preferences, profiles });

@@ -4,32 +4,33 @@ Las vibraciones de la carrera sobre `expo-haptics`: qué momento vibra (piano, b
 
 ## API
 
-| Exportación | Descripción |
-|---|---|
-| `createRaceHaptics({ impact? })` | Arma las vibraciones. `impact` reemplaza a `expo-haptics` en los tests. |
-| `getHapticLevel(event, config)` | Intensidad con la que vibra un evento; `null` si no vibra o está apagado. |
-| `DEFAULT_RACE_HAPTICS` | Piano Leve, borde Fuerte, largada Media, llegada Doble. |
-| `HAPTIC_LEVELS` | Las cinco intensidades en orden, con su nombre para el panel. |
-| `DOUBLE_GAP_MS` | 140 ms entre los dos golpes de Doble. |
+| Exportación                      | Descripción                                                               |
+| -------------------------------- | ------------------------------------------------------------------------- |
+| `createRaceHaptics({ impact? })` | Arma las vibraciones. `impact` reemplaza a `expo-haptics` en los tests.   |
+| `getHapticLevel(event, config)`  | Intensidad con la que vibra un evento; `null` si no vibra o está apagado. |
+| `DEFAULT_RACE_HAPTICS`           | Piano Leve, borde Fuerte, largada Media, llegada Doble.                   |
+| `HAPTIC_LEVELS`                  | Las cinco intensidades en orden, con su nombre para el panel.             |
+| `DOUBLE_GAP_MS`                  | 140 ms entre los dos golpes de Doble.                                     |
 
 `RaceHaptics`:
 
-| Método | Descripción |
-|---|---|
+| Método         | Descripción                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------------- |
 | `pulse(level)` | Vibra: `light`, `medium` o `heavy` son un golpe; `double`, dos golpes fuertes; `off`, nada. |
-| `close()` | Cancela el segundo golpe pendiente. Después no vibra nada más. |
+| `close()`      | Cancela el segundo golpe pendiente. Después no vibra nada más.                              |
 
 ## Qué vibra
 
-| Evento | Momento | Intensidad inicial |
-|---|---|---|
-| `kerbEnter` | `kerb` | Leve |
-| `borderHit` | `border` | Fuerte |
-| `lightsOut` | `start` | Media |
-| `finish` | `finish` | Doble |
-| `celebration` (`trackRecord`) | `trackRecord` | Doble |
-| `celebration` (`overtake`) | `overtake` | Media |
-| `celebration` (`personalBest`) | `personalBest` | Leve |
+| Evento                         | Momento        | Intensidad inicial |
+| ------------------------------ | -------------- | ------------------ |
+| `kerbEnter`                    | `kerb`         | Leve               |
+| `borderHit`                    | `border`       | Fuerte             |
+| `carHit`                       | `carHit`       | Media              |
+| `lightsOut`                    | `start`        | Media              |
+| `finish`                       | `finish`       | Doble              |
+| `celebration` (`trackRecord`)  | `trackRecord`  | Doble              |
+| `celebration` (`overtake`)     | `overtake`     | Media              |
+| `celebration` (`personalBest`) | `personalBest` | Leve               |
 
 `celebration` es el evento del ranking (hito 6b): lo emite la pantalla de carrera cuando aparecen los resultados. Vibra de más a menos según lo que se festeja. No existe un nivel "largo", así que el récord de la pista usa el doble, igual que la llegada.
 

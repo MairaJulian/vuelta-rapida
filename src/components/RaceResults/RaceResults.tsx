@@ -9,7 +9,6 @@ import type { Racer } from '@/components/PositionTable';
 import { formatGapSeconds, formatLapDelta, formatLapTime, ticksToMs } from '@/core/LapTimer';
 import { PLAYER_ID } from '@/core/RaceFlow';
 import type { ClassificationEntry, RaceResults as RaceResultsData } from '@/core/RaceFlow';
-import { getTableLabel } from '@/core/Ranking';
 import type { RaceRanking, RankingOutcome } from '@/core/Ranking';
 
 import { COLORS, LAYOUT, styles } from './RaceResults.styles';
@@ -31,6 +30,15 @@ function overtakeTitle(names: string[]): string {
   return `¡Pasaste a ${names.length} pilotos!`;
 }
 
+/** Nombre de la ficha: es el ranking de la pista (de todos los perfiles), no la clasificación de la carrera. */
+function rankingLabel(outcome: RankingOutcome): string {
+  if (outcome.table.kind === 'lap') {
+    return 'Ranking · mejor vuelta';
+  }
+  const { laps } = outcome.table;
+  return `Ranking · ${laps} ${laps === 1 ? 'vuelta' : 'vueltas'}`;
+}
+
 /** Lo que le falta al jugador en una tabla, o "¡Primero!". */
 function rankingDetail(outcome: RankingOutcome): string {
   if (!outcome.above || outcome.gapToAboveMs === null) {
@@ -45,7 +53,8 @@ function rankingDetail(outcome: RankingOutcome): string {
 
 /**
  * Textos del ranking: el título según la celebración más grande, y el puesto de cada
- * tabla con cuánto le falta para alcanzar al de arriba.
+ * tabla con cuánto le falta para alcanzar al de arriba. Una tabla con un solo perfil no
+ * aparece: ser el primero de uno no dice nada.
  */
 export function getRankingTexts(ranking: RaceRanking): RankingTexts {
   const overtaken = [...ranking.lap.overtaken, ...ranking.race.overtaken];
@@ -59,12 +68,12 @@ export function getRankingTexts(ranking: RaceRanking): RankingTexts {
   };
   const tables = (['lap', 'race'] as const).flatMap((key) => {
     const outcome = ranking[key];
-    return outcome.position === null
+    return outcome.position === null || outcome.total <= 1
       ? []
       : [
           {
             key,
-            label: getTableLabel(outcome.table),
+            label: rankingLabel(outcome),
             position: `${outcome.position}.º de ${outcome.total}`,
             detail: rankingDetail(outcome),
           },

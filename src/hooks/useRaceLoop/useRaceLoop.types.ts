@@ -2,6 +2,7 @@ import type { Transforms3d } from '@shopify/react-native-skia';
 import type { DerivedValue, SharedValue } from 'react-native-reanimated';
 
 import type { CameraConfig, CameraView, Viewport } from '@/core/Camera';
+import type { CollisionConfig } from '@/core/CarCollisions';
 import type { CarState, DrivingConfig, DrivingInput } from '@/core/DrivingModel';
 import type {
   ClassificationEntry,
@@ -49,6 +50,11 @@ export interface UseRaceLoopParams {
    * ver `withDynamicDifficulty`). Por defecto, el nivel fácil. Vale desde la próxima carrera.
    */
   aiLevel?: AiLevel;
+  /**
+   * Choques entre autos (`DEFAULT_COLLISION_CONFIG` por defecto). Se puede cambiar en
+   * caliente; con `enabled` en falso los autos se atraviesan.
+   */
+  collisionConfig?: CollisionConfig;
   /** Semilla de cada carrera nueva. Por defecto, la hora; los tests pasan una fija. */
   createSeed?: () => number;
 }

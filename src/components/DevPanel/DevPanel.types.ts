@@ -2,6 +2,7 @@ import type { SharedValue } from 'react-native-reanimated';
 
 import type { RaceAudioMix } from '@/audio/RaceAudio';
 import type { CameraConfig } from '@/core/Camera';
+import type { CollisionConfig } from '@/core/CarCollisions';
 import type { CarState, DrivingConfig } from '@/core/DrivingModel';
 import type { ControlMode } from '@/core/PlayerPreferences';
 import type { AiLevel } from '@/core/RivalAI';
@@ -52,6 +53,9 @@ export interface DevPanelProps {
   onAiLevelChange: (level: AiLevel) => void;
   /** Los parámetros del nivel elegido sin tocar: a ellos vuelve "Restablecer". */
   defaultAiLevel: AiLevel;
+  /** Choques entre autos: radio, empujón y pérdidas de velocidad (solo la sesión). */
+  collisionConfig: CollisionConfig;
+  onCollisionConfigChange: (config: CollisionConfig) => void;
   /** Volúmenes y tono del motor (solo la sesión). */
   audioMix: RaceAudioMix;
   onAudioMixChange: (mix: RaceAudioMix) => void;
@@ -99,7 +103,10 @@ export type SceneryDisplaySliderKey = 'parallax' | 'grassContrast';
 export type SceneryDisplaySwitchKey = 'visible' | 'particles';
 
 /** Reglas de la carrera que se ajustan en el panel. */
-export type RaceSliderKey = 'totalLaps';
+export type RaceSliderKey = 'totalLaps' | 'carHitInterval';
+
+/** Parámetros de los choques con slider (el interruptor va en la selección de pista). */
+export type CollisionSliderKey = Exclude<keyof CollisionConfig, 'enabled'>;
 
 /** Parámetros de la IA de los rivales con slider (el id del nivel no se ajusta). */
 export type AiSliderKey = Exclude<keyof AiLevel, 'id'>;

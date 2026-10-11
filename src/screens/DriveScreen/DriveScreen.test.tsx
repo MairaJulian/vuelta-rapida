@@ -308,9 +308,8 @@ describe('DriveScreen', () => {
       );
       // 3600 pasos a 60 por segundo: 60 s de carrera de 3 vueltas.
       expect(getBestRace(readProfiles(), id, 'autodromo-del-lago', 3)).toBe(60000);
-      expect(screen.getByTestId('results-ranking-race')).toHaveTextContent(
-        'Carrera · 3 vueltas1.º de 1¡Primero!',
-      );
+      // Con un solo perfil en la tabla, la ficha del ranking no aparece.
+      expect(screen.queryByTestId('results-ranking')).toBeNull();
       expect(screen.getByRole('header', { name: '¡Nuevo récord personal!' })).toBeTruthy();
     });
 

@@ -32,6 +32,8 @@ export interface RaceConfig {
   borderHitInterval: number;
   /** Tiempo mínimo entre dos entradas a un piano avisadas. */
   kerbInterval: number;
+  /** Tiempo mínimo entre dos choques con otro auto avisados. */
+  carHitInterval: number;
   /** Freno automático tras la llegada, de 0 a 1. */
   finishBrake: number;
 }
@@ -80,6 +82,7 @@ export type RaceEvent =
   | { type: 'lapCompleted'; tick: number; lap: number; totalLaps: number; lapTicks: number }
   | { type: 'borderHit'; tick: number; impactSpeed: number }
   | { type: 'kerbEnter'; tick: number; speed: number }
+  | { type: 'carHit'; tick: number; impactSpeed: number }
   | { type: 'newRecord'; tick: number; lapTicks: number; previousTicks: number | null }
   | { type: 'recordTrace'; tick: number; lapTicks: number; sampleHz: number; samples: number[] }
   | ({ type: 'finish'; tick: number } & RaceResults)
@@ -129,6 +132,10 @@ export interface RaceState {
   lastBorderHitTick: number | null;
   /** Paso del cronómetro de la última entrada a un piano avisada. */
   lastKerbTick: number | null;
+  /** Si el jugador estaba chocando con otro auto en el paso anterior. */
+  carContact: boolean;
+  /** Paso del cronómetro del último choque con otro auto avisado. */
+  lastCarHitTick: number | null;
   /**
    * Grabación de la vuelta en curso para el fantasma: lista plana `[x, z, rumbo, ...]`,
    * una muestra cada `getGhostSampleGap(stepHz)` pasos desde el inicio de la vuelta.
@@ -139,7 +146,7 @@ export interface RaceState {
   lapLength: number;
   /**
    * Los rivales con IA, en orden de grilla (el jugador sale último). Corren con el mismo
-   * modelo de manejo, el semáforo y las vueltas que el jugador; no chocan entre sí.
+   * modelo de manejo, el semáforo y las vueltas que el jugador; chocan entre sí y con el jugador (`core/CarCollisions`).
    */
   rivals: RivalState[];
   /** Velocidad objetivo de los rivales en cada punto del trazado. */

@@ -11,6 +11,7 @@ import type { Racer } from '@/components/PositionTable';
 import { RaceResults } from '@/components/RaceResults';
 import { StartLights } from '@/components/StartLights';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
+import { DEFAULT_COLLISION_CONFIG } from '@/core/CarCollisions';
 import { DEFAULT_CAR_COLOR_ID, getCarColor } from '@/core/CarPalette';
 import { getCircuit, withCircuitScenery } from '@/core/Circuits';
 import { DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
@@ -86,6 +87,12 @@ export function DriveScreen(_props: DriveScreenProps) {
   // El panel de ajuste puede pisar los parámetros de la IA; valen desde la próxima carrera.
   const [aiTuning, setAiTuning] = useState<AiLevel | null>(null);
   const aiLevel = aiTuning ?? baseAiLevel;
+  // Los choques entre autos: se activan en la selección de pista; el panel ajusta el resto.
+  const [collisionTuning, setCollisionTuning] = useState(DEFAULT_COLLISION_CONFIG);
+  const collisionConfig = useMemo(
+    () => ({ ...collisionTuning, enabled: preferences.collisionsEnabled }),
+    [collisionTuning, preferences.collisionsEnabled],
+  );
   // Nombres y colores inventados, siempre distintos al del jugador.
   const rivalDrivers = useMemo(
     () =>
@@ -171,6 +178,7 @@ export function DriveScreen(_props: DriveScreenProps) {
     onEngine,
     rivalCount,
     aiLevel,
+    collisionConfig,
   });
   const rivals = useMemo(
     () => ({ cars: loop.rivalCars, cameraView: loop.cameraView, drivers: rivalDrivers }),
@@ -377,6 +385,8 @@ export function DriveScreen(_props: DriveScreenProps) {
           aiLevel={aiLevel}
           onAiLevelChange={setAiTuning}
           defaultAiLevel={baseAiLevel}
+          collisionConfig={collisionConfig}
+          onCollisionConfigChange={setCollisionTuning}
           audioMix={audioMix}
           onAudioMixChange={setAudioMix}
           hapticsConfig={hapticsConfig}
