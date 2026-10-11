@@ -4,41 +4,42 @@ El sonido de la carrera sobre react-native-audio-api: el motor en loop, con camb
 
 ## API
 
-| Exportación | Descripción |
-|---|---|
+| Exportación                                                   | Descripción                                                                                                                                                               |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `createRaceAudio({ sources, mix, gearbox?, createContext? })` | Arma el sonido. Devuelve un `RaceAudio`. `gearbox` fija las marchas (lo usan los tests); sin eso, salen del ritmo de la mezcla (`mix.gearPace`, ver `audio/EngineGears`). |
-| `RACE_SOUND_SOURCES` | Los WAV empaquetados de `assets/sounds`. |
-| `DEFAULT_RACE_AUDIO_MIX` | Motor 0,25, efectos 0,9, tono del motor de 0,8 (detenido) a 2,2 (corte), con cambios de marcha a sexta a los 3,5 s (`gearPace: 'slow'`). |
-| `getSoundCue(event)` | Qué efecto suena con un evento y a qué volumen; `null` si ninguno. |
-| `getEnginePitch(ratio, mix)` | Tono del motor para las revoluciones (con cambios) o la velocidad (sin cambios), de 0 a 1. |
-| `getEngineGain(ratio, mix)` | Volumen del motor para una velocidad de 0 a 1. |
-| `SHIFT_SMOOTHING`, `SHIFT_CUT_SECONDS`, `SHIFT_CUT_GAIN` | El cambio: el tono salta con 15 ms y, al subir, el volumen baja al 35 % durante 80 ms. |
+| `RACE_SOUND_SOURCES`                                          | Los WAV empaquetados de `assets/sounds`.                                                                                                                                  |
+| `DEFAULT_RACE_AUDIO_MIX`                                      | Motor 0,25, efectos 0,9, tono del motor de 0,8 (detenido) a 2,2 (corte), con cambios de marcha a sexta a los 3,5 s (`gearPace: 'slow'`).                                  |
+| `getSoundCue(event)`                                          | Qué efecto suena con un evento y a qué volumen; `null` si ninguno.                                                                                                        |
+| `getEnginePitch(ratio, mix)`                                  | Tono del motor para las revoluciones (con cambios) o la velocidad (sin cambios), de 0 a 1.                                                                                |
+| `getEngineGain(ratio, mix)`                                   | Volumen del motor para una velocidad de 0 a 1.                                                                                                                            |
+| `SHIFT_SMOOTHING`, `SHIFT_CUT_SECONDS`, `SHIFT_CUT_GAIN`      | El cambio: el tono salta con 15 ms y, al subir, el volumen baja al 35 % durante 80 ms.                                                                                    |
 
 `RaceAudio`:
 
-| Método | Descripción |
-|---|---|
-| `load()` | Decodifica los diez sonidos y arranca el motor en ralentí. |
-| `setEngineSpeed(ratio)` | Velocidad de 0 a 1. Con cambios, pasa por la caja: el tono sigue a las revoluciones con una constante de 60 ms y salta en cada cambio. |
-| `play({ sound, volume })` | Suena un efecto, con su volumen de 0 a 1. |
-| `setMix(mix)` | Volúmenes, tono y cambios de marcha, en caliente. |
-| `setMuted(muted)` | Silencia todo sin detener nada. |
-| `suspend()` / `resume()` | Congela y reanuda el audio (pausa, segundo plano). |
-| `close()` | Libera el audio. Después no suena nada más. |
+| Método                    | Descripción                                                                                                                            |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `load()`                  | Decodifica los diez sonidos y arranca el motor en ralentí.                                                                             |
+| `setEngineSpeed(ratio)`   | Velocidad de 0 a 1. Con cambios, pasa por la caja: el tono sigue a las revoluciones con una constante de 60 ms y salta en cada cambio. |
+| `play({ sound, volume })` | Suena un efecto, con su volumen de 0 a 1.                                                                                              |
+| `setMix(mix)`             | Volúmenes, tono y cambios de marcha, en caliente.                                                                                      |
+| `setMuted(muted)`         | Silencia todo sin detener nada.                                                                                                        |
+| `suspend()` / `resume()`  | Congela y reanuda el audio (pausa, segundo plano).                                                                                     |
+| `close()`                 | Libera el audio. Después no suena nada más.                                                                                            |
 
 ## Qué suena con cada evento
 
-| Evento | Sonido | Volumen |
-|---|---|---|
-| `lightOn` | `light`: pitido grave | 1 |
-| `lightsOut` | `go`: pitido agudo y largo | 1 |
-| `kerbEnter` | `kerb`: "brrr" | De 0,4 a 1, según la velocidad (pleno desde 30 m/s). |
-| `borderHit` | `border`: golpe sordo | De 0,3 a 1, según el impacto (pleno desde 15 m/s). |
-| `lapCompleted` | `lap`: dos notas que suben | 1. La última vuelta no suena: suena la llegada. |
-| `finish` | `finish`: jingle de 8 bits | 1 |
-| `celebration` (`personalBest`) | `personalBest`: campanita corta | 1 |
-| `celebration` (`overtake`) | `overtake`: arpegio de 8 bits que sube | 1 |
-| `celebration` (`trackRecord`) | `trackRecord`: fanfarria de 2,4 s | 1 |
+| Evento                         | Sonido                                 | Volumen                                                                 |
+| ------------------------------ | -------------------------------------- | ----------------------------------------------------------------------- |
+| `lightOn`                      | `light`: pitido grave                  | 1                                                                       |
+| `lightsOut`                    | `go`: pitido agudo y largo             | 1                                                                       |
+| `kerbEnter`                    | `kerb`: "brrr"                         | De 0,4 a 1, según la velocidad (pleno desde 30 m/s).                    |
+| `borderHit`                    | `border`: golpe sordo                  | De 0,3 a 1, según el impacto (pleno desde 15 m/s).                      |
+| `carHit`                       | `border`: el mismo golpe, más bajo     | De 0,16 a 0,8, según la velocidad de acercamiento (pleno desde 10 m/s). |
+| `lapCompleted`                 | `lap`: dos notas que suben             | 1. La última vuelta no suena: suena la llegada.                         |
+| `finish`                       | `finish`: jingle de 8 bits             | 1                                                                       |
+| `celebration` (`personalBest`) | `personalBest`: campanita corta        | 1                                                                       |
+| `celebration` (`overtake`)     | `overtake`: arpegio de 8 bits que sube | 1                                                                       |
+| `celebration` (`trackRecord`)  | `trackRecord`: fanfarria de 2,4 s      | 1                                                                       |
 
 `celebration` (hito 6b) no sale de la simulación: lo emite la pantalla cuando aparecen los resultados, 1,5 s después de la llegada. Así la celebración suena con la tarjeta, después del jingle de llegada.
 

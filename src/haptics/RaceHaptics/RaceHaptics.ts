@@ -12,13 +12,14 @@ import type {
 } from './RaceHaptics.types';
 
 /**
- * Intensidades iniciales: el piano apenas, el borde fuerte, la largada media y la llegada
+ * Intensidades iniciales: el piano apenas, el borde fuerte, el choque con otro auto medio, la largada media y la llegada
  * doble. Las celebraciones del ranking, de la más grande a la más chica: el récord de la
  * pista doble, superar a otro jugador media y el mejor tiempo personal leve.
  */
 export const DEFAULT_RACE_HAPTICS: RaceHapticsConfig = Object.freeze({
   kerb: 'light',
   border: 'heavy',
+  carHit: 'medium',
   start: 'medium',
   finish: 'double',
   trackRecord: 'double',
@@ -53,6 +54,7 @@ function impactWithExpo(strength: HapticImpact) {
 const MOMENTS: Partial<Record<RaceEvent['type'], HapticMoment>> = {
   kerbEnter: 'kerb',
   borderHit: 'border',
+  carHit: 'carHit',
   lightsOut: 'start',
   finish: 'finish',
 };

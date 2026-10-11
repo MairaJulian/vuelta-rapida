@@ -56,7 +56,8 @@ const GHOST_HINTS: Record<GhostSource, string> = {
  * trazado, su largo, sus curvas, su dificultad y el récord de la pista con el nombre y
  * el color de quien lo tiene. Debajo, el fantasma contra el que se corre: la mejor
  * vuelta del jugador, el récord de la pista o ninguno (por defecto, ninguno). Antes, los
- * rivales: cuántos (o ninguno: contrarreloj), su dificultad y la dificultad dinámica. La
+ * rivales: cuántos (o ninguno: contrarreloj), su dificultad, la dificultad dinámica y si
+ * los autos chocan entre sí. La
  * pista elegida se comparte con
  * la carrera y el ranking. "Largar" abre la carrera en la pista elegida.
  */
@@ -150,6 +151,14 @@ export function TrackSelectScreen(_props: TrackSelectScreenProps) {
             onChange={(value) => updatePreferences({ dynamicDifficulty: value === 'on' })}
             label="Dificultad dinámica"
             testID="rival-dynamic-choice"
+          />
+          <Text style={styles.optionLabel}>Choques</Text>
+          <OptionChips
+            options={DYNAMIC_OPTIONS.map((option) => ({ ...option, disabled: !hasRivals }))}
+            value={preferences.collisionsEnabled ? 'on' : 'off'}
+            onChange={(value) => updatePreferences({ collisionsEnabled: value === 'on' })}
+            label="Choques entre autos"
+            testID="rival-collisions-choice"
           />
         </View>
         {hasRivals && preferences.dynamicDifficulty ? (

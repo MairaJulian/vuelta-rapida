@@ -68,6 +68,9 @@ export const KERB_FULL_SPEED = 30;
 /** Velocidad de impacto (m/s) desde la que un toque de borde suena a todo volumen. */
 export const BORDER_FULL_IMPACT = 15;
 
+/** Velocidad de acercamiento (m/s) desde la que un choque entre autos suena a todo volumen. */
+export const CAR_HIT_FULL_IMPACT = 10;
+
 /**
  * Tono del motor (velocidad de reproducción) para un valor de 0 a 1: las revoluciones
  * con cambios de marcha, o la velocidad sin cambios.
@@ -111,6 +114,12 @@ export function getSoundCue(event: RaceEvent): RaceSoundCue | null {
       return {
         sound: 'border',
         volume: scaledVolume(event.impactSpeed, BORDER_FULL_IMPACT, 0.3),
+      };
+    case 'carHit':
+      // Mismo golpe que el borde, algo más bajo: un roce entre autos es menos que una pared.
+      return {
+        sound: 'border',
+        volume: scaledVolume(event.impactSpeed, CAR_HIT_FULL_IMPACT, 0.2) * 0.8,
       };
     case 'lapCompleted':
       return event.lap < event.totalLaps ? { sound: 'lap', volume: 1 } : null;

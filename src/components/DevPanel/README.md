@@ -1,6 +1,6 @@
 # DevPanel
 
-Panel desplegable **solo para desarrollo**. Permite ajustar en caliente el modo de control, la inclinación, las vueltas, la IA de los rivales, el sonido, la vibración, el modelo de manejo, el ancho de la pista, la escenografía y la cámara. Muestra lecturas en vivo de velocidad, rumbo, deriva y fps y, con inclinación, del ángulo leído y la dirección resultante.
+Panel desplegable **solo para desarrollo**. Permite ajustar en caliente el modo de control, la inclinación, las vueltas, la IA de los rivales, los choques entre autos, el sonido, la vibración, el modelo de manejo, el ancho de la pista, la escenografía y la cámara. Muestra lecturas en vivo de velocidad, rumbo, deriva y fps y, con inclinación, del ángulo leído y la dirección resultante.
 
 ## Props
 
@@ -20,6 +20,7 @@ Panel desplegable **solo para desarrollo**. Permite ajustar en caliente el modo 
 | `fps`                                            | `SharedValue<number>`             | fps suavizados.                                                                                                                                                                                       |
 | `onResetCar`                                     | `() => void`                      | Reinicia la carrera: el auto vuelve a la largada.                                                                                                                                                     |
 | `raceConfig` / `onRaceConfigChange`              | `RaceConfig`                      | Reglas de la carrera. El panel solo cambia las vueltas.                                                                                                                                               |
+| `collisionConfig` / `onCollisionConfigChange`    | `CollisionConfig`                 | Choques entre autos: radio, empujón y pérdidas de velocidad. Valen en caliente; el interruptor (`enabled`) lo manda la preferencia de la selección de pista.                                          |
 | `aiLevel` / `onAiLevelChange` / `defaultAiLevel` | `AiLevel`                         | Parámetros de la IA de los rivales: los que están en uso (el nivel elegido, con o sin dificultad dinámica) y los del nivel sin tocar, a los que vuelve "Restablecer". Valen desde la próxima carrera. |
 | `audioMix` / `onAudioMixChange`                  | `RaceAudioMix`                    | Volúmenes del motor y de los efectos, y tono del motor.                                                                                                                                               |
 | `hapticsConfig` / `onHapticsConfigChange`        | `RaceHapticsConfig`               | Intensidad de vibración de cada momento.                                                                                                                                                              |
@@ -82,7 +83,8 @@ const DevPanel = __DEV__ ? require('@/components/DevPanel').DevPanel : null;
   - Sliders: zona muerta (1° a 9°, el rango del jugador), sensibilidad (1 a 10), filtro del temblor (0 a 0,3 s) y rampa de dirección (0 a 0,5 s).
   - Botón "Recalibrar": toma la posición del momento.
   - Botón "Calibración completa": abre la pantalla 03.
-- **Carrera:** vueltas, de 1 a 5. Valen desde la próxima carrera (Reiniciar auto, o Reiniciar en la pausa).
+- **Carrera:** vueltas, de 1 a 5, y cada cuánto se avisa un choque (de 0,1 a 2 s). Valen desde la próxima carrera (Reiniciar auto, o Reiniciar en la pausa).
+- **Choques entre autos:** radio del auto (0,8 a 2,5 m), empujón (0 a 5 m/s) y las pérdidas de velocidad del que choca por detrás y del que recibe el choque (0 a 5 /s). Valen en caliente.
 - **Sonido:**
   - Interruptor "Cambios de marcha", para comparar el motor con y sin marchas.
   - "A sexta en": ritmo de los cambios, 2,5, 3 o 3,5 s (por defecto) acelerando desde 0.

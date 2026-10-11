@@ -5,6 +5,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { createCameraState, getCameraView, stepCamera } from '@/core/Camera';
 import type { CameraState, CameraView } from '@/core/Camera';
+import { DEFAULT_COLLISION_CONFIG } from '@/core/CarCollisions';
 import { createCarState, getSpeed } from '@/core/DrivingModel';
 import type { CarState, DrivingConfig } from '@/core/DrivingModel';
 import { getRenderCar } from '@/core/DrivingSim';
@@ -96,6 +97,7 @@ export function useRaceLoop({
   onEngine,
   rivalCount = 0,
   aiLevel = AI_LEVELS[DEFAULT_AI_LEVEL_ID],
+  collisionConfig = DEFAULT_COLLISION_CONFIG,
   createSeed = defaultSeed,
 }: UseRaceLoopParams): UseRaceLoopResult {
   // La primera carrera se arma una sola vez; las siguientes, con `restart`.
@@ -111,11 +113,16 @@ export function useRaceLoop({
   const fps = useSharedValue(0);
   const engineClock = useSharedValue(0);
   const drivingConfigValue = useSharedValue(drivingConfig);
+  const collisionConfigValue = useSharedValue(collisionConfig);
   const cameraConfigValue = useSharedValue(cameraConfig);
   const viewportValue = useSharedValue(viewport);
   const trackValue = useSharedValue(track);
 
   useEffect(() => drivingConfigValue.set(drivingConfig), [drivingConfigValue, drivingConfig]);
+  useEffect(
+    () => collisionConfigValue.set(collisionConfig),
+    [collisionConfigValue, collisionConfig],
+  );
   useEffect(() => cameraConfigValue.set(cameraConfig), [cameraConfigValue, cameraConfig]);
   useEffect(() => viewportValue.set(viewport), [viewportValue, viewport]);
   useEffect(() => trackValue.set(track), [trackValue, track]);
@@ -131,6 +138,7 @@ export function useRaceLoop({
       config,
       trackValue.get(),
       DEFAULT_FIXED_STEP_CONFIG,
+      collisionConfigValue.get(),
     );
     const { race: next, events } = takeRaceEvents(advanced);
     race.set(next);

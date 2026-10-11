@@ -10,6 +10,7 @@ import type { RaceAudioMixLevel } from '@/audio/RaceAudio';
 import { DevSegmented } from '@/components/DevSegmented';
 import { DevSlider } from '@/components/DevSlider';
 import { DEFAULT_CAMERA_CONFIG } from '@/core/Camera';
+import { DEFAULT_COLLISION_CONFIG } from '@/core/CarCollisions';
 import {
   DEFAULT_DRIVING_CONFIG,
   getDriftSpeed,
@@ -31,6 +32,7 @@ import { formatSignedDegrees } from '@/render/CalibrationGauge';
 import { COLORS, OFFSETS, READING_FLEX, READINGS_INTERVAL_MS, styles } from './DevPanel.styles';
 import type {
   AiSliderKey,
+  CollisionSliderKey,
   DevPanelProps,
   DevReadings,
   NumericCameraKey,
@@ -275,6 +277,50 @@ export const TILT_SLIDERS: SliderSpec<TiltSliderKey>[] = [
 /** Sliders de la carrera. Las vueltas valen desde la próxima carrera (Reiniciar auto). */
 export const RACE_SLIDERS: SliderSpec<RaceSliderKey>[] = [
   { key: 'totalLaps', label: 'Vueltas', min: 1, max: 5, step: 1, format: String },
+  {
+    key: 'carHitInterval',
+    label: 'Aviso de choque cada',
+    min: 0.1,
+    max: 2,
+    step: 0.1,
+    format: seconds,
+  },
+];
+
+/** Sliders de los choques entre autos. Se aplican en caliente. */
+export const COLLISION_SLIDERS: SliderSpec<CollisionSliderKey>[] = [
+  {
+    key: 'radius',
+    label: 'Radio del auto',
+    min: 0.8,
+    max: 2.5,
+    step: 0.1,
+    format: (value) => `${value.toFixed(1)} m`,
+  },
+  {
+    key: 'pushSpeed',
+    label: 'Empujón',
+    min: 0,
+    max: 5,
+    step: 0.1,
+    format: (value) => `${value.toFixed(1)} m/s`,
+  },
+  {
+    key: 'rearLossRate',
+    label: 'Pérdida del que choca por detrás',
+    min: 0,
+    max: 5,
+    step: 0.1,
+    format: (value) => `${value.toFixed(1)} /s`,
+  },
+  {
+    key: 'frontLossRate',
+    label: 'Pérdida del que recibe el choque',
+    min: 0,
+    max: 5,
+    step: 0.1,
+    format: (value) => `${value.toFixed(1)} /s`,
+  },
 ];
 
 const fixed2 = (value: number) => value.toFixed(2);
@@ -409,6 +455,7 @@ export const AUDIO_SLIDERS: SliderSpec<RaceAudioMixLevel>[] = [
 export const HAPTIC_MOMENTS: [HapticMoment, string][] = [
   ['kerb', 'Piano'],
   ['border', 'Borde'],
+  ['carHit', 'Choque con otro auto'],
   ['start', 'Largada'],
   ['finish', 'Llegada'],
   ['trackRecord', 'Récord de la pista'],
@@ -501,6 +548,8 @@ export function DevPanel({
   aiLevel,
   onAiLevelChange,
   defaultAiLevel,
+  collisionConfig,
+  onCollisionConfigChange,
   audioMix,
   onAudioMixChange,
   hapticsConfig,
@@ -535,8 +584,13 @@ export function DevPanel({
     onCameraConfigChange(DEFAULT_CAMERA_CONFIG);
     onTrackChange({ ...track, width: DEFAULT_CIRCUIT.width });
     onTiltConfigChange({ ...DEFAULT_TILT_CONFIG, neutralAngle: tiltConfig.neutralAngle });
-    onRaceConfigChange({ ...raceConfig, totalLaps: DEFAULT_RACE_CONFIG.totalLaps });
+    onRaceConfigChange({
+      ...raceConfig,
+      totalLaps: DEFAULT_RACE_CONFIG.totalLaps,
+      carHitInterval: DEFAULT_RACE_CONFIG.carHitInterval,
+    });
     onAiLevelChange(defaultAiLevel);
+    onCollisionConfigChange(DEFAULT_COLLISION_CONFIG);
     onAudioMixChange(DEFAULT_RACE_AUDIO_MIX);
     onHapticsConfigChange(DEFAULT_RACE_HAPTICS);
     onSceneryDisplayChange(DEFAULT_SCENERY_DISPLAY);
@@ -653,7 +707,29 @@ export function DevPanel({
                 onChange={(value) => onRaceConfigChange({ ...raceConfig, [spec.key]: value })}
               />
             ))}
-            <Text style={styles.note}>Las vueltas valen desde la próxima carrera.</Text>
+            <Text style={styles.note}>
+              Las vueltas y el aviso de choque valen desde la próxima carrera.
+            </Text>
+
+            <Text style={styles.sectionTitle}>Choques entre autos</Text>
+            {COLLISION_SLIDERS.map((spec) => (
+              <DevSlider
+                key={spec.key}
+                testID={`slider-${spec.key}`}
+                label={spec.label}
+                value={collisionConfig[spec.key]}
+                min={spec.min}
+                max={spec.max}
+                step={spec.step}
+                formatValue={spec.format}
+                onChange={(value) =>
+                  onCollisionConfigChange({ ...collisionConfig, [spec.key]: value })
+                }
+              />
+            ))}
+            <Text style={styles.note}>
+              Se activan o desactivan en la selección de pista. Valen en caliente.
+            </Text>
 
             <Text style={styles.sectionTitle}>IA de los rivales</Text>
             {AI_SLIDERS.map((spec) => (
