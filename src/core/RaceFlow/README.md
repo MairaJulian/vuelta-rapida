@@ -28,6 +28,8 @@ restartRace: desde cualquier estado, carrera nueva en grid
 | `startLights` / `pauseRace` / `resumeRace` | Órdenes de la pantalla. Fuera del estado en que valen, devuelven la carrera tal cual. |
 | `restartRace(race, setup)` | Carrera nueva, con el aviso `phase` hacia `grid`. |
 | `takeRaceEvents(race)` | Retira los eventos pendientes: `{ race, events }`. |
+| `getRacePlace(race)` / `getRaceStandings(race)` | Puesto del jugador (`{ place, total }`, para el HUD) y puesto de cada auto (el jugador con `PLAYER_ID`). |
+| `getRenderRivals(race, stepConfig)` | Los rivales interpolados para dibujar este cuadro. |
 | `getRaceLapView(race)` | `{ lap, totalLaps, lapTicks }` para el HUD. |
 | `getRaceClockTicks(race)` | Cronómetro: desde la largada; tras la llegada, el total. |
 | `getRaceResults(race)` | Total, vueltas, mejor vuelta y récord; `null` antes de la llegada. |
@@ -71,6 +73,9 @@ if (events.length > 0) scheduleOnRN(dispatch, events); // al bus del hilo de JS
 - **Récord:** la carrera recibe el récord guardado (`setup.recordTicks`). Una vuelta que lo mejora lo reemplaza y se avisa con `newRecord`; las siguientes se comparan con el nuevo.
 - **Avisos de contacto:** solo al empezar un contacto (deslizarse contra el borde es un solo toque) y con un tiempo mínimo desde el último, para que un roce que se corta y vuelve no se repita.
 - **Eventos dentro del estado:** los pasos los juntan en `events` y el loop los retira con `takeRaceEvents`. Las órdenes de la pantalla (pausa, reinicio) también dejan su evento ahí, así todo sale por el mismo camino y una sola vez.
+- **Rivales con IA (hito 9a-1):** `setup.field` trae los rivales (`core/RivalAI`), el largo de la vuelta, el progreso del jugador en la grilla y el perfil de velocidad. `RaceState.rivals` los guarda, y cada paso de `racing` mueve a todos con el mismo reloj, el mismo semáforo y la misma máquina de estados: en `grid` y `lights` esperan quietos, y tras la llegada del jugador los que no llegaron siguen corriendo hasta completar las vueltas. Sin `field`, la carrera es la de siempre (un solo auto). Los autos no chocan entre sí.
+- **Grilla escalonada:** los rivales salen en los primeros puestos (`getGridPose` de `core/Track`: 8 m entre puestos, alternados a izquierda y derecha) y el jugador en el último, así que con 3 rivales larga a 39 m de la meta (antes, 15 m). El récord no cambia de significado: la vuelta 1 desde la grilla era y es más lenta que una vuelta lanzada.
+- **Puestos:** `getRaceStandings` arma una `PositionEntry` por auto (`core/RacePositions`) con el jugador al final de la lista. El progreso de la grilla se lee al crear la carrera (`laps.progress` ya cargado) para que los puestos valgan desde antes de largar.
 - **La llegada trae los resultados completos:** la pantalla de resultados sale del evento `finish` (`getFinishResults`), sin leer la carrera desde el hilo de JS, que lo bloquearía hasta que responda el hilo de UI.
 - **Tras la llegada:** sin acelerador (`acceleration: 0`) y con `finishBrake`. Con aceleración 0 el freno no da marcha atrás, así que el auto se detiene y queda quieto. Ya no hay avisos.
 - **La configuración va dentro del estado:** cambiar las vueltas desde el panel vale para la próxima carrera, no para la que está en curso.

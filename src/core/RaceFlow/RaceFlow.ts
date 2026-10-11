@@ -1,9 +1,13 @@
 import { getSpeed } from '@/core/DrivingModel';
-import type { DrivingConfig, DrivingInput } from '@/core/DrivingModel';
-import { createDrivingSim, stepDrivingSim } from '@/core/DrivingSim';
-import { consumeFrameTime } from '@/core/FixedStep';
+import type { CarState, DrivingConfig, DrivingInput } from '@/core/DrivingModel';
+import { createDrivingSim, interpolateCar, stepDrivingSim } from '@/core/DrivingSim';
+import { consumeFrameTime, getStepAlpha } from '@/core/FixedStep';
 import type { FixedStepConfig } from '@/core/FixedStep';
 import { getGhostSampleGap } from '@/core/Ghost';
+import { getRaceDistance, getStandings } from '@/core/RacePositions';
+import type { PositionEntry, RacePlaceView, Standing } from '@/core/RacePositions';
+import { createRival, stepRival } from '@/core/RivalAI';
+import type { RivalState } from '@/core/RivalAI';
 import { createRandomState, nextRandomBetween } from '@/core/SeededRandom';
 import type { Circuit } from '@/core/Track';
 
@@ -31,6 +35,9 @@ export const DEFAULT_RACE_CONFIG: RaceConfig = Object.freeze({
   finishBrake: 0.5,
 });
 
+/** Identificador del jugador en las posiciones; los rivales traen el suyo. */
+export const PLAYER_ID = 'player';
+
 /** Segundos a pasos de simulación, redondeado y al menos 1. */
 function secondsToTicks(seconds: number, stepHz: number): number {
   'worklet';
@@ -38,8 +45,9 @@ function secondsToTicks(seconds: number, stepHz: number): number {
 }
 
 /**
- * Carrera nueva en la grilla: el auto quieto, las luces apagadas y el cronómetro
- * en 0. La espera del semáforo se sortea acá con la semilla.
+ * Carrera nueva en la grilla: los autos quietos, las luces apagadas y el cronómetro
+ * en 0. La espera del semáforo se sortea acá con la semilla. Con `setup.field`, los
+ * rivales esperan en su puesto y el progreso del jugador en la grilla ya está leído.
  */
 export function createRace(setup: RaceSetup): RaceState {
   'worklet';
@@ -49,6 +57,8 @@ export function createRace(setup: RaceSetup): RaceState {
     config.lightsOutDelayMin,
     config.lightsOutDelayMax,
   );
+  const { field } = setup;
+  const sim = createDrivingSim(setup.car);
   return {
     phase: 'grid',
     pausedPhase: null,
@@ -60,7 +70,7 @@ export function createRace(setup: RaceSetup): RaceState {
     seed: setup.seed,
     stepHz: setup.stepHz,
     config,
-    sim: createDrivingSim(setup.car),
+    sim: field ? { ...sim, laps: { ...sim.laps, progress: field.playerProgress } } : sim,
     lapEndTicks: [],
     finishTick: null,
     previousRecordTicks: setup.recordTicks,
@@ -69,6 +79,9 @@ export function createRace(setup: RaceSetup): RaceState {
     lastBorderHitTick: null,
     lastKerbTick: null,
     lapTrace: [],
+    lapLength: field ? field.lapLength : 0,
+    rivals: field ? field.rivals.map((rival) => createRival(rival)) : [],
+    speedProfile: field ? field.speedProfile : [],
     events: [],
   };
 }
@@ -152,12 +165,39 @@ function stepLights(race: RaceState, tick: number): RaceState {
   };
 }
 
-/** En carrera: un paso del auto, los avisos de bordes y pianos, las vueltas y la llegada. */
+/** Un paso de cada rival con su IA. Los que ya llegaron frenan solos, sin acelerador. */
+function stepRivals(
+  race: RaceState,
+  drivingConfig: DrivingConfig,
+  coastConfig: DrivingConfig,
+  circuit: Circuit,
+  dt: number,
+): RivalState[] {
+  'worklet';
+  const { rivals } = race;
+  if (rivals.length === 0) {
+    return rivals;
+  }
+  const rules = { totalLaps: race.config.totalLaps, finishBrake: race.config.finishBrake };
+  const next: RivalState[] = [];
+  for (let i = 0; i < rivals.length; i += 1) {
+    next.push(
+      stepRival(rivals[i], circuit, race.speedProfile, drivingConfig, coastConfig, rules, dt),
+    );
+  }
+  return next;
+}
+
+/**
+ * En carrera: un paso del auto, los avisos de bordes y pianos, las vueltas y la llegada,
+ * y un paso de cada rival.
+ */
 function stepRacing(
   race: RaceState,
   tick: number,
   input: DrivingInput,
   drivingConfig: DrivingConfig,
+  coastConfig: DrivingConfig,
   circuit: Circuit,
   dt: number,
 ): RaceState {
@@ -182,7 +222,8 @@ function stepRacing(
     lastKerbTick = clock;
   }
 
-  const stepped = { ...race, tick, sim, events, lastBorderHitTick, lastKerbTick };
+  const rivals = stepRivals(race, drivingConfig, coastConfig, circuit, dt);
+  const stepped = { ...race, tick, sim, rivals, events, lastBorderHitTick, lastKerbTick };
   const lapStart = race.lapEndTicks.length > 0 ? race.lapEndTicks[race.lapEndTicks.length - 1] : 0;
   const pose = [sim.car.x, sim.car.z, sim.car.heading];
   // Las puertas del circuito validan cada vuelta (`LapTimer`). Una vuelta deshecha
@@ -238,11 +279,15 @@ function stepRacing(
   };
 }
 
-/** Tras la llegada: el auto sin acelerador y con freno, hasta detenerse. Sin avisos. */
+/**
+ * Tras la llegada: el auto sin acelerador y con freno, hasta detenerse. Sin avisos. Los
+ * rivales que todavía no llegaron siguen corriendo.
+ */
 function stepFinished(
   race: RaceState,
   tick: number,
   input: DrivingInput,
+  drivingConfig: DrivingConfig,
   coastConfig: DrivingConfig,
   circuit: Circuit,
   dt: number,
@@ -255,7 +300,7 @@ function stepFinished(
     circuit,
     dt,
   );
-  return { ...race, tick, sim };
+  return { ...race, tick, sim, rivals: stepRivals(race, drivingConfig, coastConfig, circuit, dt) };
 }
 
 /**
@@ -285,9 +330,9 @@ export function advanceRace(
     if (next.phase === 'lights') {
       next = stepLights(next, tick);
     } else if (next.phase === 'racing') {
-      next = stepRacing(next, tick, input, drivingConfig, circuit, dt);
+      next = stepRacing(next, tick, input, drivingConfig, coastConfig, circuit, dt);
     } else if (next.phase === 'finished') {
-      next = stepFinished(next, tick, input, coastConfig, circuit, dt);
+      next = stepFinished(next, tick, input, drivingConfig, coastConfig, circuit, dt);
     } else {
       next = { ...next, tick };
     }
@@ -394,6 +439,54 @@ export function getRaceLapClockMs(race: RaceState): number {
     race.phase === 'racing' || (race.phase === 'paused' && race.pausedPhase === 'racing');
   const fraction = racing ? race.sim.accumulatorMs : 0;
   return (getRaceLapView(race).lapTicks * 1000) / race.stepHz + fraction;
+}
+
+/**
+ * Los rivales a dibujar en este cuadro: cada auto interpolado entre sus dos últimos pasos
+ * con la misma fracción de paso que el del jugador (`getRenderCar`).
+ */
+export function getRenderRivals(race: RaceState, stepConfig: FixedStepConfig): CarState[] {
+  'worklet';
+  const alpha = getStepAlpha(race.sim.accumulatorMs, stepConfig);
+  const cars: CarState[] = [];
+  for (let i = 0; i < race.rivals.length; i += 1) {
+    const { sim } = race.rivals[i];
+    cars.push(interpolateCar(sim.previousCar, sim.car, alpha));
+  }
+  return cars;
+}
+
+/**
+ * Puesto de cada auto (el jugador con `PLAYER_ID`, los rivales con su id). Cuenta
+ * vueltas completas más progreso en la vuelta; los que llegaron van primero, por orden de
+ * llegada. Sin rivales, el jugador es el 1.
+ */
+export function getRaceStandings(race: RaceState): Standing[] {
+  'worklet';
+  const entries: PositionEntry[] = [];
+  for (let i = 0; i < race.rivals.length; i += 1) {
+    const rival = race.rivals[i];
+    entries.push({
+      id: rival.id,
+      raceDistance: getRaceDistance(rival.sim.laps, race.lapLength),
+      finishTick: rival.finishTick,
+    });
+  }
+  // El jugador va último: en un empate, lo gana el rival (la grilla lo pone detrás).
+  entries.push({
+    id: PLAYER_ID,
+    raceDistance: getRaceDistance(race.sim.laps, race.lapLength),
+    finishTick: race.finishTick,
+  });
+  return getStandings(entries);
+}
+
+/** Puesto del jugador y autos en carrera, para el HUD ("2/4"). */
+export function getRacePlace(race: RaceState): RacePlaceView {
+  'worklet';
+  const standings = getRaceStandings(race);
+  const player = standings[standings.length - 1];
+  return { place: player.place, total: standings.length };
 }
 
 /** Resultados de la carrera terminada; `null` si todavía no llegó. */
