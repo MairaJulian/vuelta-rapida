@@ -3,11 +3,19 @@ import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
-import { formatLapTime, ticksToMs } from '@/core/LapTimer';
+import { formatLapDelta, formatLapTime, ticksToMs } from '@/core/LapTimer';
 import type { RaceLapView } from '@/core/RaceFlow';
 
-import { COLORS, HUD_INTERVAL_MS, NO_RECORD, OFFSETS, PAUSE_SIZE, styles } from './LapHud.styles';
-import type { LapHudProps, LapHudTexts } from './LapHud.types';
+import {
+  COLORS,
+  DELTA_ICON_SIZE,
+  HUD_INTERVAL_MS,
+  NO_RECORD,
+  OFFSETS,
+  PAUSE_SIZE,
+  styles,
+} from './LapHud.styles';
+import type { GhostDeltaChip, LapHudProps, LapHudTexts } from './LapHud.types';
 
 /** Textos del HUD: la vuelta en curso con el total ("2" y "/3"), su tiempo y el récord. */
 export function getLapHudTexts(
@@ -24,14 +32,29 @@ export function getLapHudTexts(
 }
 
 /**
- * HUD de la carrera (pantalla 07 del handoff, sin minimapa ni delta): "Vuelta 2/3"
+ * Chip de diferencia con el fantasma: el delta en segundos con milésimas y siempre con
+ * signo ("−0.412" / "+0.236", para que no dependa del color). Cero cuenta como a favor.
+ * `null` si no hay diferencia que mostrar.
+ */
+export function getGhostDeltaChip(deltaSeconds: number | null): GhostDeltaChip | null {
+  if (deltaSeconds === null || !Number.isFinite(deltaSeconds)) {
+    return null;
+  }
+  return { text: formatLapDelta(deltaSeconds * 1000), faster: deltaSeconds <= 0 };
+}
+
+/**
+ * HUD de la carrera (pantalla 07 del handoff, sin minimapa): "Vuelta 2/3"
  * arriba a la izquierda, el tiempo de la vuelta al centro, y "Mejor" y el botón de
  * pausa arriba a la derecha. Lee la vuelta de la carrera unas 20 veces por
- * segundo; la simulación no espera a React. Solo el botón de pausa recibe toques.
+ * segundo; la simulación no espera a React. Con un fantasma, debajo del cronómetro va el
+ * chip de diferencia: verde si el jugador va más rápido, rojo si va más lento. Solo el
+ * botón de pausa recibe toques.
  */
-export function LapHud({ lapView, recordMs, stepHz, onPause, style }: LapHudProps) {
+export function LapHud({ lapView, recordMs, stepHz, ghostDelta, onPause, style }: LapHudProps) {
   const insets = useSafeAreaInsets();
   const [texts, setTexts] = useState(() => getLapHudTexts(lapView.get(), recordMs, stepHz));
+  const [chip, setChip] = useState<GhostDeltaChip | null>(null);
 
   useEffect(() => {
     const refresh = () => {
@@ -46,10 +69,20 @@ export function LapHud({ lapView, recordMs, stepHz, onPause, style }: LapHudProp
           : next,
       );
     };
+    const refreshChip = () => {
+      const next = getGhostDeltaChip(ghostDelta ? ghostDelta.get() : null);
+      setChip((current) =>
+        current?.text === next?.text && current?.faster === next?.faster ? current : next,
+      );
+    };
     refresh();
-    const timer = setInterval(refresh, HUD_INTERVAL_MS);
+    refreshChip();
+    const timer = setInterval(() => {
+      refresh();
+      refreshChip();
+    }, HUD_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [lapView, recordMs, stepHz]);
+  }, [lapView, recordMs, stepHz, ghostDelta]);
 
   return (
     <View testID="lap-hud" style={[styles.container, { top: OFFSETS.top + insets.top }, style]}>
@@ -73,6 +106,20 @@ export function LapHud({ lapView, recordMs, stepHz, onPause, style }: LapHudProp
           {texts.time}
         </Text>
       </View>
+      {chip ? (
+        <View
+          testID="lap-hud-delta"
+          style={[
+            styles.deltaChip,
+            { backgroundColor: chip.faster ? COLORS.faster : COLORS.slower },
+          ]}
+          accessible
+          accessibilityLabel={`${chip.faster ? 'Vas adelante' : 'Vas atrás'} del fantasma, ${chip.text} segundos`}
+        >
+          <Icon name="ghost" color={COLORS.white} size={DELTA_ICON_SIZE} />
+          <Text style={styles.deltaText}>{chip.text}</Text>
+        </View>
+      ) : null}
       <View
         style={[
           styles.sidePill,

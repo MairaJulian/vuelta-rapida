@@ -6,7 +6,7 @@
 
 | Prop | Tipo | Descripción |
 |---|---|---|
-| `name` | `IconName` | `play`, `pause`, `restart`, `signOut`, `trophy`, `speakerHigh`, `speakerSlash`, `vibrate`, `flagCheckered`, `wrench`, `gearSix`, `minus`, `plus`, `pencil`, `trash` o `userPlus`. |
+| `name` | `IconName` | `play`, `pause`, `restart`, `signOut`, `trophy`, `speakerHigh`, `speakerSlash`, `vibrate`, `flagCheckered`, `wrench`, `gearSix`, `minus`, `plus`, `pencil`, `trash`, `userPlus` o `ghost` (este último dibujado a mano). |
 | `color` | `string` | Color del ícono. |
 | `size` | `number` | Lado en dp. Por defecto, 24. |
 | `testID` | `string` | Para los tests. |

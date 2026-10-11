@@ -12,6 +12,11 @@ export const COLORS = {
   faint: '#9AA1AD',
   /** soft: botón presionado */
   pressed: '#ECEEF2',
+  /** delta-faster: diferencia a favor */
+  faster: '#2E9A55',
+  /** delta-slower: diferencia en contra */
+  slower: '#D83B3B',
+  white: '#FFFFFF',
 } as const;
 
 /** Distancias al borde de la pantalla (pantalla 07): 14 arriba y 28 a los costados. */
@@ -25,6 +30,9 @@ export const HUD_INTERVAL_MS = 50;
 
 /** Sin récord todavía. */
 export const NO_RECORD = '–:––.–––';
+
+/** Tamaño del ícono del fantasma en el chip de diferencia. */
+export const DELTA_ICON_SIZE = 16;
 
 const SHADOW = '0 2px 6px rgba(20, 23, 31, 0.14)';
 
@@ -78,6 +86,25 @@ export const styles = StyleSheet.create({
   bestValue: {
     color: COLORS.value,
     fontSize: 20,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+  },
+  // Chip de diferencia con el fantasma (handoff): píldora de 3/12, texto blanco 800 de 15 y
+  // el ícono del fantasma de 16. Va debajo del cronómetro.
+  deltaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 6,
+    paddingVertical: 3,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    pointerEvents: 'none',
+    boxShadow: SHADOW,
+  },
+  deltaText: {
+    color: COLORS.white,
+    fontSize: 16,
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
   },
