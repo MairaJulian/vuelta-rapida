@@ -26,6 +26,10 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     boxShadow: '0 1px 3px rgba(20, 23, 31, 0.12)',
   },
+  // Desactivada: apagada, como las demás cosas que no se pueden tocar.
+  disabled: {
+    opacity: 0.4,
+  },
   label: {
     fontSize: 15,
     fontWeight: '800',

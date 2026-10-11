@@ -27,10 +27,12 @@ import { calibrateTilt, DEFAULT_TILT_CONFIG, withTiltSteering } from '@/core/Til
 import type { TiltConfig } from '@/core/TiltSteering';
 import type { Circuit } from '@/core/Track';
 import { useBestLapRecord } from '@/hooks/useBestLapRecord';
+import { useGhostRecording } from '@/hooks/useGhostRecording';
 import { useParticles } from '@/hooks/useParticles';
 import { usePlayerPreferences } from '@/hooks/usePlayerPreferences';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useRaceAudio } from '@/hooks/useRaceAudio';
+import { useRaceGhost } from '@/hooks/useRaceGhost';
 import { useRaceHaptics } from '@/hooks/useRaceHaptics';
 import { useRaceLoop } from '@/hooks/useRaceLoop';
 import { useRaceRanking } from '@/hooks/useRaceRanking';
@@ -147,6 +149,15 @@ export function DriveScreen(_props: DriveScreenProps) {
   });
 
   useEffect(() => bus.on('newRecord', (event) => saveLap(event.lapTicks)), [bus, saveLap]);
+  // La vuelta que mejora el récord se guarda también como fantasma del perfil.
+  useGhostRecording({ bus, circuitId: track.id, stepHz: STEP_HZ });
+  // El fantasma elegido en las preferencias corre al lado del jugador y da la diferencia.
+  const { ghost, delta } = useRaceGhost({
+    bus,
+    circuit: track,
+    race: loop.race,
+    cameraView: loop.cameraView,
+  });
 
   const { phase, pausedLap, results } = useRaceStatus({ bus, lapView: loop.lapView });
   // Al llegar: el total de la carrera se guarda y se compara el ranking de la pista.
@@ -244,6 +255,7 @@ export function DriveScreen(_props: DriveScreenProps) {
         display={sceneryDisplay}
         carColor={carColor}
         carNumber={carNumber}
+        ghost={ghost}
       />
       {controlMode === 'tilt' ? (
         <TiltControls
@@ -255,7 +267,13 @@ export function DriveScreen(_props: DriveScreenProps) {
       ) : (
         <ButtonControls input={input} brakeVibration={preferences.vibrationEnabled} />
       )}
-      <LapHud lapView={loop.lapView} recordMs={recordMs} stepHz={STEP_HZ} onPause={pause} />
+      <LapHud
+        lapView={loop.lapView}
+        recordMs={recordMs}
+        stepHz={STEP_HZ}
+        ghostDelta={delta}
+        onPause={pause}
+      />
       <StartLights bus={bus} lightCount={raceConfig.lightCount} />
       {phase === 'paused' && pausedLap ? (
         <PauseMenu
