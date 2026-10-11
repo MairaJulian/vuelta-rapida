@@ -74,6 +74,7 @@ Es el circuito del handoff (pantallas 05, 07 y 08) y su minimapa. Datos: unos 2,
 - **Orden de la selección:** de la más fácil a la más difícil, el de `CIRCUIT_DEFINITIONS`.
 - **Nombres del handoff:** Las Sierras y Puerto Viejo salen de las fichas de la pantalla 05 (con su carácter técnico y callejero). Puerto Viejo usa además la silueta en escalera del handoff.
 - **Cómo se diseñaron:** con esquinas redondeadas (vértice y radio), guardadas como los puntos que resultan. No hay herramienta en el repositorio: el test de `Circuits.test.ts` es la red de seguridad al cambiar un trazado.
+- **Sin picos en el trazado (hito 9a-1):** Las Sierras tenía dos puntos de control que doblaban el trazado hacia atrás (un pico de unos 3 m: el progreso retrocedía y el rival con IA se estrellaba); se quitaron. Al sumar o cambiar una pista, que los puntos de control avancen siempre en el sentido de la vuelta.
 - **Sumar una pista:** agregar su definición a `CIRCUIT_DEFINITIONS`. El test parametrizado la valida sola (cerrada, sin cruces, tramos separados, curvas posibles, pianos, largada sobre el asfalto y escenografía fuera de la pista). Una pista más angosta usa curvas más cerradas: `validateCircuit` calcula el radio mínimo según su ancho.
 
 ## Decisiones de diseño
