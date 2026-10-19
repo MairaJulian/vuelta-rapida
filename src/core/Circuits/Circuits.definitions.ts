@@ -22,7 +22,7 @@ export const GRAN_MESETA: CircuitDefinition = {
   id: 'gran-meseta',
   name: 'Gran Meseta',
   difficulty: 'media',
-  width: 14,
+  width: 16,
   checkpointFractions: [1 / 3, 2 / 3],
   scenery: { seed: 11, treeDensity: 1 },
   controlPoints: [
@@ -91,7 +91,7 @@ export const LAS_SIERRAS: CircuitDefinition = {
   id: 'las-sierras',
   name: 'Las Sierras',
   difficulty: 'dificil',
-  width: 11,
+  width: 13,
   checkpointFractions: [1 / 3, 2 / 3],
   scenery: { seed: 23, treeDensity: 1 },
   controlPoints: [
@@ -215,7 +215,7 @@ export const PUERTO_VIEJO: CircuitDefinition = {
   id: 'puerto-viejo',
   name: 'Puerto Viejo',
   difficulty: 'dificil',
-  width: 9,
+  width: 11,
   checkpointFractions: [1 / 3, 2 / 3],
   scenery: { seed: 37, treeDensity: 1 },
   controlPoints: [

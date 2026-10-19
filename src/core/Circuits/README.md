@@ -49,7 +49,7 @@ const raceCircuit = withCircuitScenery(DEFAULT_CIRCUIT);
 
 ## Autódromo del Lago
 
-Es el circuito del handoff (pantallas 05, 07 y 08) y su minimapa. Datos: unos 2,4 km, antihorario y 14 m de ancho.
+Es el circuito del handoff (pantallas 05, 07 y 08) y su minimapa. Datos: unos 2,4 km, antihorario y 16 m de ancho (14 m hasta el hito 9b: se ensanchó 2 m para la carrera con hasta 11 autos).
 
 - **Puntos de control:** salen del trazado del handoff (viewBox 100 × 60) a 11 m por unidad, centrados en el origen. La meta está donde la marca el handoff, sobre la recta principal, mirando hacia +x.
 - **Carácter de circuito rápido**, como su ficha del handoff ("Rápido · 5,8 km · 11 curvas"):
@@ -66,10 +66,10 @@ Es el circuito del handoff (pantallas 05, 07 y 08) y su minimapa. Datos: unos 2,
 
 | Pista              | Estilo                                                                    | Largo  | Ancho | Dificultad |
 | ------------------ | ------------------------------------------------------------------------- | ------ | ----- | ---------- |
-| Autódromo del Lago | Rápida (ver arriba)                                                       | 2,4 km | 14 m  | Fácil      |
-| Gran Meseta        | Rápida: rectas largas, barridos amplios y una horquilla de frenada fuerte | 2,8 km | 14 m  | Media      |
-| Las Sierras        | Técnica: once curvas cerradas y cambios de dirección                      | 1,9 km | 11 m  | Difícil    |
-| Puerto Viejo       | Urbana: trece curvas encadenadas, la más angosta                          | 1,4 km | 9 m   | Difícil    |
+| Autódromo del Lago | Rápida (ver arriba)                                                       | 2,4 km | 16 m  | Fácil      |
+| Gran Meseta        | Rápida: rectas largas, barridos amplios y una horquilla de frenada fuerte | 2,8 km | 16 m  | Media      |
+| Las Sierras        | Técnica: once curvas cerradas y cambios de dirección                      | 1,9 km | 13 m  | Difícil    |
+| Puerto Viejo       | Urbana: trece curvas encadenadas, la más angosta                          | 1,4 km | 11 m  | Difícil    |
 
 - **Orden de la selección:** de la más fácil a la más difícil, el de `CIRCUIT_DEFINITIONS`.
 - **Nombres del handoff:** Las Sierras y Puerto Viejo salen de las fichas de la pantalla 05 (con su carácter técnico y callejero). Puerto Viejo usa además la silueta en escalera del handoff.

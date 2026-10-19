@@ -56,7 +56,7 @@ export const AUTODROMO_DEL_LAGO: CircuitDefinition = {
   id: 'autodromo-del-lago',
   name: 'Autódromo del Lago',
   difficulty: 'facil',
-  width: 14,
+  width: 16,
   checkpointFractions: [1 / 3, 2 / 3],
   scenery: { seed: 7, treeDensity: 1 },
   controlPoints: [

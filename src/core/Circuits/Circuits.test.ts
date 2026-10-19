@@ -192,6 +192,6 @@ describe('AUTODROMO_DEL_LAGO', () => {
   it('es el circuito por defecto, de 14 m de ancho', () => {
     expect(DEFAULT_CIRCUIT.id).toBe('autodromo-del-lago');
     expect(DEFAULT_CIRCUIT.name).toBe('Autódromo del Lago');
-    expect(DEFAULT_CIRCUIT.width).toBe(14);
+    expect(DEFAULT_CIRCUIT.width).toBe(16);
   });
 });
