@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,7 +18,16 @@ import { usePlayerPreferences } from '@/hooks/usePlayerPreferences';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useSelectedTrack } from '@/hooks/useSelectedTrack';
 
-import { PADDING, styles } from './TrackSelectScreen.styles';
+import {
+  BODY_GAP,
+  BODY_PADDING_BOTTOM,
+  BODY_PADDING_TOP,
+  PADDING,
+  PEEK_HEIGHT,
+  styles,
+  THUMB_INSET,
+  THUMB_MIN_HEIGHT,
+} from './TrackSelectScreen.styles';
 import type { TrackSelectScreenProps } from './TrackSelectScreen.types';
 
 /** Los tres fantasmas que se pueden elegir, con su texto. */
@@ -71,6 +81,34 @@ export function TrackSelectScreen(_props: TrackSelectScreenProps) {
   const { rivalCount } = preferences;
   const hasRivals = rivalCount > 0;
 
+  // Alto de la ventana, de la lista de pistas (sin estirar) y de las opciones: si todo no
+  // entra, la lista se estira para que sobre solo `PEEK_HEIGHT` y asome la primera fila.
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const [listHeight, setListHeight] = useState(0);
+  const [optionsHeight, setOptionsHeight] = useState(0);
+  const overflows =
+    viewportHeight > 0 &&
+    BODY_PADDING_TOP + listHeight + BODY_GAP + optionsHeight + BODY_PADDING_BOTTOM > viewportHeight;
+  const listMinHeight = overflows ? viewportHeight - BODY_PADDING_TOP - BODY_GAP - PEEK_HEIGHT : 0;
+
+  // Indicador de desplazamiento propio: alto proporcional a lo que se ve y posición según
+  // lo que se bajó. Solo si hay algo que deslizar.
+  const [contentHeight, setContentHeight] = useState(0);
+  const [scrollY, setScrollY] = useState(0);
+  const scrollable = viewportHeight > 0 && contentHeight > viewportHeight + 1;
+  const trackHeight = viewportHeight - 2 * THUMB_INSET;
+  const thumbHeight = scrollable
+    ? Math.min(
+        trackHeight,
+        Math.max(THUMB_MIN_HEIGHT, (trackHeight * viewportHeight) / contentHeight),
+      )
+    : 0;
+  const maxScroll = Math.max(contentHeight - viewportHeight, 1);
+  const thumbTop = scrollable
+    ? THUMB_INSET +
+      (Math.min(Math.max(scrollY, 0), maxScroll) / maxScroll) * (trackHeight - thumbHeight)
+    : 0;
+
   // Un fantasma sin grabación todavía se muestra desactivado.
   const availability = getGhostAvailability(state, state.activeProfileId, selectedId);
   const ghostOptions = GHOST_OPTIONS.map((option) => ({
@@ -105,82 +143,102 @@ export function TrackSelectScreen(_props: TrackSelectScreenProps) {
           <MenuButton label="Largar" variant="primary" icon="flagCheckered" onPress={start} />
         }
       />
-      <ScrollView
-        style={styles.body}
-        contentContainerStyle={styles.bodyContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.bodyFrame}>
         <ScrollView
-          horizontal
-          style={styles.list}
-          contentContainerStyle={styles.listContent}
-          showsHorizontalScrollIndicator={false}
-          accessibilityRole="radiogroup"
+          style={styles.body}
+          contentContainerStyle={styles.bodyContent}
+          onLayout={(event) => setViewportHeight(event.nativeEvent.layout.height)}
+          onContentSizeChange={(_width, height) => setContentHeight(height)}
+          onScroll={(event) => setScrollY(event.nativeEvent.contentOffset.y)}
+          scrollEventThrottle={16}
+          // La barra del sistema es fina y se pierde: se dibuja la propia (`scrollThumb`).
+          showsVerticalScrollIndicator={false}
         >
-          {CIRCUITS.map((circuit) => (
-            <TrackCard
-              key={circuit.id}
-              circuit={circuit}
-              selected={circuit.id === selectedId}
-              record={getTrackRecord(state, circuit.id, LAP_TABLE)}
-              onPress={() => select(circuit.id)}
-            />
-          ))}
+          <ScrollView
+            horizontal
+            style={[styles.list, listMinHeight > 0 ? { minHeight: listMinHeight } : null]}
+            contentContainerStyle={styles.listContent}
+            onContentSizeChange={(_width, height) => setListHeight(height)}
+            showsHorizontalScrollIndicator={false}
+            accessibilityRole="radiogroup"
+          >
+            {CIRCUITS.map((circuit) => (
+              <TrackCard
+                key={circuit.id}
+                circuit={circuit}
+                selected={circuit.id === selectedId}
+                record={getTrackRecord(state, circuit.id, LAP_TABLE)}
+                onPress={() => select(circuit.id)}
+              />
+            ))}
+          </ScrollView>
+          <View
+            style={styles.options}
+            onLayout={(event) => setOptionsHeight(event.nativeEvent.layout.height)}
+          >
+            <View style={styles.option} testID="rival-count-choice">
+              <Text style={styles.optionLabel}>Rivales</Text>
+              <OptionChips
+                options={RIVAL_OPTIONS}
+                value={String(rivalCount)}
+                onChange={(value) => updatePreferences({ rivalCount: Number(value) })}
+                label="Rivales"
+              />
+            </View>
+            <View style={styles.option} testID="rival-level-choice">
+              <Text style={styles.optionLabel}>Dificultad</Text>
+              <OptionChips
+                options={LEVEL_OPTIONS.map((option) => ({ ...option, disabled: !hasRivals }))}
+                value={preferences.aiLevel}
+                onChange={(aiLevel) => updatePreferences({ aiLevel })}
+                label="Dificultad de los rivales"
+              />
+              <Text style={styles.optionLabel}>Ajuste dinámico</Text>
+              <OptionChips
+                options={DYNAMIC_OPTIONS.map((option) => ({ ...option, disabled: !hasRivals }))}
+                value={preferences.dynamicDifficulty ? 'on' : 'off'}
+                onChange={(value) => updatePreferences({ dynamicDifficulty: value === 'on' })}
+                label="Dificultad dinámica"
+                testID="rival-dynamic-choice"
+              />
+              <Text style={styles.optionLabel}>Choques</Text>
+              <OptionChips
+                options={DYNAMIC_OPTIONS.map((option) => ({ ...option, disabled: !hasRivals }))}
+                value={preferences.collisionsEnabled ? 'on' : 'off'}
+                onChange={(value) => updatePreferences({ collisionsEnabled: value === 'on' })}
+                label="Choques entre autos"
+                testID="rival-collisions-choice"
+              />
+            </View>
+            {hasRivals && preferences.dynamicDifficulty ? (
+              <Text style={styles.ghostHint} testID="rival-dynamic-hint">
+                Si vas muy atrás, los rivales aflojan un poco; si vas muy adelante, aprietan.
+              </Text>
+            ) : null}
+            <View style={styles.option} testID="ghost-choice">
+              <Text style={styles.optionLabel}>Fantasma</Text>
+              <OptionChips
+                options={ghostOptions}
+                value={preferences.ghostSource}
+                onChange={(ghostSource) => updatePreferences({ ghostSource })}
+                label="Fantasma"
+              />
+            </View>
+            {ghostHint ? (
+              <Text style={styles.ghostHint} testID="ghost-hint">
+                {ghostHint}
+              </Text>
+            ) : null}
+          </View>
         </ScrollView>
-        <View style={styles.option} testID="rival-count-choice">
-          <Text style={styles.optionLabel}>Rivales</Text>
-          <OptionChips
-            options={RIVAL_OPTIONS}
-            value={String(rivalCount)}
-            onChange={(value) => updatePreferences({ rivalCount: Number(value) })}
-            label="Rivales"
+        {scrollable ? (
+          <View
+            testID="scroll-thumb"
+            pointerEvents="none"
+            style={[styles.scrollThumb, { top: thumbTop, height: thumbHeight }]}
           />
-        </View>
-        <View style={styles.option} testID="rival-level-choice">
-          <Text style={styles.optionLabel}>Dificultad</Text>
-          <OptionChips
-            options={LEVEL_OPTIONS.map((option) => ({ ...option, disabled: !hasRivals }))}
-            value={preferences.aiLevel}
-            onChange={(aiLevel) => updatePreferences({ aiLevel })}
-            label="Dificultad de los rivales"
-          />
-          <Text style={styles.optionLabel}>Ajuste dinámico</Text>
-          <OptionChips
-            options={DYNAMIC_OPTIONS.map((option) => ({ ...option, disabled: !hasRivals }))}
-            value={preferences.dynamicDifficulty ? 'on' : 'off'}
-            onChange={(value) => updatePreferences({ dynamicDifficulty: value === 'on' })}
-            label="Dificultad dinámica"
-            testID="rival-dynamic-choice"
-          />
-          <Text style={styles.optionLabel}>Choques</Text>
-          <OptionChips
-            options={DYNAMIC_OPTIONS.map((option) => ({ ...option, disabled: !hasRivals }))}
-            value={preferences.collisionsEnabled ? 'on' : 'off'}
-            onChange={(value) => updatePreferences({ collisionsEnabled: value === 'on' })}
-            label="Choques entre autos"
-            testID="rival-collisions-choice"
-          />
-        </View>
-        {hasRivals && preferences.dynamicDifficulty ? (
-          <Text style={styles.ghostHint} testID="rival-dynamic-hint">
-            Si vas muy atrás, los rivales aflojan un poco; si vas muy adelante, aprietan.
-          </Text>
         ) : null}
-        <View style={styles.option} testID="ghost-choice">
-          <Text style={styles.optionLabel}>Fantasma</Text>
-          <OptionChips
-            options={ghostOptions}
-            value={preferences.ghostSource}
-            onChange={(ghostSource) => updatePreferences({ ghostSource })}
-            label="Fantasma"
-          />
-        </View>
-        {ghostHint ? (
-          <Text style={styles.ghostHint} testID="ghost-hint">
-            {ghostHint}
-          </Text>
-        ) : null}
-      </ScrollView>
+      </View>
     </View>
   );
 }

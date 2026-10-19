@@ -26,7 +26,7 @@ import {
 import type { RaceConfig, RaceSetup, RaceState } from '@/core/RaceFlow';
 import { AI_LEVELS, buildSpeedProfile, DEFAULT_AI_LEVEL_ID } from '@/core/RivalAI';
 import type { AiLevel } from '@/core/RivalAI';
-import { getGridPose, getGridProgress, getStartPose } from '@/core/Track';
+import { getGridOffset, getGridPose, getGridProgress, getStartPose } from '@/core/Track';
 import type { Circuit } from '@/core/Track';
 
 import type { UseRaceLoopParams, UseRaceLoopResult } from './useRaceLoop.types';
@@ -72,6 +72,7 @@ function createSetup(
         id: `rival-${slot + 1}`,
         car: createGridCar(track, slot),
         startProgress: getGridProgress(track, slot),
+        startOffset: getGridOffset(track, slot),
         seed: seed + (slot + 1) * 7919,
         level,
       })),

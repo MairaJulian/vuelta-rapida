@@ -38,7 +38,8 @@ Los circuitos del juego se definen con puntos de control en `core/Circuits`; aqu
 | `getStartPose(track)` | Largada: 15 m antes de la meta medidos sobre el trazado, mirando hacia ella. |
 | `getSegmentAtProgress(circuit, progress)` | Segmento y parte recorrida (0 a 1) donde cae un progreso. Búsqueda binaria. Worklet. |
 | `getPoseAtProgress(circuit, progress, offset?)` | Posición y rumbo sobre el trazado a ese progreso; `offset` corre el punto a la derecha de la marcha. Worklet. |
-| `getGridPose(circuit, slot)` / `getGridProgress(circuit, slot)` | Puesto de la grilla: el 0 es la pole (15 m antes de la meta) y cada siguiente va `GRID_SLOT_GAP` (8 m) más atrás y del lado contrario (`GRID_SIDE_OFFSET`, 2 m; menos en pistas angostas). |
+| `getGridPose(circuit, slot)` / `getGridProgress(circuit, slot)` | Puesto de la grilla, en dos columnas: el 0 es la pole (15 m antes de la meta, a la izquierda); el 1 sale a su derecha y `GRID_STAGGER` (5 m) más atrás; cada fila siguiente, `GRID_ROW_GAP` (12 m) más atrás. Cada columna va a `GRID_SIDE_OFFSET` (3 m del centro; menos en pistas angostas). |
+| `getGridOffset(circuit, slot)`                                  | Corrimiento lateral del puesto, en metros (negativo a la izquierda, positivo a la derecha). |
 | `getCurvatureProfile(track)` | Curvatura (1/m) de cada punto del trazado, medida como los pianos. Para la IA de los rivales. |
 | `getCurveSections(track, maxRadius?)` | Tramos curvos (radio menor que `CURVE_MAX_RADIUS`, 150 m), de punta a punta, para dibujar los pianos. Une los que están separados por poco y descarta los muy cortos. |
 | `getKerbSections(track, distances, length, maxRadius?)` | Los mismos tramos medidos sobre el trazado. `createCircuit` los guarda en `kerbs`. |

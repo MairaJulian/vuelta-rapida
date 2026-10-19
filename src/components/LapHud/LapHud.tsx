@@ -34,9 +34,13 @@ export function getLapHudTexts(
   };
 }
 
+/** Filas que como mucho tiene la tabla: con más autos, no entraría sobre los botones. */
+const MAX_POSITION_ROWS = 6;
+
 /**
  * Filas de la tabla de posiciones, del primero al último. `[]` si corre un solo auto (sin
- * rivales no hay tabla) o si falta algún auto en `racers`.
+ * rivales no hay tabla) o si falta algún auto en `racers`. Con más de `MAX_POSITION_ROWS`
+ * autos muestra los primeros y, si está más atrás, la fila del jugador con su puesto.
  */
 export function getPositionRows(
   entries: readonly ClassificationEntry[],
@@ -59,7 +63,9 @@ export function getPositionRows(
       player: entry.id === PLAYER_ID,
     });
   }
-  return rows;
+  return rows.length <= MAX_POSITION_ROWS
+    ? rows
+    : rows.filter((row, i) => i < MAX_POSITION_ROWS - 1 || row.player);
 }
 
 function sameRows(a: readonly PositionRow[], b: readonly PositionRow[]): boolean {

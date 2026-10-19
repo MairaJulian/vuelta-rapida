@@ -24,12 +24,13 @@ import type {
 export const RIVAL_COUNT = 3;
 
 /** Tope de rivales que se pueden elegir. */
-export const MAX_RIVALS = 5;
+export const MAX_RIVALS = 10;
 
 /**
- * Niveles de dificultad. El fácil corre a un 88–95 % de lo que aguantan las curvas, con
- * trazada y frenada imprecisas; el medio, a 92–98 %, y el difícil, a 97–102 % con poco
- * error. Todos topean el ritmo (`maxPace`) para no pasarse del límite de cada tramo.
+ * Niveles de dificultad. En curva, el fácil corre a un 82–90 % de lo que aguantan, con
+ * trazada y frenada imprecisas; el medio, a 89–95 %, y el difícil, a 97–102 % con poco
+ * error. Todos topean el ritmo (`maxPace`) para no pasarse del límite de cada tramo. En
+ * recta los tres van a fondo.
  */
 export const AI_LEVELS: Readonly<Record<AiLevelId, AiLevel>> = Object.freeze({
   easy: Object.freeze({
@@ -37,13 +38,14 @@ export const AI_LEVELS: Readonly<Record<AiLevelId, AiLevel>> = Object.freeze({
     lookAheadMin: 9,
     lookAheadTime: 0.35,
     lookAheadCurveTime: 0.45,
-    paceMin: 0.88,
-    paceMax: 0.95,
-    lateralAccel: 30,
-    steerReserve: 0.65,
-    brakeDecelFactor: 0.6,
+    paceMin: 0.82,
+    paceMax: 0.9,
+    lateralAccel: 31,
+    steerReserve: 0.67,
+    brakeDecelFactor: 0.66,
     brakeGain: 0.3,
     lineError: 1,
+    laneSpread: 0.5,
     lineChangeSeconds: 1.5,
     lineRate: 0.8,
     catchUpRange: 150,
@@ -57,13 +59,14 @@ export const AI_LEVELS: Readonly<Record<AiLevelId, AiLevel>> = Object.freeze({
     lookAheadMin: 9,
     lookAheadTime: 0.35,
     lookAheadCurveTime: 0.45,
-    paceMin: 0.92,
-    paceMax: 0.98,
-    lateralAccel: 30,
-    steerReserve: 0.7,
-    brakeDecelFactor: 0.7,
+    paceMin: 0.89,
+    paceMax: 0.95,
+    lateralAccel: 33,
+    steerReserve: 0.74,
+    brakeDecelFactor: 0.78,
     brakeGain: 0.4,
     lineError: 0.7,
+    laneSpread: 0.5,
     lineChangeSeconds: 1.5,
     lineRate: 0.8,
     catchUpRange: 150,
@@ -79,11 +82,12 @@ export const AI_LEVELS: Readonly<Record<AiLevelId, AiLevel>> = Object.freeze({
     lookAheadCurveTime: 0.45,
     paceMin: 0.97,
     paceMax: 1.02,
-    lateralAccel: 30,
-    steerReserve: 0.75,
-    brakeDecelFactor: 0.8,
+    lateralAccel: 35,
+    steerReserve: 0.82,
+    brakeDecelFactor: 0.9,
     brakeGain: 0.5,
     lineError: 0.4,
+    laneSpread: 0.5,
     lineChangeSeconds: 2,
     lineRate: 0.8,
     catchUpRange: 150,
@@ -107,7 +111,7 @@ export function withDynamicDifficulty(level: AiLevel, enabled: boolean): AiLevel
   return enabled ? level : { ...level, catchUpBoost: 0, catchUpEase: 0 };
 }
 
-/** Nombres inventados de los rivales, en orden. */
+/** Nombres inventados de los rivales, en orden: uno distinto por cada rival posible (`MAX_RIVALS`). */
 export const RIVAL_NAMES: readonly string[] = Object.freeze([
   'Chispa',
   'Ráfaga',
@@ -115,6 +119,10 @@ export const RIVAL_NAMES: readonly string[] = Object.freeze([
   'Trueno',
   'Bólido',
   'Meteoro',
+  'Relámpago',
+  'Tormenta',
+  'Cóndor',
+  'Fulgor',
 ]);
 
 /**
@@ -136,6 +144,17 @@ const RIVAL_COLOR_ORDER: readonly CarColorId[] = Object.freeze([
 const MIN_CORNER_SPEED = 7;
 /** Distancia mínima a la que mira la IA en una curva cerrada, en metros. */
 const MIN_LOOK_AHEAD = 5;
+/**
+ * Cuánto por debajo del tope del auto (fracción de `maxSpeed`) tiene que estar el límite de
+ * un tramo para que se le aplique entero el ritmo del rival.
+ */
+const CURVE_SPEED_SPAN = 0.15;
+/** Hasta dónde mira adelante el rival para saber si viene una curva y volver a la trazada, en metros. */
+const LANE_LOOK_AHEAD = 200;
+/** Separación de los puntos que mira en ese tramo, en metros. */
+const LANE_LOOK_STEP = 40;
+/** Tope del desvío total de la trazada (carril más imprecisión), como fracción del ancho libre. */
+const MAX_LINE_FRACTION = 0.8;
 /** Pasos de la búsqueda binaria de la velocidad que permite el giro de las ruedas. */
 const STEER_SEARCH_STEPS = 14;
 
@@ -223,15 +242,19 @@ export function createRival(setup: RivalSetup): RivalState {
   'worklet';
   const { level } = setup;
   const draw = nextRandomBetween(createRandomState(setup.seed), level.paceMin, level.paceMax);
+  const lane = nextRandomBetween(draw.state, -1, 1);
   const sim = createDrivingSim(setup.car);
+  // Sale desviado como su puesto de la grilla y se corre hacia su carril sin saltos.
+  const startOffset = setup.startOffset ?? 0;
   return {
     id: setup.id,
     driver: {
       level,
       pace: draw.value,
-      random: draw.state,
-      lineOffset: 0,
-      lineTarget: 0,
+      random: lane.state,
+      lane: lane.value,
+      lineOffset: startOffset,
+      lineTarget: startOffset,
       speedScale: 1,
       nextDrawTick: 0,
     },
@@ -246,7 +269,13 @@ export function createRival(setup: RivalSetup): RivalState {
  * trazada y cuánto se pasa o se queda en la velocidad objetivo; entre sorteos se corre
  * hacia el desvío a `lineRate`. El desvío se limita a una parte del ancho libre.
  */
-function stepDriver(driver: RivalDriver, tick: number, limit: number, dt: number): RivalDriver {
+function stepDriver(
+  driver: RivalDriver,
+  tick: number,
+  limit: number,
+  dt: number,
+  laneScale: number,
+): RivalDriver {
   'worklet';
   const { level } = driver;
   let { random, lineTarget, speedScale, nextDrawTick } = driver;
@@ -259,9 +288,35 @@ function stepDriver(driver: RivalDriver, tick: number, limit: number, dt: number
     speedScale = speed.value;
     nextDrawTick = tick + Math.max(1, Math.round(level.lineChangeSeconds / dt));
   }
+  // El carril empuja la trazada hacia un costado en recta (`laneScale` 1) y se apaga en curva.
+  const laneOffset = driver.lane * level.laneSpread * limit * laneScale;
+  const maxLine = limit * MAX_LINE_FRACTION;
+  const goal = clamp(lineTarget + laneOffset, -maxLine, maxLine);
   const maxMove = level.lineRate * dt;
-  const lineOffset = driver.lineOffset + clamp(lineTarget - driver.lineOffset, -maxMove, maxMove);
+  const lineOffset = driver.lineOffset + clamp(goal - driver.lineOffset, -maxMove, maxMove);
   return { ...driver, random, lineTarget, speedScale, nextDrawTick, lineOffset };
+}
+
+/**
+ * Cuánto del carril propio puede usar el rival ahora, de 0 a 1: 1 si lo que viene en los
+ * próximos `LANE_LOOK_AHEAD` metros es recta y 0 si hay una curva (con la misma transición
+ * gradual que el ritmo, `CURVE_SPEED_SPAN`). Mira lejos porque el rival tarda en volver a
+ * la trazada (`lineRate`).
+ */
+function getLaneScale(
+  rival: RivalState,
+  circuit: Circuit,
+  profile: readonly number[],
+  config: DrivingConfig,
+): number {
+  'worklet';
+  const progress = rival.sim.laps.progress ?? 0;
+  let slowest = config.maxSpeed;
+  for (let ahead = 0; ahead <= LANE_LOOK_AHEAD; ahead += LANE_LOOK_STEP) {
+    const { segment } = getSegmentAtProgress(circuit, progress + ahead);
+    slowest = Math.min(slowest, profile[segment]);
+  }
+  return 1 - clamp((config.maxSpeed - slowest) / (config.maxSpeed * CURVE_SPEED_SPAN), 0, 1);
 }
 
 /**
@@ -294,10 +349,17 @@ export function getRivalInput(
       ? level.catchUpBoost * Math.min(gap / level.catchUpRange, 1)
       : -level.catchUpEase * Math.min(-gap / level.catchUpRange, 1);
   const limit = profile[segment];
-  const target = Math.min(
-    limit * level.maxPace,
-    limit * driver.pace * driver.speedScale * (1 + catchUp),
-  );
+  // En recta va a fondo, igual que el jugador: el ritmo, el error de frenada y el tope solo
+  // valen donde hay curva. `curve` va de 0 (el límite es el tope del auto) a 1 (el límite
+  // está `CURVE_SPEED_SPAN` por debajo), así que la transición es gradual. En recta solo se
+  // relaja si va muy adelante del jugador.
+  const curve = clamp((config.maxSpeed - limit) / (config.maxSpeed * CURVE_SPEED_SPAN), 0, 1);
+  const target =
+    limit *
+    Math.min(
+      1 + curve * (level.maxPace - 1),
+      (1 + curve * (driver.pace * driver.speedScale - 1)) * (1 + catchUp),
+    );
 
   // En una curva cerrada el límite de velocidad es bajo: mirar menos adelante evita cortarla.
   const lookAhead = Math.min(
@@ -334,7 +396,13 @@ export function stepRival(
 ): RivalState {
   'worklet';
   const tick = rival.sim.tick + 1;
-  const driver = stepDriver(rival.driver, tick, getTrackLimit(circuit, config), dt);
+  const driver = stepDriver(
+    rival.driver,
+    tick,
+    getTrackLimit(circuit, config),
+    dt,
+    getLaneScale(rival, circuit, profile, config),
+  );
   const input = getRivalInput({ ...rival, driver }, circuit, profile, config, playerDistance);
   if (rival.finishTick !== null) {
     const sim = stepDrivingSim(
