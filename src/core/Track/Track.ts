@@ -324,10 +324,12 @@ export function getStartPose(track: TrackData): Pose {
   return { x: finish.x, z: finish.z, heading: finish.heading };
 }
 
-/** Distancia entre dos puestos de la grilla, a lo largo del trazado, en metros. */
-export const GRID_SLOT_GAP = 8;
-/** Corrimiento lateral de los puestos de la grilla (alternados a izquierda y derecha), en metros. */
-export const GRID_SIDE_OFFSET = 2;
+/** Distancia entre dos filas de la grilla (dos autos por fila), a lo largo del trazado, en metros. */
+export const GRID_ROW_GAP = 12;
+/** Cuánto más atrás sale el auto de la columna derecha que el de la izquierda de su fila, en metros. */
+export const GRID_STAGGER = 5;
+/** Corrimiento lateral de cada columna de la grilla respecto al centro, en metros. */
+export const GRID_SIDE_OFFSET = 3;
 
 /**
  * Segmento del trazado donde cae un progreso (distancia desde la meta) y la parte
@@ -375,18 +377,28 @@ export function getPoseAtProgress(circuit: Circuit, progress: number, offset: nu
 }
 
 /**
- * Puesto de la grilla: el 0 es la pole, `START_GAP` metros antes de la meta; cada
- * puesto siguiente va `GRID_SLOT_GAP` metros más atrás y del lado contrario. En pistas
- * angostas el corrimiento se achica para que el auto quede dentro del asfalto.
+ * Corrimiento lateral del puesto de la grilla, en metros: negativo a la izquierda de la
+ * marcha (puestos pares) y positivo a la derecha (impares). En pistas angostas se achica
+ * para que el auto quede dentro del asfalto.
+ */
+export function getGridOffset(circuit: Circuit, slot: number): number {
+  const side = Math.min(GRID_SIDE_OFFSET, circuit.width / 4);
+  return slot % 2 === 0 ? -side : side;
+}
+
+/**
+ * Puesto de la grilla, en dos columnas: el 0 es la pole, `START_GAP` metros antes de la
+ * meta, a la izquierda; el 1, a su derecha y `GRID_STAGGER` metros más atrás; cada fila
+ * siguiente va `GRID_ROW_GAP` metros más atrás. El orden de salida es el del puesto.
  */
 export function getGridPose(circuit: Circuit, slot: number): Pose {
-  const side = Math.min(GRID_SIDE_OFFSET, circuit.width / 4);
-  return getPoseAtProgress(circuit, getGridProgress(circuit, slot), slot % 2 === 0 ? -side : side);
+  return getPoseAtProgress(circuit, getGridProgress(circuit, slot), getGridOffset(circuit, slot));
 }
 
 /** Progreso (distancia desde la meta) del puesto de la grilla, en [0, largo). */
 export function getGridProgress(circuit: Circuit, slot: number): number {
-  const along = circuit.length - START_GAP - slot * GRID_SLOT_GAP;
+  const along =
+    circuit.length - START_GAP - Math.floor(slot / 2) * GRID_ROW_GAP - (slot % 2) * GRID_STAGGER;
   return ((along % circuit.length) + circuit.length) % circuit.length;
 }
 

@@ -353,6 +353,14 @@ export const AI_SLIDERS: SliderSpec<AiSliderKey>[] = [
   },
   { key: 'brakeGain', label: 'Fuerza del freno', min: 0.1, max: 1, step: 0.05, format: fixed2 },
   { key: 'lineError', label: 'Error de trazada', min: 0, max: 3, step: 0.1, format: meters },
+  {
+    key: 'laneSpread',
+    label: 'Carril propio (en recta)',
+    min: 0,
+    max: 1,
+    step: 0.05,
+    format: percent,
+  },
   { key: 'speedError', label: 'Error de frenada', min: 0, max: 0.15, step: 0.01, format: percent },
   {
     key: 'lookAheadMin',

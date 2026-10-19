@@ -1,6 +1,12 @@
 import { CIRCUITS } from '@/core/Circuits';
 import { createCarState, DEFAULT_DRIVING_CONFIG } from '@/core/DrivingModel';
-import { getGridPose, getGridProgress, GRID_SLOT_GAP } from '@/core/Track';
+import {
+  getGridOffset,
+  getGridPose,
+  getGridProgress,
+  GRID_ROW_GAP,
+  GRID_STAGGER,
+} from '@/core/Track';
 import type { Circuit } from '@/core/Track';
 
 import {
@@ -37,6 +43,7 @@ function startRivals(
       id: `rival-${slot + 1}`,
       car: createCarState(pose.x, pose.z, pose.heading),
       startProgress: getGridProgress(circuit, slot),
+      startOffset: getGridOffset(circuit, slot),
       seed: seed + slot * 101,
       level,
     });
@@ -152,7 +159,12 @@ describe('IA de los rivales', () => {
 
   it('los puestos de la grilla van ordenados hacia atrás', () => {
     const circuit = CIRCUITS[0];
-    expect(getGridProgress(circuit, 0) - getGridProgress(circuit, 1)).toBeCloseTo(GRID_SLOT_GAP);
+    // Dos columnas: el segundo sale a la derecha y un poco más atrás; la fila siguiente, más atrás.
+    expect(getGridProgress(circuit, 0) - getGridProgress(circuit, 1)).toBeCloseTo(GRID_STAGGER);
+    expect(getGridProgress(circuit, 0) - getGridProgress(circuit, 2)).toBeCloseTo(GRID_ROW_GAP);
+    expect(getGridOffset(circuit, 0)).toBeLessThan(0);
+    expect(getGridOffset(circuit, 1)).toBeGreaterThan(0);
+    expect(getGridOffset(circuit, 2)).toBe(getGridOffset(circuit, 0));
   });
 
   describe('createRivalRoster', () => {
@@ -164,6 +176,12 @@ describe('IA de los rivales', () => {
         expect(new Set(roster.map((rival) => rival.name)).size).toBe(RIVAL_COUNT);
         expect(roster.map((rival) => rival.colorId)).not.toContain(colorId);
       }
+    });
+
+    it('con el máximo de rivales, ningún nombre se repite', () => {
+      const roster = createRivalRoster('blue', MAX_RIVALS);
+      expect(roster).toHaveLength(MAX_RIVALS);
+      expect(new Set(roster.map((rival) => rival.name)).size).toBe(MAX_RIVALS);
     });
   });
 });

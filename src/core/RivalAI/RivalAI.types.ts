@@ -28,6 +28,12 @@ export interface AiLevel {
   brakeGain: number;
   /** Error de trazada: cuánto se aleja del centro de la pista, como mucho, en metros. */
   lineError: number;
+  /**
+   * Carril propio: cada rival sortea un carril de −1 a 1 y en recta se corre hacia él hasta
+   * `laneSpread` veces el ancho libre (de 0 a 1), para no ir todos en fila por el centro.
+   * En curva vuelve a la trazada.
+   */
+  laneSpread: number;
   /** Cada cuántos segundos cambia hacia dónde se desvía de la trazada. */
   lineChangeSeconds: number;
   /** Con qué rapidez se corre hacia la nueva trazada, en m/s. */
@@ -56,6 +62,8 @@ export interface RivalDriver {
   /** Ritmo de este rival (sorteado entre `paceMin` y `paceMax`). */
   pace: number;
   random: RandomState;
+  /** Carril de este rival, de −1 (izquierda) a 1 (derecha); se sortea una vez con la semilla. */
+  lane: number;
   /** Desvío actual de la trazada, en metros (positivo, a la derecha de la marcha). */
   lineOffset: number;
   /** Desvío al que se acerca. */
@@ -83,6 +91,8 @@ export interface RivalSetup {
   car: CarState;
   /** Progreso del puesto de la grilla, en metros desde la meta (cerca del largo de la vuelta). */
   startProgress: number;
+  /** Corrimiento lateral del puesto de la grilla, en metros (positivo a la derecha); 0 por defecto. */
+  startOffset?: number;
   seed: number;
   level: AiLevel;
 }
