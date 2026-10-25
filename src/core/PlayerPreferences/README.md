@@ -5,7 +5,7 @@ Preferencias que se guardan entre partidas: modo de control, calibración de la 
 ## Tipos
 
 - `ControlMode`: `'tilt' | 'buttons'`.
-- `PlayerPreferences`: `{ controlMode, tiltNeutralAngle, tiltSensitivity, tiltDeadZone, soundEnabled, ghostSource, vibrationEnabled, rivalCount, aiLevel, dynamicDifficulty, collisionsEnabled }`.
+- `PlayerPreferences`: `{ controlMode, tiltNeutralAngle, tiltSensitivity, tiltDeadZone, soundEnabled, ghostSource, vibrationEnabled, rivalCount, aiLevel, dynamicDifficulty, collisionsEnabled, lapCount }`.
   - `controlMode`: `null` hasta que el jugador elige.
   - `tiltNeutralAngle`: en radianes; `null` sin calibrar.
   - `tiltSensitivity`: de 1 a 10.
@@ -13,6 +13,7 @@ Preferencias que se guardan entre partidas: modo de control, calibración de la 
   - `ghostSource`: qué fantasma corre al lado del jugador: `none` (sin fantasma, por defecto), `mine` (su mejor vuelta) o `record` (el récord de la pista). Es del celular, no del perfil: se elige en la selección de pista y se resuelve con `core/GhostChoice`.
   - `rivalCount`, `aiLevel` y `dynamicDifficulty` (hito 9a-2): cuántos rivales corren (de 0, contrarreloj, a `MAX_RIVALS`; 3 por defecto), su dificultad (`easy`, `medium` o `hard`; fácil por defecto) y si la dificultad dinámica está activada (por defecto sí). Se eligen en la selección de pista. Un valor fuera de rango o desconocido vuelve al de por defecto.
   - `collisionsEnabled` (hito 9b): si los autos chocan entre sí (por defecto sí). Se elige en la selección de pista, junto a los rivales.
+  - `lapCount`: vueltas de la carrera, de `MIN_RACE_LAPS` (1) a `MAX_RACE_LAPS` (10); 3 por defecto. Se elige en la selección de pista y `DriveScreen` lo lleva a `RaceConfig.totalLaps`. Un valor fuera de rango se limita al extremo y se redondea; uno que no es número vuelve al de por defecto.
   - `soundEnabled` y `vibrationEnabled`: si suenan el motor y los efectos, y si vibra el celular (también con el freno). Inicial, los dos prendidos. Se cambian desde la pausa.
 - `StartStep`: `'choose-control' | 'calibrate' | 'drive'`.
 

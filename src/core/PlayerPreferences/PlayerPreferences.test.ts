@@ -1,3 +1,4 @@
+import { MAX_RACE_LAPS, MIN_RACE_LAPS } from '@/core/RaceFlow';
 import { MAX_RIVALS } from '@/core/RivalAI';
 import { SAVE_VERSION } from '@/core/SaveData';
 import { DEFAULT_TILT_CONFIG, MAX_DEAD_ZONE, MIN_DEAD_ZONE } from '@/core/TiltSteering';
@@ -29,6 +30,7 @@ const saved: PlayerPreferences = {
   aiLevel: 'hard',
   dynamicDifficulty: false,
   collisionsEnabled: false,
+  lapCount: 7,
 };
 
 describe('parsePlayerPreferences', () => {
@@ -70,7 +72,21 @@ describe('parsePlayerPreferences', () => {
       aiLevel: 'easy',
       dynamicDifficulty: true,
       collisionsEnabled: true,
+      lapCount: 3,
     });
+  });
+
+  it('limita las vueltas a 1–10 y redondea', () => {
+    const laps = (lapCount: unknown) =>
+      parsePlayerPreferences(JSON.stringify({ lapCount })).lapCount;
+    expect(laps(1)).toBe(MIN_RACE_LAPS);
+    expect(laps(10)).toBe(MAX_RACE_LAPS);
+    expect(laps(99)).toBe(MAX_RACE_LAPS);
+    expect(laps(0)).toBe(MIN_RACE_LAPS);
+    expect(laps(-4)).toBe(MIN_RACE_LAPS);
+    expect(laps(4.4)).toBe(4);
+    expect(laps('diez')).toBe(DEFAULT_PLAYER_PREFERENCES.lapCount);
+    expect(MAX_RACE_LAPS).toBe(10);
   });
 
   it('los rivales por defecto son 3, fáciles, con dificultad dinámica y sin fantasma', () => {

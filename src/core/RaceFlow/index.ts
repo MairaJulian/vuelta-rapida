@@ -13,6 +13,8 @@ export {
   getRaceResults,
   getRaceStandings,
   getRenderRivals,
+  MAX_RACE_LAPS,
+  MIN_RACE_LAPS,
   PLAYER_ID,
   pauseRace,
   restartRace,

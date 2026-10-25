@@ -29,6 +29,7 @@ export default TrackSelectScreen;
 
 - **Cuatro pistas, de la más fácil a la más difícil:** la lista sale de `CIRCUITS`; sumar una pista es sumar su definición a `core/Circuits`. Con las tarjetas de 240 dp la lista se desplaza en horizontal.
 - **La pista elegida se comparte** (`useSelectedTrack`, en memoria): la selección la fija, la carrera también (si se abrió con un enlace) y el ranking abre en ella. Al volver a esta pantalla queda marcada la última que se corrió.
+- **Las vueltas también son una preferencia del celular** (`lapCount`, de 1 a 10, 3 por defecto): fila "Vueltas" arriba de los rivales; `DriveScreen` la lleva a la carrera y el subtítulo del encabezado la refleja.
 - **Los rivales también son preferencias del celular** (`rivalCount`, `aiLevel`, `dynamicDifficulty` y `collisionsEnabled`, los choques entre autos): se guardan al tocarlas y `DriveScreen` las lee al largar. "Sin rivales" es el modo contrarreloj de antes.
 - **El fantasma es una preferencia del celular** (`PlayerPreferences.ghostSource`), no de la pista: la elección vale para todas. Las opciones se activan o desactivan según la pista elegida y el perfil activo (`getGhostAvailability`). Si la elegida no existe en esa pista, se corre sin fantasma, sin cambiar la preferencia: cuando el jugador la grabe, aparece sola.
 - **Todo en un desplazamiento vertical:** las tarjetas y el fantasma entran justos en un celular de 360 dp de alto; con un desplazamiento, en uno bajo se desliza en vez de cortarse.

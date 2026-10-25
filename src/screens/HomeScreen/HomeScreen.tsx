@@ -7,9 +7,9 @@ import { IconButton } from '@/components/IconButton';
 import { MenuButton } from '@/components/MenuButton';
 import { getCarColor } from '@/core/CarPalette';
 import { DEFAULT_CIRCUIT } from '@/core/Circuits';
-import { DEFAULT_RACE_CONFIG } from '@/core/RaceFlow';
 import { formatLapTime } from '@/core/LapTimer';
 import { getBestLap } from '@/core/Profiles';
+import { usePlayerPreferences } from '@/hooks/usePlayerPreferences';
 import { useProfiles } from '@/hooks/useProfiles';
 import { CarPreview } from '@/render/CarPreview';
 
@@ -25,7 +25,8 @@ export function HomeScreen(_props: HomeScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { state, activeProfile } = useProfiles();
-  const laps = DEFAULT_RACE_CONFIG.totalLaps;
+  const { preferences } = usePlayerPreferences();
+  const laps = preferences.lapCount;
 
   // Sin jugador elegido (se borró o se llegó directo): primero, quién juega.
   if (!activeProfile) {
@@ -103,7 +104,9 @@ export function HomeScreen(_props: HomeScreenProps) {
               <View key={i} style={[styles.checkerSquare, { backgroundColor: color }]} />
             ))}
           </View>
-          <Text style={styles.chipText}>Contrarreloj · {laps} vueltas</Text>
+          <Text style={styles.chipText}>
+            Contrarreloj · {laps} {laps === 1 ? 'vuelta' : 'vueltas'}
+          </Text>
         </View>
         <Text style={styles.logo} accessibilityRole="header" accessibilityLabel="Vuelta Rápida">
           <Text style={{ color: COLORS.ink }}>VUELTA</Text>

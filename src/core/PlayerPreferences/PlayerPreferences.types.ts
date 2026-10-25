@@ -36,6 +36,8 @@ export interface PlayerPreferences {
   dynamicDifficulty: boolean;
   /** Si los autos chocan entre sí. Apagado, se atraviesan. */
   collisionsEnabled: boolean;
+  /** Vueltas de la carrera, de `MIN_RACE_LAPS` a `MAX_RACE_LAPS` (10). */
+  lapCount: number;
 }
 
 /** Primer paso al abrir el juego, según lo que ya está guardado. */

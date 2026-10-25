@@ -42,6 +42,10 @@ export const DEFAULT_RACE_CONFIG: RaceConfig = Object.freeze({
   finishBrake: 0.5,
 });
 
+/** Cantidad de vueltas que puede elegir el jugador: de 1 a 10. */
+export const MIN_RACE_LAPS = 1;
+export const MAX_RACE_LAPS = 10;
+
 /** Identificador del jugador en las posiciones; los rivales traen el suyo. */
 export const PLAYER_ID = 'player';
 

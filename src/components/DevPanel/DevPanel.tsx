@@ -19,7 +19,7 @@ import {
 } from '@/core/DrivingModel';
 import type { CarState, DrivingConfig } from '@/core/DrivingModel';
 import type { ControlMode } from '@/core/PlayerPreferences';
-import { DEFAULT_RACE_CONFIG } from '@/core/RaceFlow';
+import { DEFAULT_RACE_CONFIG, MAX_RACE_LAPS, MIN_RACE_LAPS } from '@/core/RaceFlow';
 import { DEFAULT_SCENERY_SPEC } from '@/core/Scenery';
 import { DEFAULT_SCENERY_DISPLAY } from '@/core/SceneryView';
 import { DEFAULT_TILT_CONFIG, MAX_DEAD_ZONE, MIN_DEAD_ZONE } from '@/core/TiltSteering';
@@ -274,9 +274,19 @@ export const TILT_SLIDERS: SliderSpec<TiltSliderKey>[] = [
   },
 ];
 
-/** Sliders de la carrera. Las vueltas valen desde la próxima carrera (Reiniciar auto). */
+/**
+ * Sliders de la carrera. Las vueltas valen desde la próxima carrera (Reiniciar auto) y
+ * llegan al mismo máximo que la selección de pista.
+ */
 export const RACE_SLIDERS: SliderSpec<RaceSliderKey>[] = [
-  { key: 'totalLaps', label: 'Vueltas', min: 1, max: 5, step: 1, format: String },
+  {
+    key: 'totalLaps',
+    label: 'Vueltas',
+    min: MIN_RACE_LAPS,
+    max: MAX_RACE_LAPS,
+    step: 1,
+    format: String,
+  },
   {
     key: 'carHitInterval',
     label: 'Aviso de choque cada',
@@ -586,7 +596,7 @@ export function DevPanel({
     return () => clearInterval(timer);
   }, [open, car, fps, tiltOutput]);
 
-  // Restablece los ajustes, pero no la calibración: esa la elige el jugador.
+  // Restablece los ajustes, pero no la calibración ni las vueltas: las elige el jugador.
   const restoreDefaults = () => {
     onDrivingConfigChange(DEFAULT_DRIVING_CONFIG);
     onCameraConfigChange(DEFAULT_CAMERA_CONFIG);
@@ -594,7 +604,6 @@ export function DevPanel({
     onTiltConfigChange({ ...DEFAULT_TILT_CONFIG, neutralAngle: tiltConfig.neutralAngle });
     onRaceConfigChange({
       ...raceConfig,
-      totalLaps: DEFAULT_RACE_CONFIG.totalLaps,
       carHitInterval: DEFAULT_RACE_CONFIG.carHitInterval,
     });
     onAiLevelChange(defaultAiLevel);

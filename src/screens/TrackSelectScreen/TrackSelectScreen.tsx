@@ -10,7 +10,7 @@ import { TrackCard } from '@/components/TrackCard';
 import { CIRCUITS } from '@/core/Circuits';
 import type { GhostSource } from '@/core/Ghost';
 import { getGhostAvailability } from '@/core/GhostChoice';
-import { DEFAULT_RACE_CONFIG } from '@/core/RaceFlow';
+import { MAX_RACE_LAPS, MIN_RACE_LAPS } from '@/core/RaceFlow';
 import { getTrackRecord, LAP_TABLE } from '@/core/Ranking';
 import { MAX_RIVALS } from '@/core/RivalAI';
 import type { AiLevelId } from '@/core/RivalAI';
@@ -42,6 +42,12 @@ const RIVAL_OPTIONS: readonly { value: string; label: string }[] = [
   { value: '0', label: 'Sin rivales' },
   ...Array.from({ length: MAX_RIVALS }, (_, i) => ({ value: String(i + 1), label: String(i + 1) })),
 ];
+
+/** Cuántas vueltas: de `MIN_RACE_LAPS` a `MAX_RACE_LAPS`. */
+const LAP_OPTIONS: readonly { value: string; label: string }[] = Array.from(
+  { length: MAX_RACE_LAPS - MIN_RACE_LAPS + 1 },
+  (_, i) => ({ value: String(MIN_RACE_LAPS + i), label: String(MIN_RACE_LAPS + i) }),
+);
 
 const LEVEL_OPTIONS: readonly { value: AiLevelId; label: string }[] = [
   { value: 'easy', label: 'Fácil' },
@@ -77,8 +83,7 @@ export function TrackSelectScreen(_props: TrackSelectScreenProps) {
   const { state } = useProfiles();
   const { preferences, updatePreferences } = usePlayerPreferences();
   const { circuitId: selectedId, select } = useSelectedTrack();
-  const laps = DEFAULT_RACE_CONFIG.totalLaps;
-  const { rivalCount } = preferences;
+  const { rivalCount, lapCount } = preferences;
   const hasRivals = rivalCount > 0;
 
   // Alto de la ventana, de la lista de pistas (sin estirar) y de las opciones: si todo no
@@ -137,7 +142,7 @@ export function TrackSelectScreen(_props: TrackSelectScreenProps) {
     >
       <MenuHeader
         title="Elegí la pista"
-        subtitle={`${hasRivals ? 'Carrera' : 'Contrarreloj'} · ${laps} vueltas`}
+        subtitle={`${hasRivals ? 'Carrera' : 'Contrarreloj'} · ${lapCount} ${lapCount === 1 ? 'vuelta' : 'vueltas'}`}
         onBack={back}
         action={
           <MenuButton label="Largar" variant="primary" icon="flagCheckered" onPress={start} />
@@ -176,6 +181,15 @@ export function TrackSelectScreen(_props: TrackSelectScreenProps) {
             style={styles.options}
             onLayout={(event) => setOptionsHeight(event.nativeEvent.layout.height)}
           >
+            <View style={styles.option} testID="lap-count-choice">
+              <Text style={styles.optionLabel}>Vueltas</Text>
+              <OptionChips
+                options={LAP_OPTIONS}
+                value={String(lapCount)}
+                onChange={(value) => updatePreferences({ lapCount: Number(value) })}
+                label="Vueltas"
+              />
+            </View>
             <View style={styles.option} testID="rival-count-choice">
               <Text style={styles.optionLabel}>Rivales</Text>
               <OptionChips

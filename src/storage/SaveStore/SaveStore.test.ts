@@ -63,6 +63,7 @@ describe('SaveStore', () => {
       aiLevel: 'easy',
       dynamicDifficulty: true,
       collisionsEnabled: true,
+      lapCount: 3,
     });
     // Primero los perfiles, después las preferencias.
     expect(storage.setItemSync.mock.calls.map(([key]) => key)).toEqual([

@@ -2,6 +2,7 @@ import { DEFAULT_GHOST_SOURCE, GHOST_SOURCES } from '@/core/Ghost';
 import type { GhostSource } from '@/core/Ghost';
 import { clamp } from '@/core/MathUtils';
 import type { Radians } from '@/core/MathUtils';
+import { DEFAULT_RACE_CONFIG, MAX_RACE_LAPS, MIN_RACE_LAPS } from '@/core/RaceFlow';
 import { AI_LEVEL_IDS, DEFAULT_AI_LEVEL_ID, MAX_RIVALS, RIVAL_COUNT } from '@/core/RivalAI';
 import type { AiLevelId } from '@/core/RivalAI';
 import { serializeSaveDocument } from '@/core/SaveData';
@@ -28,6 +29,7 @@ export const DEFAULT_PLAYER_PREFERENCES: PlayerPreferences = Object.freeze({
   aiLevel: DEFAULT_AI_LEVEL_ID,
   dynamicDifficulty: true,
   collisionsEnabled: true,
+  lapCount: DEFAULT_RACE_CONFIG.totalLaps,
 });
 
 const MIN_SENSITIVITY = 1;
@@ -114,6 +116,9 @@ export function parsePlayerPreferences(raw: string | null): PlayerPreferences {
       typeof fields.collisionsEnabled === 'boolean'
         ? fields.collisionsEnabled
         : DEFAULT_PLAYER_PREFERENCES.collisionsEnabled,
+    lapCount: isFiniteNumber(fields.lapCount)
+      ? Math.round(clamp(fields.lapCount, MIN_RACE_LAPS, MAX_RACE_LAPS))
+      : DEFAULT_PLAYER_PREFERENCES.lapCount,
   };
 }
 
@@ -134,6 +139,7 @@ export function serializePlayerPreferences(preferences: PlayerPreferences): stri
     aiLevel: preferences.aiLevel,
     dynamicDifficulty: preferences.dynamicDifficulty,
     collisionsEnabled: preferences.collisionsEnabled,
+    lapCount: preferences.lapCount,
   });
 }
 
