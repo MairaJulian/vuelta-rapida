@@ -37,6 +37,7 @@ restartRace: desde cualquier estado, carrera nueva en grid
 | `getFinishResults(event)`                                               | Los mismos resultados, sacados del evento `finish`.                                                                                    |
 | `getAllLightsOnTick` / `getLightsOutTick`                               | Pasos desde el comienzo del semáforo hasta las cinco luces y hasta la largada.                                                         |
 | `shouldNotifyContact(...)`                                              | Regla de los avisos de borde y de piano (ver abajo).                                                                                   |
+| `MIN_RACE_LAPS`, `MAX_RACE_LAPS`                                        | Vueltas que puede elegir el jugador: de 1 a 10.                                                                                        |
 | `DEFAULT_RACE_CONFIG`                                                   | 3 vueltas, 5 luces a 1 s, espera de 0,5 a 1,5 s, 0,5 s entre toques, 0,3 s entre pianos, freno de llegada 0,5.                         |
 
 ## Eventos (`RaceEvent`)

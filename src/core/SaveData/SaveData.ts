@@ -9,7 +9,7 @@ import type {
 } from './SaveData.types';
 
 /** Versión actual de los datos guardados. Subirla exige sumar un paso a `SAVE_MIGRATIONS`. */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 /** Versión de los datos guardados antes de que existiera el número de versión (hito 6a). */
 export const LEGACY_SAVE_VERSION = 1;
@@ -162,6 +162,18 @@ function addCollisionsPreference({ profiles, preferences }: SaveDocuments): Save
   return { profiles, preferences: { ...preferences, collisionsEnabled: true } };
 }
 
+/**
+ * v6 → v7 (vueltas elegibles): las preferencias suman cuántas vueltas dura la carrera
+ * (`lapCount`, 3, como hasta ahora). Si el documento ya tiene el campo, una migración
+ * anterior se cortó después de escribirlo: se deja como está. Los perfiles no cambian.
+ */
+function addLapCountPreference({ profiles, preferences }: SaveDocuments): SaveDocuments {
+  if (preferences === null || preferences.lapCount !== undefined) {
+    return { profiles, preferences };
+  }
+  return { profiles, preferences: { ...preferences, lapCount: 3 } };
+}
+
 /** Pasos de migración, uno por versión. */
 export const SAVE_MIGRATIONS: readonly SaveMigration[] = Object.freeze([
   { from: 1, to: 2, migrate: moveRecordsToProfiles },
@@ -169,6 +181,7 @@ export const SAVE_MIGRATIONS: readonly SaveMigration[] = Object.freeze([
   { from: 3, to: 4, migrate: addGhosts },
   { from: 4, to: 5, migrate: addRivalPreferences },
   { from: 5, to: 6, migrate: addCollisionsPreference },
+  { from: 6, to: 7, migrate: addLapCountPreference },
 ]);
 
 /**

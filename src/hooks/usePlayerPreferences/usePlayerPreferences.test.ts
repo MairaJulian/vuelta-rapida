@@ -52,6 +52,7 @@ describe('usePlayerPreferences', () => {
       aiLevel: 'easy',
       dynamicDifficulty: true,
       collisionsEnabled: true,
+      lapCount: 3,
     });
   });
 
@@ -71,6 +72,7 @@ describe('usePlayerPreferences', () => {
       aiLevel: 'easy',
       dynamicDifficulty: true,
       collisionsEnabled: true,
+      lapCount: 3,
     });
   });
 

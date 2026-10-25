@@ -343,9 +343,9 @@ describe('DevPanel', () => {
     });
   });
 
-  it('las vueltas van de 1 a 5, de a una, e incluyen las de la carrera por defecto', () => {
+  it('las vueltas van de 1 a 10, de a una, e incluyen las de la carrera por defecto', () => {
     const [laps] = RACE_SLIDERS;
-    expect(laps).toMatchObject({ key: 'totalLaps', min: 1, max: 5, step: 1 });
+    expect(laps).toMatchObject({ key: 'totalLaps', min: 1, max: 10, step: 1 });
     expect(DEFAULT_RACE_CONFIG.totalLaps).toBeGreaterThanOrEqual(laps.min);
     expect(DEFAULT_RACE_CONFIG.totalLaps).toBeLessThanOrEqual(laps.max);
   });
@@ -356,7 +356,7 @@ describe('DevPanel', () => {
     await slide('totalLaps', 1);
     expect(props.onRaceConfigChange).toHaveBeenLastCalledWith({
       ...DEFAULT_RACE_CONFIG,
-      totalLaps: 5,
+      totalLaps: 10,
     });
   });
 

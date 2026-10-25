@@ -21,13 +21,14 @@ Cada documento lleva su número de versión en el campo `version`.
 | 4       | 8        | Fantasma. Los perfiles suman `ghosts` (la grabación de la mejor vuelta de cada perfil en cada pista; vacía al migrar: antes no se grababa) y las preferencias suman `ghostSource` (`mine`, `record` o `none`; por defecto `mine`). Si el documento ya tiene el campo, no lo pisa.     |
 | 5       | 9a-2     | Rivales. Las preferencias suman `rivalCount` (3), `aiLevel` (`easy`) y `dynamicDifficulty` (`true`), y el fantasma vuelve a `none` una sola vez (la versión 4 guardaba `mine` sin que nadie lo eligiera). Si el documento ya tiene `rivalCount`, no lo pisa. Los perfiles no cambian. |
 | 6       | 9b       | Colisiones. Las preferencias suman `collisionsEnabled` (`true`). Si el documento ya tiene el campo, no lo pisa. Los perfiles no cambian.                                                                                                                                              |
+| 7       | 9b       | Vueltas elegibles. Las preferencias suman `lapCount` (3, como hasta ahora). Si el documento ya tiene el campo, no lo pisa. Los perfiles no cambian.                                                                                                                                   |
 
 ## API
 
 | Exporta                                                  | Qué hace                                                                                 |
 | -------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | `migrateSave(raw, migrations?, targetVersion?)`          | Lleva los documentos a la versión actual. Devuelve `{ fromVersion, documents, writes }`. |
-| `SAVE_VERSION`                                           | Versión actual (6).                                                                      |
+| `SAVE_VERSION`                                           | Versión actual (7).                                                                      |
 | `SAVE_MIGRATIONS`                                        | Un paso `{ from, to, migrate }` por versión.                                             |
 | `SAVE_DOCUMENTS`                                         | Los documentos, en el orden en que se escriben: `profiles` y después `preferences`.      |
 | `serializeSaveDocument(fields, version?)`                | Texto de un documento con la versión primero. Lo usan los serializadores de cada módulo. |

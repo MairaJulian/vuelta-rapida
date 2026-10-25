@@ -142,8 +142,11 @@ export function DriveScreen(_props: DriveScreenProps) {
   const atlas = useSceneryAtlas();
   const { recordMs, saveLap } = useBestLapRecord({ circuitId: track.id, stepHz: STEP_HZ });
   const recordTicks = recordMs === null ? null : Math.round((recordMs * STEP_HZ) / 1000);
-  // Las vueltas se cambian en el panel y valen desde la próxima carrera.
-  const [raceConfig, setRaceConfig] = useState(DEFAULT_RACE_CONFIG);
+  // Las vueltas salen de la selección de pista; el panel las puede pisar y valen desde la próxima carrera.
+  const [raceConfig, setRaceConfig] = useState(() => ({
+    ...DEFAULT_RACE_CONFIG,
+    totalLaps: preferences.lapCount,
+  }));
   // Los eventos de la carrera llegan acá; el sonido, la vibración y las pantallas los escuchan.
   const bus = useMemo(() => createEventBus<RaceEvent>(), []);
   // La mezcla es un ajuste de desarrollo: queda en la sesión.
