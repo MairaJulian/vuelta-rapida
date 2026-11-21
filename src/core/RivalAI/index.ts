@@ -6,6 +6,7 @@ export {
   createRivalRoster,
   DEFAULT_AI_LEVEL_ID,
   getRivalInput,
+  getTrafficCar,
   MAX_RIVALS,
   RIVAL_COUNT,
   RIVAL_NAMES,
@@ -20,4 +21,6 @@ export type {
   RivalRules,
   RivalSetup,
   RivalState,
+  RivalTactic,
+  TrafficCar,
 } from './RivalAI.types';
