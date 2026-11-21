@@ -12,11 +12,32 @@ La IA de los rivales como TypeScript puro y worklets: cada rival maneja con el *
 
 ## Ajuste de ritmo según el jugador (rubber banding)
 
-Cada paso, el rival compara su distancia de carrera con la del jugador: si va detrás, su ritmo sube hasta `catchUpBoost` (+15 %); si va delante, baja hasta `catchUpEase` (−12 %), en proporción a la distancia y hasta `catchUpRange` (150 m). El objetivo nunca pasa de `maxPace` (97 %) del límite seguro del tramo, así que las curvas siguen con margen. Sin esto, un jugador que pasa a los rivales los pierde de vista: el jugador llega a 42 m/s y ellos, al 88–95 %, a unos 38. En las curvas cerradas la IA además mira menos adelante (`lookAheadCurveTime`), porque con el punto lejano cortaba la curva por dentro y tocaba el borde.
+Cada paso, el rival compara su distancia de carrera con la del jugador: si va detrás, su ritmo sube hasta `catchUpBoost` (+15 % en fácil, +14 % en medio y +12 % en difícil); si va delante, baja hasta `catchUpEase` (−6 %, −4 % y −2 %; hasta el hito 9b, −12 %, −10 % y −8 %, así que el jugador que se escapaba dejaba a los rivales aflojar), en proporción a la distancia y hasta `catchUpRange` (150 m). El objetivo nunca pasa de `maxPace` (97 %) del límite seguro del tramo, así que las curvas siguen con margen. Sin esto, un jugador que pasa a los rivales los pierde de vista: el jugador llega a 42 m/s y ellos, al 88–95 %, a unos 38. En las curvas cerradas la IA además mira menos adelante (`lookAheadCurveTime`), porque con el punto lejano cortaba la curva por dentro y tocaba el borde.
+
+## Otros autos: defender, pasar y esquivar (hito 10)
+
+`stepRival` recibe, además, `traffic` (el jugador y los rivales, en ese orden; se arma con `getTrafficCar`) y `selfIndex` (el lugar del rival en esa lista). Sin ellos el rival corre solo, como antes. Con ellos, `stepTactics` mira a los autos de los `reactRange` metros de carrera de alrededor y decide, sin azar (la carrera sigue siendo reproducible):
+
+- **Esquivar:** si un auto está a su lado (a menos de 5 m de carrera) y más cerca que `sideSpace` de lateral, se corre hacia el otro lado (hasta 4 m, a `tacticRate`). Con `sideSpace` menor que el ancho del auto (2,6 m) deja que se rocen.
+- **Pasar:** si va pegado (a menos de `max(20, 2,5 × followDistance)` m) a un auto que le estorba (desvío a menos de 2,9 m), prueba los dos lados del de adelante: apunta a `passGap` m de su carril, en el lado con más lugar, si entra en el asfalto y no hay otro auto en ese carril. Mantiene la maniobra mientras haya un auto junto a su carril o recién superado.
+- **Defender:** si un auto lo ataca desde atrás (a menos de la mitad de `reactRange`, sin quedarse atrás y a menos de 5,8 m de lateral), se corre hacia su línea (`defendStrength` de la distancia que los separa) y la mantiene `tacticHold` segundos.
+- **No zigzaguear:** después de cada maniobra espera `tacticCooldown` segundos antes de otra.
+- **Seguir:** si no puede pasar y el auto de adelante le estorba, no pasa de la velocidad que lo deja a `followDistance` m de él (`speedCap` de `stepTactics`, que `getRivalInput` usa como tope).
+- No maniobra en curva (mira 80 m adelante con el mismo criterio que el carril propio) ni a menos de 8 m/s, así que en la grilla parados no se pasan.
+
+La lista no es un reloj compartido: cada rival ve a los demás como estaban al principio del paso, igual que los ve el jugador.
+
+| Nivel  | Defiende | Separación al pasar / al costado | Sigue a | Maniobra a  |
+| ------ | -------- | -------------------------------- | ------- | ----------- |
+| easy   | 30 %     | 3,4 m / 3,6 m                    | 12 m    | 1,5 m/s     |
+| medium | 60 %     | 3,2 m / 3,2 m                    | 9 m     | 2 m/s       |
+| hard   | 100 %    | 2,8 m / 2,5 m                    | 5 m     | 3,2 m/s     |
+
+Fácil y medio son "justos": se dejan lugar y no se tocan. El difícil es "picante": cierra la puerta del todo, pasa y sigue pegado, y a veces se rozan; las colisiones del hito 9b hacen el resto.
 
 ## Dificultad
 
-`AI_LEVELS` guarda los parámetros de cada nivel (`AiLevel`) y `AI_LEVEL_IDS` los ordena de menos a más exigente. `easy` corre en curva al 82–90 % de la velocidad segura (`lineError` 1 m, freno al 66 %); `medium`, al 89–95 % (0,7 m, freno al 78 %); `hard`, al 97–102 % (0,4 m, freno al 90 %). En recta los tres van al tope del auto, así que la diferencia está en las curvas: en las pistas con curvas, cada nivel es unos 2 m/s más rápido de media que el anterior (en Gran Meseta, casi toda de rectas, casi no se nota). Los tres frenan menos y más tarde que antes (`lateralAccel` 31/33/35 m/s², antes 30; `steerReserve` 0,67/0,74/0,82, antes 0,65/0,7/0,75). Los tres se prueban en todas las pistas con la grilla llena. `DEFAULT_AI_LEVEL_ID` es `easy`.
+`AI_LEVELS` guarda los parámetros de cada nivel (`AiLevel`) y `AI_LEVEL_IDS` los ordena de menos a más exigente. `easy` corre en curva al 82–90 % de la velocidad segura (`lineError` 1 m, freno al 66 %); `medium`, al 89–95 % (0,7 m, freno al 78 %); `hard`, al 98–103 % (0,4 m, freno al 90 %; hasta el hito 9b, 97–102 %, y su `maxPace` pasó de 1,03 a 1,04). En recta los tres van al tope del auto, así que la diferencia está en las curvas: en las pistas con curvas, cada nivel es unos 2 m/s más rápido de media que el anterior (en Gran Meseta, casi toda de rectas, casi no se nota). Los tres frenan menos y más tarde que antes (`lateralAccel` 31/33/35 m/s², antes 30; `steerReserve` 0,67/0,74/0,82, antes 0,65/0,7/0,75). Los tres se prueban en todas las pistas con la grilla llena. `DEFAULT_AI_LEVEL_ID` es `medium` (hasta el hito 9b era `easy`).
 
 **Dificultad dinámica:** es el ajuste de ritmo de arriba (activo cuando el jugador va muy adelante o muy atrás). `withDynamicDifficulty(level, false)` devuelve el nivel con `catchUpBoost` y `catchUpEase` en 0: los rivales corren a su ritmo sorteado, sin mirar al jugador.
 
@@ -53,7 +74,7 @@ rival = stepRival(
 
 ## Decisiones de diseño
 
-- **Sin colisiones entre autos (hito 9a-1):** los rivales no ven al jugador ni a los otros rivales; se atraviesan. Las colisiones, el pelotón y las maniobras de adelantamiento quedan para otro hito.
+- **Con otros autos a la vista (hito 10):** hasta el hito 9b los rivales no veían a nadie (ni al jugador) y se atravesaban; desde el 9b chocan, y desde el 10 maniobran (ver arriba). Sin `traffic` en `stepRival` siguen corriendo solos.
 - **Hasta 10 rivales:** hay un nombre inventado distinto por cada uno (`RIVAL_NAMES`), pero la paleta tiene 8 colores y uno es del jugador, así que del octavo rival en adelante los colores se repiten. La grilla de 11 autos, en dos columnas, ocupa unos 60 m (`GRID_ROW_GAP`). La prueba de la IA corre la grilla llena en las cuatro pistas y los tres niveles. Con tantos autos conviene medir los fps en el celular: cada rival es un paso de simulación más por cuadro, en el hilo de UI y sin JIT.
 - **Mismo modelo, misma interfaz:** la IA solo produce `DrivingInput`. Así cualquier ajuste del manejo (panel de desarrollo) vale para todos y el rival no puede hacer nada que el jugador no pueda.
 - **El perfil de velocidad se calcula una vez por carrera** con el manejo de ese momento, no en cada paso: el hilo de UI corre sin JIT. Si el panel cambia el manejo a mitad de carrera, el perfil recién se actualiza en la carrera siguiente.

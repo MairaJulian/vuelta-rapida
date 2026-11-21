@@ -69,7 +69,7 @@ describe('parsePlayerPreferences', () => {
       ghostSource: 'none',
       vibrationEnabled: true,
       rivalCount: 3,
-      aiLevel: 'easy',
+      aiLevel: 'medium',
       dynamicDifficulty: true,
       collisionsEnabled: true,
       lapCount: 3,
@@ -93,7 +93,7 @@ describe('parsePlayerPreferences', () => {
     const parsed = parsePlayerPreferences(JSON.stringify({ controlMode: 'buttons' }));
     expect(parsed).toMatchObject({
       rivalCount: 3,
-      aiLevel: 'easy',
+      aiLevel: 'medium',
       dynamicDifficulty: true,
       ghostSource: 'none',
     });
@@ -111,7 +111,7 @@ describe('parsePlayerPreferences', () => {
 
   it('descarta una dificultad inexistente', () => {
     expect(parsePlayerPreferences(JSON.stringify({ aiLevel: 'medium' })).aiLevel).toBe('medium');
-    expect(parsePlayerPreferences(JSON.stringify({ aiLevel: 'experto' })).aiLevel).toBe('easy');
+    expect(parsePlayerPreferences(JSON.stringify({ aiLevel: 'experto' })).aiLevel).toBe('medium');
   });
 
   it('las preferencias de antes del sonido y la vibración arrancan con los dos prendidos', () => {

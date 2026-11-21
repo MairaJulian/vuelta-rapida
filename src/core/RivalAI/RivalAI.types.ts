@@ -51,6 +51,25 @@ export interface AiLevel {
   maxPace: number;
   /** Error de frenada: la velocidad objetivo se multiplica por 1 ± este valor (se sortea). */
   speedError: number;
+  /** Hasta qué distancia por delante y por detrás mira a los otros autos, en metros. */
+  reactRange: number;
+  /**
+   * Cuánto se cierra sobre la trazada del auto que lo ataca desde atrás, de 0 (no defiende)
+   * a 1 (se pone justo en su línea).
+   */
+  defendStrength: number;
+  /** Separación lateral con el auto al que pasa, en metros, de centro a centro. */
+  passGap: number;
+  /** Separación lateral mínima que guarda con un auto a su lado, en metros. Menos de 2,6 roza. */
+  sideSpace: number;
+  /** Distancia a la que se queda detrás de un auto que no puede pasar, en metros. */
+  followDistance: number;
+  /** Con qué rapidez se mueve de lado al defender, pasar o esquivar, en m/s. */
+  tacticRate: number;
+  /** Segundos que mantiene una maniobra (defender o pasar) antes de poder cambiarla. */
+  tacticHold: number;
+  /** Segundos que espera tras una maniobra antes de empezar otra. */
+  tacticCooldown: number;
 }
 
 /**
@@ -72,6 +91,30 @@ export interface RivalDriver {
   speedScale: number;
   /** Paso de simulación en que se sortean desvío y factor de nuevo. */
   nextDrawTick: number;
+  /** Maniobra en curso: seguir su trazada, cerrarle la línea al que ataca o pasar a un auto. */
+  tactic: RivalTactic;
+  /** Desvío de la trazada, en metros, al que apunta la maniobra (si `tactic` no es `none`). */
+  tacticGoal: number;
+  /** Paso de simulación hasta el que se mantiene la maniobra. */
+  tacticUntilTick: number;
+  /** Paso de simulación desde el que puede empezar otra maniobra. */
+  tacticReadyTick: number;
+}
+
+/** Qué hace el rival respecto de los autos que lo rodean. */
+export type RivalTactic = 'none' | 'defend' | 'pass';
+
+/**
+ * Lo que un rival sabe de otro auto (el jugador u otro rival) en este paso. Se arma una
+ * vez por auto y paso, con `getTrafficCar`. Serializable.
+ */
+export interface TrafficCar {
+  /** Distancia de carrera: crece vuelta tras vuelta, así que sirve para ver quién va delante. */
+  distance: number;
+  /** Desvío de la trazada central, en metros (positivo a la derecha de la marcha). */
+  lateral: number;
+  /** Velocidad hacia adelante, en m/s. */
+  speed: number;
 }
 
 /** Un auto rival en la carrera. Serializable. */

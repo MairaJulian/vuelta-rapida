@@ -9,8 +9,8 @@ import type { FixedStepConfig } from '@/core/FixedStep';
 import { getGhostSampleGap } from '@/core/Ghost';
 import { getRaceDistance, getStandings } from '@/core/RacePositions';
 import type { PositionEntry, RacePlaceView, Standing } from '@/core/RacePositions';
-import { createRival, stepRival } from '@/core/RivalAI';
-import type { RivalState } from '@/core/RivalAI';
+import { createRival, getTrafficCar, stepRival } from '@/core/RivalAI';
+import type { RivalState, TrafficCar } from '@/core/RivalAI';
 import { createRandomState, nextRandomBetween } from '@/core/SeededRandom';
 import { getKerbFactor, getNearestOnCenterline, getProgressAt } from '@/core/Track';
 import type { Circuit } from '@/core/Track';
@@ -193,6 +193,11 @@ function stepRivals(
   }
   const rules = { totalLaps: race.config.totalLaps, finishBrake: race.config.finishBrake };
   const playerDistance = getRaceDistance(race.sim.laps, race.lapLength);
+  // Lo que cada rival ve de los demás: el jugador primero y después los rivales, como están ahora.
+  const traffic: TrafficCar[] = [getTrafficCar(race.sim, circuit, race.lapLength)];
+  for (let i = 0; i < rivals.length; i += 1) {
+    traffic.push(getTrafficCar(rivals[i].sim, circuit, race.lapLength));
+  }
   const next: RivalState[] = [];
   for (let i = 0; i < rivals.length; i += 1) {
     next.push(
@@ -205,6 +210,8 @@ function stepRivals(
         rules,
         dt,
         playerDistance,
+        traffic,
+        i + 1,
       ),
     );
   }

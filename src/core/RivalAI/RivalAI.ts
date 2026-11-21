@@ -3,6 +3,7 @@ import type { CarColorId } from '@/core/CarPalette';
 import { getForwardSpeed, getMaxSteerAngle } from '@/core/DrivingModel';
 import type { DrivingConfig, DrivingInput } from '@/core/DrivingModel';
 import { createDrivingSim, stepDrivingSim } from '@/core/DrivingSim';
+import type { DrivingSimState } from '@/core/DrivingSim';
 import { clamp, wrapAngle } from '@/core/MathUtils';
 import { getRaceDistance } from '@/core/RacePositions';
 import { createRandomState, nextRandomBetween } from '@/core/SeededRandom';
@@ -18,6 +19,7 @@ import type {
   RivalRules,
   RivalSetup,
   RivalState,
+  TrafficCar,
 } from './RivalAI.types';
 
 /** Rivales por carrera por defecto. */
@@ -50,9 +52,17 @@ export const AI_LEVELS: Readonly<Record<AiLevelId, AiLevel>> = Object.freeze({
     lineRate: 0.8,
     catchUpRange: 150,
     catchUpBoost: 0.15,
-    catchUpEase: 0.12,
+    catchUpEase: 0.06,
     maxPace: 0.97,
     speedError: 0.06,
+    reactRange: 60,
+    defendStrength: 0.3,
+    passGap: 3.4,
+    sideSpace: 3.6,
+    followDistance: 12,
+    tacticRate: 1.5,
+    tacticHold: 1.5,
+    tacticCooldown: 4,
   }),
   medium: Object.freeze({
     id: 'medium',
@@ -70,18 +80,26 @@ export const AI_LEVELS: Readonly<Record<AiLevelId, AiLevel>> = Object.freeze({
     lineChangeSeconds: 1.5,
     lineRate: 0.8,
     catchUpRange: 150,
-    catchUpBoost: 0.12,
-    catchUpEase: 0.1,
+    catchUpBoost: 0.14,
+    catchUpEase: 0.04,
     maxPace: 1,
     speedError: 0.04,
+    reactRange: 70,
+    defendStrength: 0.6,
+    passGap: 3.2,
+    sideSpace: 3.2,
+    followDistance: 9,
+    tacticRate: 2,
+    tacticHold: 1.5,
+    tacticCooldown: 3,
   }),
   hard: Object.freeze({
     id: 'hard',
     lookAheadMin: 9,
     lookAheadTime: 0.35,
     lookAheadCurveTime: 0.45,
-    paceMin: 0.97,
-    paceMax: 1.02,
+    paceMin: 0.98,
+    paceMax: 1.03,
     lateralAccel: 35,
     steerReserve: 0.82,
     brakeDecelFactor: 0.9,
@@ -91,17 +109,25 @@ export const AI_LEVELS: Readonly<Record<AiLevelId, AiLevel>> = Object.freeze({
     lineChangeSeconds: 2,
     lineRate: 0.8,
     catchUpRange: 150,
-    catchUpBoost: 0.1,
-    catchUpEase: 0.08,
-    maxPace: 1.03,
+    catchUpBoost: 0.12,
+    catchUpEase: 0.02,
+    maxPace: 1.04,
     speedError: 0.02,
+    reactRange: 80,
+    defendStrength: 1,
+    passGap: 2.8,
+    sideSpace: 2.5,
+    followDistance: 5,
+    tacticRate: 3.2,
+    tacticHold: 1.2,
+    tacticCooldown: 1.5,
   }),
 });
 
 /** Niveles en orden de menor a mayor dificultad. */
 export const AI_LEVEL_IDS: readonly AiLevelId[] = Object.freeze(['easy', 'medium', 'hard']);
 
-export const DEFAULT_AI_LEVEL_ID: AiLevelId = 'easy';
+export const DEFAULT_AI_LEVEL_ID: AiLevelId = 'medium';
 
 /**
  * El nivel con o sin dificultad dinámica. Sin ella los rivales no se ajustan a la
@@ -151,10 +177,26 @@ const MIN_LOOK_AHEAD = 5;
 const CURVE_SPEED_SPAN = 0.15;
 /** Hasta dónde mira adelante el rival para saber si viene una curva y volver a la trazada, en metros. */
 const LANE_LOOK_AHEAD = 200;
+/** Hasta dónde mira adelante para decidir si maniobra con otros autos, en metros: menos que el carril, porque defender o pasar es más corto. */
+const TACTIC_LOOK_AHEAD = 80;
 /** Separación de los puntos que mira en ese tramo, en metros. */
 const LANE_LOOK_STEP = 40;
 /** Tope del desvío total de la trazada (carril más imprecisión), como fracción del ancho libre. */
 const MAX_LINE_FRACTION = 0.8;
+/** Velocidad mínima, en m/s, para maniobrar con otros autos: en la grilla, parados, no se pasan. */
+const TACTIC_MIN_SPEED = 4;
+/** Velocidad mínima que pide el auto de adelante al seguirlo, en m/s: un auto parado (el que ya llegó) se pasa, no se espera. */
+const MIN_FOLLOW_SPEED = 5;
+/** Tope del desvío al defender, pasar o esquivar, como fracción del ancho libre: deja margen al borde. */
+const TACTIC_MAX_LINE_FRACTION = 0.65;
+/** Distancia, de carrera, por debajo de la cual otro auto cuenta como "a su lado", en metros. */
+const SIDE_ZONE = 5;
+/** Diferencia lateral bajo la que un auto estorba el paso del otro (el ancho del auto más un margen), en metros. */
+const OVERLAP = 2.9;
+/** Cuánto de recta (de `getLaneScale`) pide para defender o pasar: en curva no se maniobra. */
+const TACTIC_MIN_STRAIGHT = 0.5;
+/** Tope de la corrección para esquivar a un auto a su lado, en metros. */
+const MAX_AVOID = 4;
 /** Pasos de la búsqueda binaria de la velocidad que permite el giro de las ruedas. */
 const STEER_SEARCH_STEPS = 14;
 
@@ -257,6 +299,10 @@ export function createRival(setup: RivalSetup): RivalState {
       lineTarget: startOffset,
       speedScale: 1,
       nextDrawTick: 0,
+      tactic: 'none',
+      tacticGoal: 0,
+      tacticUntilTick: 0,
+      tacticReadyTick: 0,
     },
     // El progreso de la grilla ya está leído: ordena a los autos antes de largar.
     sim: { ...sim, laps: { ...sim.laps, progress: setup.startProgress } },
@@ -275,6 +321,7 @@ function stepDriver(
   limit: number,
   dt: number,
   laneScale: number,
+  avoid: number,
 ): RivalDriver {
   'worklet';
   const { level } = driver;
@@ -291,8 +338,12 @@ function stepDriver(
   // El carril empuja la trazada hacia un costado en recta (`laneScale` 1) y se apaga en curva.
   const laneOffset = driver.lane * level.laneSpread * limit * laneScale;
   const maxLine = limit * MAX_LINE_FRACTION;
-  const goal = clamp(lineTarget + laneOffset, -maxLine, maxLine);
-  const maxMove = level.lineRate * dt;
+  // Una maniobra (defender o pasar) manda sobre la trazada; esquivar suma encima.
+  const base = driver.tactic === 'none' ? lineTarget + laneOffset : driver.tacticGoal;
+  const reacting = driver.tactic !== 'none' || avoid !== 0;
+  const maxOffset = reacting ? Math.min(maxLine, limit * TACTIC_MAX_LINE_FRACTION) : maxLine;
+  const goal = clamp(base + clamp(avoid, -MAX_AVOID, MAX_AVOID), -maxOffset, maxOffset);
+  const maxMove = (reacting ? Math.max(level.lineRate, level.tacticRate) : level.lineRate) * dt;
   const lineOffset = driver.lineOffset + clamp(goal - driver.lineOffset, -maxMove, maxMove);
   return { ...driver, random, lineTarget, speedScale, nextDrawTick, lineOffset };
 }
@@ -308,15 +359,206 @@ function getLaneScale(
   circuit: Circuit,
   profile: readonly number[],
   config: DrivingConfig,
+  lookAhead: number,
 ): number {
   'worklet';
   const progress = rival.sim.laps.progress ?? 0;
   let slowest = config.maxSpeed;
-  for (let ahead = 0; ahead <= LANE_LOOK_AHEAD; ahead += LANE_LOOK_STEP) {
+  for (let ahead = 0; ahead <= lookAhead; ahead += LANE_LOOK_STEP) {
     const { segment } = getSegmentAtProgress(circuit, progress + ahead);
     slowest = Math.min(slowest, profile[segment]);
   }
   return 1 - clamp((config.maxSpeed - slowest) / (config.maxSpeed * CURVE_SPEED_SPAN), 0, 1);
+}
+
+/**
+ * Lo que los demás rivales saben de un auto: dónde va en la carrera, a qué lado de la
+ * trazada y a qué velocidad. El desvío sale de proyectar su posición sobre la normal del
+ * trazado en su progreso (el mismo corrimiento que usa `getPoseAtProgress`).
+ */
+export function getTrafficCar(
+  sim: DrivingSimState,
+  circuit: Circuit,
+  lapLength: number,
+): TrafficCar {
+  'worklet';
+  const { car } = sim;
+  const pose = getPoseAtProgress(circuit, sim.laps.progress ?? 0);
+  return {
+    distance: getRaceDistance(sim.laps, lapLength),
+    lateral: (car.x - pose.x) * Math.cos(pose.heading) + (car.z - pose.z) * Math.sin(pose.heading),
+    speed: getForwardSpeed(car),
+  };
+}
+
+/** Resultado de mirar a los otros autos: el rival con su maniobra, la corrección y el tope de velocidad. */
+interface TacticStep {
+  driver: RivalDriver;
+  /** Corrimiento lateral para no tocar a un auto a su lado, en metros. */
+  avoid: number;
+  /** Velocidad tope por el auto de adelante, en m/s (infinito si no hay ninguno). */
+  speedCap: number;
+}
+
+/**
+ * Si hay un auto adelante estorbando (con su desvío dentro de `OVERLAP` del de `lateral`),
+ * ¿el lado `side` (−1 izquierda, 1 derecha) tiene lugar para pasarlo? Devuelve el desvío al
+ * que apuntar, o `null` si no entra en el asfalto o hay otro auto en ese carril.
+ */
+function getPassGoal(
+  driver: RivalDriver,
+  traffic: readonly TrafficCar[],
+  selfIndex: number,
+  aheadIndex: number,
+  side: number,
+  maxLine: number,
+): number | null {
+  'worklet';
+  const ahead = traffic[aheadIndex];
+  const goal = ahead.lateral + side * driver.level.passGap;
+  if (Math.abs(goal) > maxLine) {
+    return null;
+  }
+  const me = traffic[selfIndex];
+  const farGap = ahead.distance - me.distance + SIDE_ZONE;
+  for (let j = 0; j < traffic.length; j += 1) {
+    if (j === selfIndex || j === aheadIndex) {
+      continue;
+    }
+    const gap = traffic[j].distance - me.distance;
+    if (gap > -SIDE_ZONE && gap < farGap && Math.abs(traffic[j].lateral - goal) < OVERLAP) {
+      return null;
+    }
+  }
+  return goal;
+}
+
+/**
+ * Cómo se comporta el rival con los otros autos. Todo sale de `traffic` (el jugador y los
+ * rivales, del paso anterior), sin azar, así la carrera sigue siendo reproducible:
+ *
+ * - **Esquivar:** si un auto está a su lado (a menos de `SIDE_ZONE` m de carrera) y más cerca
+ *   que `sideSpace`, se corre hacia el otro lado. Con `sideSpace` menor que el ancho del auto
+ *   (nivel difícil) deja que se rocen.
+ * - **Pasar:** si va pegado a un auto que le estorba y hay lugar y carril libre, apunta a un
+ *   carril `passGap` al costado y lo mantiene hasta dejarlo atrás (`tacticHold` de margen).
+ * - **Defender:** si un auto lo ataca desde atrás, a menos de la mitad de `reactRange` y sin
+ *   quedarse, se corre hacia su línea (`defendStrength`) y la mantiene `tacticHold` segundos.
+ *   Tras cada maniobra espera `tacticCooldown`: no zigzaguea.
+ * - **Seguir:** si no puede pasar, no se acerca al auto de adelante más de `followDistance`.
+ *
+ * En curva, o casi parado, no maniobra: vuelve a su trazada.
+ */
+function stepTactics(
+  driver: RivalDriver,
+  traffic: readonly TrafficCar[],
+  selfIndex: number,
+  tick: number,
+  dt: number,
+  laneScale: number,
+  limit: number,
+): TacticStep {
+  'worklet';
+  const { level } = driver;
+  const me = traffic[selfIndex];
+  const maxLine = limit * TACTIC_MAX_LINE_FRACTION;
+  const reach = level.reactRange;
+  let aheadIndex = -1;
+  let aheadGap = reach;
+  let behindIndex = -1;
+  let behindGap = reach;
+  let avoid = 0;
+  for (let j = 0; j < traffic.length; j += 1) {
+    if (j === selfIndex) {
+      continue;
+    }
+    const gap = traffic[j].distance - me.distance;
+    const side = traffic[j].lateral - me.lateral;
+    if (Math.abs(gap) < SIDE_ZONE) {
+      const room = level.sideSpace - Math.abs(side);
+      if (room > 0) {
+        // Con el mismo desvío exacto, el de índice menor se va a la izquierda.
+        const away = side > 0 || (side === 0 && selfIndex > j) ? -1 : 1;
+        avoid += away * room;
+      }
+    } else if (gap > 0) {
+      if (gap < aheadGap) {
+        aheadGap = gap;
+        aheadIndex = j;
+      }
+    } else if (-gap < behindGap) {
+      behindGap = -gap;
+      behindIndex = j;
+    }
+  }
+
+  let { tactic, tacticGoal, tacticUntilTick, tacticReadyTick } = driver;
+  const cooldown = Math.max(1, Math.round(level.tacticCooldown / dt));
+  const hold = Math.max(1, Math.round(level.tacticHold / dt));
+  const canAct = me.speed > TACTIC_MIN_SPEED && laneScale >= TACTIC_MIN_STRAIGHT;
+  if (tactic === 'pass') {
+    // Mientras haya un auto junto a su carril de paso o recién superado, sigue pasando.
+    for (let j = 0; j < traffic.length; j += 1) {
+      const gap = traffic[j].distance - me.distance;
+      if (
+        j !== selfIndex &&
+        gap > -SIDE_ZONE * 2 &&
+        gap < reach &&
+        Math.abs(traffic[j].lateral - tacticGoal) < level.passGap + 1
+      ) {
+        tacticUntilTick = Math.max(tacticUntilTick, tick + hold);
+      }
+    }
+  }
+  if (tactic !== 'none' && (!canAct || tick >= tacticUntilTick)) {
+    tactic = 'none';
+    tacticReadyTick = tick + cooldown;
+  }
+
+  const blocked = aheadIndex >= 0 && Math.abs(traffic[aheadIndex].lateral - me.lateral) < OVERLAP;
+  if (tactic === 'none' && canAct && tick >= tacticReadyTick) {
+    if (blocked && aheadGap < Math.max(20, level.followDistance * 2.5)) {
+      // Pasa por el lado con más lugar libre.
+      const left = getPassGoal(driver, traffic, selfIndex, aheadIndex, -1, maxLine);
+      const right = getPassGoal(driver, traffic, selfIndex, aheadIndex, 1, maxLine);
+      const goal =
+        left !== null && right !== null
+          ? Math.abs(left) <= Math.abs(right)
+            ? left
+            : right
+          : (left ?? right);
+      if (goal !== null) {
+        tactic = 'pass';
+        tacticGoal = goal;
+        tacticUntilTick = tick + hold;
+      }
+    } else if (behindIndex >= 0 && level.defendStrength > 0 && behindGap < reach * 0.5) {
+      const attacker = traffic[behindIndex];
+      const offset = attacker.lateral - me.lateral;
+      if (attacker.speed >= me.speed - 1 && Math.abs(offset) < 2 * OVERLAP) {
+        const goal = clamp(me.lateral + level.defendStrength * offset, -maxLine, maxLine);
+        if (Math.abs(goal - me.lateral) > 0.3) {
+          tactic = 'defend';
+          tacticGoal = goal;
+          tacticUntilTick = tick + hold;
+        }
+      }
+    }
+  }
+
+  // Sin lugar para pasar (o antes de que el paso lo saque del camino), no se acerca de más.
+  let speedCap = Infinity;
+  if (blocked && aheadGap < level.followDistance * 2) {
+    speedCap = Math.max(
+      traffic[aheadIndex].speed + (aheadGap - level.followDistance) * 0.8,
+      MIN_FOLLOW_SPEED,
+    );
+  }
+  return {
+    driver: { ...driver, tactic, tacticGoal, tacticUntilTick, tacticReadyTick },
+    avoid,
+    speedCap,
+  };
 }
 
 /**
@@ -325,7 +567,8 @@ function getLaneScale(
  * crece con la velocidad (y corrido por el desvío del rival). Freno: proporcional a lo
  * que se pasa de la velocidad objetivo del tramo (`profile`, con su ritmo, su error y el
  * ajuste por la distancia al jugador: `playerDistance`, la distancia de carrera del jugador).
- * El objetivo nunca pasa de `maxPace` veces el límite seguro del tramo.
+ * El objetivo nunca pasa de `maxPace` veces el límite seguro del tramo. `speedCap` (opcional)
+ * es la velocidad tope que pide el auto de adelante (`stepTactics`).
  */
 export function getRivalInput(
   rival: RivalState,
@@ -333,6 +576,7 @@ export function getRivalInput(
   profile: readonly number[],
   config: DrivingConfig,
   playerDistance: number,
+  speedCap?: number,
 ): DrivingInput {
   'worklet';
   const { driver, sim } = rival;
@@ -354,12 +598,14 @@ export function getRivalInput(
   // está `CURVE_SPEED_SPAN` por debajo), así que la transición es gradual. En recta solo se
   // relaja si va muy adelante del jugador.
   const curve = clamp((config.maxSpeed - limit) / (config.maxSpeed * CURVE_SPEED_SPAN), 0, 1);
-  const target =
+  const paced =
     limit *
     Math.min(
       1 + curve * (level.maxPace - 1),
       (1 + curve * (driver.pace * driver.speedScale - 1)) * (1 + catchUp),
     );
+  // Con un auto adelante que no puede pasar, no pasa de la velocidad que lo deja a distancia.
+  const target = speedCap === undefined ? paced : Math.min(paced, speedCap);
 
   // En una curva cerrada el límite de velocidad es bajo: mirar menos adelante evita cortarla.
   const lookAhead = Math.min(
@@ -380,7 +626,8 @@ export function getRivalInput(
 }
 
 /**
- * Un paso fijo del rival. Corre con el mismo modelo de manejo, los mismos límites de
+ * Un paso fijo del rival. `traffic` (el jugador y los rivales, en ese orden) y `selfIndex` (su
+ * lugar en esa lista) son opcionales: sin ellos no ve a los otros autos. Corre con el mismo modelo de manejo, los mismos límites de
  * pista y las mismas vueltas que el jugador. Al completar la última vuelta frena solo
  * (`coastConfig`: sin acelerador), siguiendo la trazada, como el jugador tras la llegada.
  */
@@ -393,17 +640,42 @@ export function stepRival(
   rules: RivalRules,
   dt: number,
   playerDistance: number,
+  traffic?: readonly TrafficCar[],
+  selfIndex?: number,
 ): RivalState {
   'worklet';
   const tick = rival.sim.tick + 1;
+  const limit = getTrackLimit(circuit, config);
+  const laneScale = getLaneScale(rival, circuit, profile, config, LANE_LOOK_AHEAD);
+  // Con otros autos a la vista (y sin haber llegado) maniobra; si no, corre solo.
+  const react =
+    traffic !== undefined && selfIndex !== undefined && rival.finishTick === null
+      ? stepTactics(
+          rival.driver,
+          traffic,
+          selfIndex,
+          tick,
+          dt,
+          getLaneScale(rival, circuit, profile, config, TACTIC_LOOK_AHEAD),
+          limit,
+        )
+      : null;
   const driver = stepDriver(
-    rival.driver,
+    react === null ? rival.driver : react.driver,
     tick,
-    getTrackLimit(circuit, config),
+    limit,
     dt,
-    getLaneScale(rival, circuit, profile, config),
+    laneScale,
+    react === null ? 0 : react.avoid,
   );
-  const input = getRivalInput({ ...rival, driver }, circuit, profile, config, playerDistance);
+  const input = getRivalInput(
+    { ...rival, driver },
+    circuit,
+    profile,
+    config,
+    playerDistance,
+    react === null ? undefined : react.speedCap,
+  );
   if (rival.finishTick !== null) {
     const sim = stepDrivingSim(
       rival.sim,
